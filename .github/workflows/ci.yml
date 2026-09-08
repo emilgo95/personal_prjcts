@@ -6,21 +6,14 @@ on:
   push:
     branches: [main]
 
+# Permisos mínimos a nivel de workflow. El job `codeql` declara los suyos.
 permissions:
   contents: read
   pull-requests: read    # dorny/paths-filter lee los ficheros cambiados del PR vía API
-  packages: write        # publicar imagen en GHCR
-  id-token: write        # OIDC (si se adopta federación de identidad)
-  security-events: write # subir resultados de CodeQL / Trivy
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  REGISTRY: ghcr.io
-  # OWNER se resuelve a la organización/usuario dueño del repo
-  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -177,77 +170,14 @@ jobs:
             kustomize build "$ov" | kubeconform -strict -summary -ignore-missing-schemas
           done
 
-  # ---------------------------------------------------------------------------
-  # 5. Construir y publicar imágenes (solo en push a main)
-  # ---------------------------------------------------------------------------
-  images:
-    needs: [changes, backend, frontend]
-    if: |
-      always() &&
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      !contains(needs.*.result, 'failure')
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - { name: agriaudit-backend,  context: backend,  changed: backend }
-          - { name: agriaudit-frontend, context: frontend, changed: frontend }
-          - { name: agriaudit-ocr,      context: ocr,      changed: ocr }
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: ¿Este componente ha cambiado?
-        id: gate
-        run: echo "build=${{ needs.changes.outputs[matrix.changed] }}" >> "$GITHUB_OUTPUT"
-
-      - name: Login en GHCR
-        if: steps.gate.outputs.build == 'true'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Metadatos de la imagen
-        if: steps.gate.outputs.build == 'true'
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE_PREFIX }}/${{ matrix.name }}
-          tags: |
-            type=sha,format=long
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build & push (Buildx)
-        if: steps.gate.outputs.build == 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ matrix.context }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: true
-          sbom: true
-
-      - name: Escaneo de vulnerabilidades de la imagen
-        if: steps.gate.outputs.build == 'true'
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: ${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:sha-${{ github.sha }}
-          format: sarif
-          output: trivy-${{ matrix.name }}.sarif
-          severity: CRITICAL,HIGH
-      - name: Subir resultados de Trivy
-        if: steps.gate.outputs.build == 'true'
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-${{ matrix.name }}.sarif
+  # NOTA: la construcción y publicación de imágenes a un registro (GHCR) se
+  # añadirá cuando exista un destino de despliegue real (ver docs/FASE-0.md,
+  # local-only). Hoy `compose-smoke` ya construye las imágenes para probarlas.
+  # Cuando vuelva, fijar las acciones por SHA (RS-SUPPLY-06) y usar una versión
+  # válida de aquasecurity/trivy-action.
 
   # ---------------------------------------------------------------------------
-  # 6. Puerta única de CI — es el ÚNICO check requerido por la protección de main.
+  # 5. Puerta única de CI — es el ÚNICO check requerido por la protección de main.
   #    Pasa si todos los jobs relevantes terminaron OK o se saltaron (skipped);
   #    falla si alguno falló o fue cancelado.
   # ---------------------------------------------------------------------------
