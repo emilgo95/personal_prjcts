@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${m.documentTitle}">Checklist</title>
+    <th:block th:replace="~{docs/_common :: styles}"></th:block>
+</head>
+<body>
+<div th:replace="~{docs/_common :: docheader}"></div>
+
+<h2>Resumen</h2>
+<p>
+    Resultado global:
+    <span class="result"
+          th:classappend="${m.score.overallResult == 'PASS'} ? 'r-pass' : (${m.score.overallResult == 'FAIL'} ? 'r-fail' : 'r-other')"
+          th:text="${T(com.agriaudit.service.document.DocLabels).overallResult(m.score.overallResult)}">Resultado</span>
+    &nbsp; Progreso: <b th:text="${m.score.progressPct} + '%'">0%</b>
+    &nbsp; Evaluados: <b th:text="${m.score.assessedCount} + ' / ' + ${m.score.totalControlPoints}"></b>
+</p>
+
+<th:block th:each="ch : ${m.chapters}">
+    <h2 th:text="${ch.code} + ' · ' + ${ch.title}">Capítulo</h2>
+    <table>
+        <tr>
+            <th style="width:8%">Ref</th>
+            <th style="width:34%">Punto de control</th>
+            <th style="width:12%">Nivel</th>
+            <th style="width:10%">Resultado</th>
+            <th style="width:36%">Evidencias / observaciones</th>
+        </tr>
+        <tr th:each="cp : ${ch.controlPoints}" th:with="r=${m.resultsByControlPoint.get(cp.id)}">
+            <td th:text="${cp.ref}"></td>
+            <td th:text="${cp.title}"></td>
+            <td th:text="${T(com.agriaudit.service.document.DocLabels).level(cp.level)}"></td>
+            <td>
+                <span class="badge"
+                      th:with="c=${r != null ? r.compliance : 'NOT_ASSESSED'}"
+                      th:classappend="${c == 'COMPLIANT'} ? 'b-ok' : (${c == 'NON_COMPLIANT'} ? 'b-no' : (${c == 'NOT_APPLICABLE'} ? 'b-na' : 'b-pend'))"
+                      th:text="${T(com.agriaudit.service.document.DocLabels).compliance(c)}">-</span>
+            </td>
+            <td>
+                <span th:if="${r != null and r.evidenceNotes != null}" th:text="${r.evidenceNotes}"></span>
+                <span th:if="${r != null and r.auditorComment != null}" class="muted" th:text="' — ' + ${r.auditorComment}"></span>
+                <div th:replace="~{docs/_common :: evidence(${m.evidenceByControlPoint.get(cp.id)})}"></div>
+            </td>
+        </tr>
+    </table>
+</th:block>
+
+<div th:replace="~{docs/_common :: disclaimer}"></div>
+</body>
+</html>

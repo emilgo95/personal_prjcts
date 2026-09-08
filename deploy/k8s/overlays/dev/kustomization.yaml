@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: agriaudit-dev
+namePrefix: ""
+
+resources:
+  - ../../base
+
+# Valores de configuración propios de dev (no secretos).
+configMapGenerator:
+  - name: backend-config
+    behavior: merge
+    envs:
+      - config.env
+
+# El Ingress usa un placeholder; se sustituye por el host de este entorno.
+patches:
+  - target: { kind: Ingress, name: agriaudit }
+    patch: |
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: agriaudit.dev.example.internal
+      - op: replace
+        path: /spec/rules/0/host
+        value: agriaudit.dev.example.internal
+  # En dev basta 1 réplica y sin autoescalado agresivo.
+  - target: { kind: Deployment, name: backend }
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target: { kind: HorizontalPodAutoscaler, name: backend }
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+  - target: { kind: Deployment, name: frontend }
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1

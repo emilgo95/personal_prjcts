@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${m.documentTitle}">Informe de Evaluación GRASP</title>
+    <th:block th:replace="~{docs/_common :: styles}"></th:block>
+</head>
+<body>
+<div th:replace="~{docs/_common :: docheader}"></div>
+
+<h2>Alcance de la evaluación</h2>
+<p>Evaluación de riesgo de las prácticas sociales en la explotación conforme al módulo GRASP (GLOBALG.A.P. Risk
+   Assessment on Social Practice). Complemento del certificado GLOBALG.A.P.; no genera un certificado independiente.</p>
+
+<h2>Resumen por capítulo</h2>
+<table>
+    <tr><th>Capítulo</th><th>Sí (conforme)</th><th>No</th><th>N.A.</th><th>Sin evaluar</th></tr>
+    <tr th:each="g : ${m.score.chapterBreakdown}">
+        <td th:text="${g.title}"></td>
+        <td th:text="${g.compliant}"></td>
+        <td th:text="${g.nonCompliant}"></td>
+        <td th:text="${g.notApplicable}"></td>
+        <td th:text="${g.notAssessed}"></td>
+    </tr>
+</table>
+
+<h2>Detalle de puntos de control</h2>
+<th:block th:each="ch : ${m.chapters}">
+    <h3 th:text="${ch.code} + ' · ' + ${ch.title}">Capítulo</h3>
+    <table>
+        <tr><th style="width:8%">Ref</th><th style="width:44%">Punto de control</th><th style="width:10%">Cumple</th><th style="width:38%">Evidencias / comentario</th></tr>
+        <tr th:each="cp : ${ch.controlPoints}" th:with="r=${m.resultsByControlPoint.get(cp.id)}">
+            <td th:text="${cp.ref}"></td>
+            <td th:text="${cp.title}"></td>
+            <td th:with="c=${r != null ? r.compliance : 'NOT_ASSESSED'}"
+                th:text="${c == 'COMPLIANT' ? 'Sí' : (c == 'NON_COMPLIANT' ? 'No' : (c == 'NOT_APPLICABLE' ? 'N.A.' : '-'))}"></td>
+            <td>
+                <span th:if="${r != null and r.evidenceNotes != null}" th:text="${r.evidenceNotes}"></span>
+                <span th:if="${r != null and r.auditorComment != null}" class="muted" th:text="' — ' + ${r.auditorComment}"></span>
+                <div th:replace="~{docs/_common :: evidence(${m.evidenceByControlPoint.get(cp.id)})}"></div>
+            </td>
+        </tr>
+    </table>
+</th:block>
+
+<h2>Hallazgos y acciones</h2>
+<p th:if="${m.findings.isEmpty()}">Sin hallazgos registrados.</p>
+<table th:if="${!m.findings.isEmpty()}">
+    <tr><th>Nº</th><th>Punto</th><th>Descripción</th><th>Acción acordada</th><th>Plazo</th></tr>
+    <tr th:each="f : ${m.findings}">
+        <td th:text="${f.reference} ?: ''"></td>
+        <td th:text="${f.controlPointRef} ?: '-'"></td>
+        <td th:text="${f.description ?: (f.title ?: '')}"></td>
+        <td th:text="${!f.correctiveActions.isEmpty() ? f.correctiveActions[0].correction : 'Pendiente'}"></td>
+        <td th:text="${f.dueDate} ?: '-'"></td>
+    </tr>
+</table>
+
+<div th:replace="~{docs/_common :: disclaimer}"></div>
+</body>
+</html>

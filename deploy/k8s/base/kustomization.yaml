@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base común a todos los entornos. Cada overlay (dev/staging/prod) ajusta
+# réplicas, recursos, dominio del Ingress y los valores del ConfigMap.
+
+commonLabels:
+  app.kubernetes.io/part-of: agriaudit
+
+resources:
+  - backend.yaml
+  - ocr.yaml
+  - frontend.yaml
+
+# ConfigMap NO secreto, generado desde un fichero .env por entorno (en los overlays).
+# Aquí se define solo la parte común e invariable.
+configMapGenerator:
+  - name: backend-config
+    literals:
+      - SPRING_PROFILES_ACTIVE=k8s
+      - SERVER_PORT=8081
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75 -XX:+UseZGC
+      - AGRIAUDIT_OCR_URL=http://ocr:8000
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,prometheus
+
+# Los secretos NO se generan aquí. Ver secret.example.yaml y el README:
+# se gestionan con Sealed Secrets o External Secrets Operator.
+
+images:
+  # El pipeline de CD sustituye estos con `kustomize edit set image ...:<sha>`
+  - name: ghcr.io/OWNER/agriaudit-backend
+    newTag: latest
+  - name: ghcr.io/OWNER/agriaudit-frontend
+    newTag: latest
+  - name: ghcr.io/OWNER/agriaudit-ocr
+    newTag: latest

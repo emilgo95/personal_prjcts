@@ -1,0 +1,40 @@
+name: CD
+
+# FASE 0: despliegue MANUAL a un entorno (dev / pre / prod).
+# Requiere que el entorno de GitHub correspondiente tenga el secreto KUBECONFIG
+# con un ServiceAccount de permisos mínimos en su namespace.
+#
+# Fase 1: descomentar el disparo `workflow_run` para encadenar dev -> pre tras
+# un CI verde en main, y añadir la puerta de aprobación en `prod`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Entorno a desplegar
+        type: choice
+        options: [dev, pre, prod]
+        default: dev
+      image_tag:
+        description: "Tag de imagen (por defecto: sha-<commit actual>)"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/kustomize-deploy
+        with:
+          overlay: deploy/k8s/overlays/${{ github.event.inputs.environment }}
+          image_tag: ${{ github.event.inputs.image_tag || format('sha-{0}', github.sha) }}
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          namespace: agriaudit-${{ github.event.inputs.environment }}

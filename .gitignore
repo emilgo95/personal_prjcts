@@ -1,0 +1,76 @@
+# ---------------------------------------------------------------------------
+# Java / Maven
+# ---------------------------------------------------------------------------
+backend/target/
+*.class
+*.jar
+!**/maven-wrapper.jar
+!**/gradle-wrapper.jar
+.mvn/timing.properties
+hs_err_pid*.log
+
+# ---------------------------------------------------------------------------
+# Node / Vite (frontend)
+# ---------------------------------------------------------------------------
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+
+# ---------------------------------------------------------------------------
+# Python (ocr)
+# ---------------------------------------------------------------------------
+**/__pycache__/
+*.py[cod]
+ocr/.venv/
+ocr/venv/
+
+# ---------------------------------------------------------------------------
+# Entorno y secretos  (NUNCA subir credenciales reales)
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.p12
+*.keystore
+kubeconfig
+deploy/k8s/**/backend-sealedsecret.yaml
+deploy/k8s/**/*-secret.yaml
+!deploy/k8s/base/secret.example.yaml
+
+# ---------------------------------------------------------------------------
+# Datos de ejecución (volúmenes locales)
+# ---------------------------------------------------------------------------
+data/
+docdata/
+uploads/
+
+# ---------------------------------------------------------------------------
+# Herramientas / IDE (config local, no compartida)
+# ---------------------------------------------------------------------------
+.idea/
+.vscode/
+*.iml
+.settings/
+.classpath
+.project
+.claude/settings.local.json
+
+# ---------------------------------------------------------------------------
+# Logs y temporales
+# ---------------------------------------------------------------------------
+*.log
+logs/
+
+# ---------------------------------------------------------------------------
+# Sistema operativo
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Bundle de fuentes (duplica docs/dominio-funcional/fuentes/): se genera bajo demanda
+docs/dominio-funcional/*.zip
