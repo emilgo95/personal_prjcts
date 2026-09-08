@@ -9,8 +9,10 @@ y **generar los documentos en el formato esperado por cada estándar del sector*
 - **Generación de documentos:** PDF (Thymeleaf + openhtmltopdf), DOCX y XLSX (Apache POI)
 
 Estándares implementados end-to-end: **GLOBALG.A.P. IFA v6**, **GRASP v2** y **SMETA 6.1 (4 pilares)**.
-El esquema soporta añadir más estándares como datos semilla. Consulta
-[`docs/normative-catalog.md`](docs/normative-catalog.md) para el catálogo de estándares y normativa investigado.
+El esquema soporta añadir más estándares como datos semilla.
+
+> La carpeta `docs/` (catálogo normativo, planes, requisitos, análisis de dominio) es
+> **documentación interna y solo local**: está en `.gitignore` y no se versiona.
 
 ---
 
@@ -204,9 +206,7 @@ agriaudit-docs/
 ├── .devcontainer/               # GitHub Codespaces
 ├── .github/workflows/           # CI (build + tests + smoke) y CD
 ├── deploy/k8s/                  # manifiestos Kubernetes (base + overlays)
-├── docs/
-│   ├── normative-catalog.md      # estándares + normativa investigados (con fuentes)
-│   └── api.http                  # ejemplos de peticiones
+├── docs/                        # documentación interna — SOLO LOCAL (en .gitignore)
 ├── backend/
 │   └── src/main/
 │       ├── java/com/agriaudit/   # domain · repo · security · service · web

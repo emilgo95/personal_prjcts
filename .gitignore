@@ -72,5 +72,8 @@ logs/
 Thumbs.db
 desktop.ini
 
-# Bundle de fuentes (duplica docs/dominio-funcional/fuentes/): se genera bajo demanda
-docs/dominio-funcional/*.zip
+# ---------------------------------------------------------------------------
+# Documentacion interna (solo local, no se versiona)
+# Nota: es /docs/ (raiz del repo). NO afecta a backend/.../templates/docs/.
+# ---------------------------------------------------------------------------
+/docs/
