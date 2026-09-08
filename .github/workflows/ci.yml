@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read    # dorny/paths-filter lee los ficheros cambiados del PR vía API
   packages: write        # publicar imagen en GHCR
   id-token: write        # OIDC (si se adopta federación de identidad)
   security-events: write # subir resultados de CodeQL / Trivy
