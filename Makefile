@@ -9,6 +9,11 @@ help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 	  awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
+.PHONY: setup
+setup: init ## Configuración inicial tras clonar (hooks de git + .env)
+	@git config core.hooksPath .githooks
+	@echo "Hooks activados (.githooks). Push directo a 'main' bloqueado: usa ramas + PR."
+
 .PHONY: init
 init: ## Crea el .env a partir de la plantilla (si no existe)
 	@test -f .env || cp .env.example .env

@@ -1,0 +1,30 @@
+#!/bin/sh
+# Bloquea el push directo a 'main'. En este proyecto se trabaja siempre con
+# ramas + Pull Request (ver CONTRIBUTING.md).
+#
+# Activar tras clonar:   git config core.hooksPath .githooks
+# Excepción puntual:     AGRIAUDIT_ALLOW_MAIN=1 git push ...
+
+protected="main"
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+    case "$remote_ref" in
+        "refs/heads/$protected")
+            if [ "$AGRIAUDIT_ALLOW_MAIN" != "1" ]; then
+                echo ""
+                echo "  Push directo a '$protected' bloqueado."
+                echo "  Trabaja con una rama y un PR:"
+                echo ""
+                echo "    git switch -c feat/mi-cambio"
+                echo "    git push -u origin feat/mi-cambio"
+                echo "    gh pr create --fill"
+                echo ""
+                echo "  (excepción puntual: AGRIAUDIT_ALLOW_MAIN=1 git push ...)"
+                echo ""
+                exit 1
+            fi
+            ;;
+    esac
+done
+
+exit 0
