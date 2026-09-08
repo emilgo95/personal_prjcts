@@ -83,11 +83,32 @@ jobs:
           path: backend/target/site/jacoco/
           if-no-files-found: warn
 
-      - name: CodeQL (Java)
-        uses: github/codeql-action/init@v3
+  # ---------------------------------------------------------------------------
+  # 2b. CodeQL (SAST) — job propio, análisis de fuente (build-mode: none).
+  #     Informativo: sube hallazgos a la pestaña Security; NO forma parte de
+  #     `ci-ok`, así que no bloquea la fusión por ahora.
+  # ---------------------------------------------------------------------------
+  codeql:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [java-kotlin, javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
         with:
-          languages: java-kotlin
+          languages: ${{ matrix.language }}
+          build-mode: none
       - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
 
   # ---------------------------------------------------------------------------
   # 3. Frontend: typecheck, tests, build
