@@ -223,3 +223,22 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-${{ matrix.name }}.sarif
+
+  # ---------------------------------------------------------------------------
+  # 6. Puerta única de CI — es el ÚNICO check requerido por la protección de main.
+  #    Pasa si todos los jobs relevantes terminaron OK o se saltaron (skipped);
+  #    falla si alguno falló o fue cancelado.
+  # ---------------------------------------------------------------------------
+  ci-ok:
+    if: always()
+    needs: [changes, backend, frontend, compose-smoke, manifests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar resultados
+        run: |
+          results='${{ join(needs.*.result, ',') }}'
+          echo "Resultados de los jobs: $results"
+          case "$results" in
+            *failure*|*cancelled*) echo "::error::Algún job de CI ha fallado"; exit 1 ;;
+            *) echo "CI en verde"; exit 0 ;;
+          esac
