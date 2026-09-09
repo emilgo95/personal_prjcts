@@ -25,7 +25,6 @@ jobs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
       ocr: ${{ steps.filter.outputs.ocr }}
-      deploy: ${{ steps.filter.outputs.deploy }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -38,9 +37,6 @@ jobs:
               - 'frontend/**'
             ocr:
               - 'ocr/**'
-            deploy:
-              - 'deploy/**'
-              - '.github/workflows/**'
 
   # ---------------------------------------------------------------------------
   # 2. Backend: compilar, tests, verificación de arquitectura, análisis
@@ -150,26 +146,6 @@ jobs:
         if: always()
         run: docker compose down -v
 
-  # ---------------------------------------------------------------------------
-  # 4. Validar los manifiestos de Kubernetes (siempre que cambien)
-  # ---------------------------------------------------------------------------
-  manifests:
-    needs: changes
-    if: needs.changes.outputs.deploy == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Instalar kustomize y kubeconform
-        run: |
-          curl -sL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz | sudo tar xz -C /usr/local/bin
-          curl -sL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | sudo tar xz -C /usr/local/bin kubeconform
-      - name: Renderizar y validar cada overlay
-        run: |
-          for ov in deploy/k8s/overlays/*; do
-            echo "== $ov =="
-            kustomize build "$ov" | kubeconform -strict -summary -ignore-missing-schemas
-          done
-
   # NOTA: la construcción y publicación de imágenes a un registro (GHCR) se
   # añadirá cuando exista un destino de despliegue real (ver docs/FASE-0.md,
   # local-only). Hoy `compose-smoke` ya construye las imágenes para probarlas.
@@ -183,7 +159,7 @@ jobs:
   # ---------------------------------------------------------------------------
   ci-ok:
     if: always()
-    needs: [changes, backend, frontend, compose-smoke, manifests]
+    needs: [changes, backend, frontend, compose-smoke]
     runs-on: ubuntu-latest
     steps:
       - name: Comprobar resultados

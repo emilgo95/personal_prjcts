@@ -37,9 +37,6 @@ ocr/venv/
 *.p12
 *.keystore
 kubeconfig
-deploy/k8s/**/backend-sealedsecret.yaml
-deploy/k8s/**/*-secret.yaml
-!deploy/k8s/base/secret.example.yaml
 
 # ---------------------------------------------------------------------------
 # Datos de ejecución (volúmenes locales)

@@ -204,8 +204,7 @@ agriaudit-docs/
 ├── Makefile
 ├── .env.example
 ├── .devcontainer/               # GitHub Codespaces
-├── .github/workflows/           # CI (build + tests + smoke) y CD
-├── deploy/k8s/                  # manifiestos Kubernetes (base + overlays)
+├── .github/workflows/           # CI (build + tests + smoke con docker compose)
 ├── docs/                        # documentación interna — SOLO LOCAL (en .gitignore)
 ├── backend/
 │   └── src/main/
