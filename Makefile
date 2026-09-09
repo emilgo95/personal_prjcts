@@ -57,6 +57,14 @@ smoke: ## Comprueba que la app responde (tras 'make up')
 	@curl -fsS http://localhost:$${BACKEND_PORT:-8081}/actuator/health | grep -q UP && echo "backend OK" || (echo "backend KO"; exit 1)
 	@curl -fsS -o /dev/null -w "frontend HTTP %{http_code}\n" http://localhost:$${FRONTEND_PORT:-8080}
 
+.PHONY: e2e
+e2e: ## Tests End-to-End de UI y accesibilidad (Playwright) — requiere 'make up'
+	cd e2e && npm install && npx playwright install --with-deps chromium && npm test
+
+.PHONY: api-test
+api-test: ## Tests de la API (Karate) — requiere 'make up'
+	cd api-tests && mvn -B -ntp test
+
 .PHONY: db
 db: ## Abre una consola psql contra la base de datos
 	$(COMPOSE) exec db psql -U $${POSTGRES_USER:-agriaudit} -d $${POSTGRES_DB:-agriaudit}

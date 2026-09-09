@@ -25,6 +25,9 @@ jobs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
       ocr: ${{ steps.filter.outputs.ocr }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      apitests: ${{ steps.filter.outputs.apitests }}
+      compose: ${{ steps.filter.outputs.compose }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -37,6 +40,13 @@ jobs:
               - 'frontend/**'
             ocr:
               - 'ocr/**'
+            e2e:
+              - 'e2e/**'
+            apitests:
+              - 'api-tests/**'
+            compose:
+              - 'docker-compose.yml'
+              - '.env.example'
 
   # ---------------------------------------------------------------------------
   # 2. Backend: compilar, tests, verificación de arquitectura, análisis
@@ -120,28 +130,90 @@ jobs:
           npm test -- --run
 
   # ---------------------------------------------------------------------------
-  # 3b. Arranque completo con Docker Compose + smoke test (la "prueba de dev")
+  # 3b. E2E: arranque completo con Docker Compose + smoke + Playwright (UI/a11y)
+  #     + Karate (API). Una sola pila para las dos suites.
   # ---------------------------------------------------------------------------
-  compose-smoke:
+  e2e:
     needs: changes
-    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true' || needs.changes.outputs.ocr == 'true'
+    if: >-
+      needs.changes.outputs.backend == 'true' ||
+      needs.changes.outputs.frontend == 'true' ||
+      needs.changes.outputs.ocr == 'true' ||
+      needs.changes.outputs.e2e == 'true' ||
+      needs.changes.outputs.apitests == 'true' ||
+      needs.changes.outputs.compose == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Levantar la aplicación
         run: |
           cp .env.example .env
           docker compose up --build -d
-      - name: Esperar y comprobar salud
+
+      - name: Esperar y comprobar salud (smoke)
         run: |
           for i in $(seq 1 60); do
             curl -fsS http://localhost:8081/actuator/health | grep -q UP && break || sleep 5
           done
           curl -fsS http://localhost:8081/actuator/health | grep -q UP
           curl -fsS -o /dev/null -w "frontend HTTP %{http_code}\n" http://localhost:8080
-      - name: Logs si algo falla
+
+      - name: Configurar Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Playwright — instalar dependencias y navegador
+        working-directory: e2e
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Playwright — tests E2E (UI + accesibilidad)
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          E2E_API_URL: http://localhost:8081
+        run: npm test
+
+      - name: Configurar JDK 21
+        if: always()
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Karate — tests de API
+        if: always()
+        working-directory: api-tests
+        env:
+          API_BASE_URL: http://localhost:8081
+        run: mvn -B -ntp test
+
+      - name: Logs de la aplicación si algo falla
         if: failure()
         run: docker compose logs
+
+      - name: Publicar informe de Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Publicar informe de Karate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: karate-report
+          path: api-tests/target/karate-reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Parar
         if: always()
         run: docker compose down -v
@@ -159,7 +231,7 @@ jobs:
   # ---------------------------------------------------------------------------
   ci-ok:
     if: always()
-    needs: [changes, backend, frontend, compose-smoke]
+    needs: [changes, backend, frontend, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: Comprobar resultados

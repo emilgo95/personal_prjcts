@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.agriaudit</groupId>
+    <artifactId>agriaudit-api-tests</artifactId>
+    <version>0.1.0</version>
+    <packaging>jar</packaging>
+    <name>AgriAudit Docs - API tests (Karate)</name>
+    <description>Pruebas de contrato y comportamiento de la API REST con Karate</description>
+
+    <!--
+      Módulo Maven independiente (no es hijo del backend): prueba la API por HTTP
+      contra la pila ya desplegada. Se ejecuta con `mvn test` cuando el backend
+      responde en API_BASE_URL (por defecto http://localhost:8081).
+    -->
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>21</maven.compiler.release>
+        <karate.version>1.5.1</karate.version>
+        <junit.jupiter.version>5.11.3</junit.jupiter.version>
+        <!-- No fallar el build si no hay backend al que apuntar (permite `mvn -DskipTests` implícito). -->
+        <skipApiTests>false</skipApiTests>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.karatelabs</groupId>
+            <artifactId>karate-junit5</artifactId>
+            <version>${karate.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+                <configuration>
+                    <skipTests>${skipApiTests}</skipTests>
+                    <includes>
+                        <include>**/ApiTest.java</include>
+                    </includes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -39,9 +39,21 @@ El hook `pre-push` rechaza el push a `main`. Excepción puntual justificada:
 
 ## CI
 
-`.github/workflows/ci.yml` compila y testea backend y frontend, levanta la app
-con Docker Compose y hace un *smoke test*, y pasa CodeQL. El job `ci-ok` resume
-el resultado: es el que hay que ver en verde antes de fusionar.
+`.github/workflows/ci.yml` compila y testea backend y frontend, y en el job
+`e2e` levanta la app con Docker Compose para pasar el *smoke test*, los tests
+**End-to-End de UI y accesibilidad (Playwright)** y los tests de **API
+(Karate)**; los informes se publican como artefactos. CodeQL corre aparte. El
+job `ci-ok` resume el resultado: es el que hay que ver en verde antes de
+fusionar.
+
+## Tests
+
+| Suite | Dónde | Comando |
+|---|---|---|
+| Unitarios/integración backend | `backend/` | `cd backend && mvn verify` |
+| Unitarios frontend | `frontend/` | `cd frontend && npm test -- --run` |
+| E2E de UI + accesibilidad (Playwright) | `e2e/` | `make e2e` (con la app levantada) |
+| API (Karate) | `api-tests/` | `make api-test` (con la app levantada) |
 
 ## Antes de abrir el PR
 
@@ -49,4 +61,6 @@ el resultado: es el que hay que ver en verde antes de fusionar.
 make test     # tests de backend y frontend
 make up       # la app arranca en local
 make smoke    # responde
+make e2e      # tests E2E de UI (Playwright)
+make api-test # tests de API (Karate)
 ```

@@ -194,6 +194,28 @@ cd frontend
 npm run test
 ```
 
+### End-to-End de UI y accesibilidad (Playwright)
+
+Con la app levantada (`make up`):
+
+```bash
+make e2e          # o: cd e2e && npm install && npm test
+```
+
+Prueba login, navegación, generación de documentos y accesibilidad (axe-core)
+contra el frontend real. Ver [`e2e/README.md`](e2e/README.md).
+
+### API (Karate)
+
+Con la app levantada:
+
+```bash
+make api-test     # o: cd api-tests && mvn test
+```
+
+Pruebas de contrato y comportamiento de la API REST (auth, catálogo, auditorías,
+documentos, panel). Ver [`api-tests/README.md`](api-tests/README.md).
+
 ---
 
 ## Estructura
@@ -204,7 +226,7 @@ agriaudit-docs/
 ├── Makefile
 ├── .env.example
 ├── .devcontainer/               # GitHub Codespaces
-├── .github/workflows/           # CI (build + tests + smoke con docker compose)
+├── .github/workflows/           # CI (build + tests + e2e con docker compose)
 ├── docs/                        # documentación interna — SOLO LOCAL (en .gitignore)
 ├── backend/
 │   └── src/main/
@@ -212,6 +234,8 @@ agriaudit-docs/
 │       └── resources/
 │           ├── db/migration/     # Flyway: esquema + datos semilla
 │           └── templates/docs/   # plantillas Thymeleaf de los PDF
-└── frontend/
-    └── src/                      # api · auth · components · audit · pages
+├── frontend/
+│   └── src/                      # api · auth · components · audit · pages
+├── e2e/                          # tests E2E de UI + accesibilidad (Playwright)
+└── api-tests/                    # tests de API (Karate)
 ```
