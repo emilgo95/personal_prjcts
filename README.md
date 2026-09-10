@@ -67,6 +67,44 @@ El contenedor solo publica el puerto en `127.0.0.1` (no en la red).
 
 ---
 
+## Probar en un Codespace (sin instalar nada)
+
+Para enseñar la app o revisar un PR con la aplicación viva, sin montar nada en local:
+
+1. En GitHub: **`Code` → pestaña `Codespaces` → `Create codespace on main`**. El
+   contenedor de desarrollo (`.devcontainer/`) trae Docker, Java 21 y Node 20, y
+   crea el `.env` a partir de `.env.example`.
+2. En la terminal del Codespace:
+
+   ```bash
+   make up
+   ```
+
+   La primera vez tarda unos minutos (construye las imágenes). Espera a que el
+   backend esté sano:
+
+   ```bash
+   make smoke
+   ```
+
+3. Abre la aplicación por la pestaña **`PORTS`** de VS Code (abajo, junto a
+   *Terminal*): en la fila **`8080`**, pulsa el icono del globo (*Open in
+   Browser*). La URL es del tipo `https://<nombre>-8080.app.github.dev`.
+
+   > **`http://localhost:8080` no funciona** desde tu navegador: apunta a tu
+   > máquina, no al Codespace. Hay que usar siempre el enlace de la pestaña
+   > `PORTS`. Para compartirlo con alguien externo: clic derecho en el puerto →
+   > *Port Visibility* → *Public*.
+
+4. Entra con `admin@demo.test` / `Admin123!` (juego de datos de demostración ya
+   cargado).
+
+El Codespace se **para solo** tras 30 min de inactividad y se **borra** tras
+varias semanas sin uso; es un entorno de usar y tirar, no un `dev` permanente
+con URL fija.
+
+---
+
 ## Datos de demostración
 
 Al arrancar con la base de datos vacía se carga automáticamente un juego de datos ficticio y coherente
