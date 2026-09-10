@@ -43,8 +43,9 @@ El hook `pre-push` rechaza el push a `main`. Excepción puntual justificada:
 `e2e` levanta la app con Docker Compose para pasar el *smoke test*, los tests
 **End-to-End de UI y accesibilidad (Playwright)** y los tests de **API
 (Karate)**; los informes se publican como artefactos. CodeQL corre aparte. El
-job `ci-ok` resume el resultado: es el que hay que ver en verde antes de
-fusionar.
+job `secrets-scan` pasa **gitleaks** sobre los commits (configuración y lista de
+permitidos en `.gitleaks.toml`). El job `ci-ok` resume el resultado: es el que
+hay que ver en verde antes de fusionar.
 
 ## Tests
 

@@ -225,13 +225,30 @@ jobs:
   # válida de aquasecurity/trivy-action.
 
   # ---------------------------------------------------------------------------
+  # 4. Escaneo de secretos (gitleaks) — sustituto del secret scanning nativo de
+  #    GitHub, que no está disponible en repos privados sin GitHub Advanced
+  #    Security. Corre siempre; en un PR analiza los commits del PR, en push a
+  #    main los commits nuevos. La configuración y la lista de permitidos
+  #    (valores de `.env.example`, credenciales de demo) están en `.gitleaks.toml`.
+  # ---------------------------------------------------------------------------
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------------------------------------------------------------------------
   # 5. Puerta única de CI — es el ÚNICO check requerido por la protección de main.
   #    Pasa si todos los jobs relevantes terminaron OK o se saltaron (skipped);
   #    falla si alguno falló o fue cancelado.
   # ---------------------------------------------------------------------------
   ci-ok:
     if: always()
-    needs: [changes, backend, frontend, e2e]
+    needs: [changes, backend, frontend, e2e, secrets-scan]
     runs-on: ubuntu-latest
     steps:
       - name: Comprobar resultados

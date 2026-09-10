@@ -1,0 +1,6 @@
+# Propietarios del código de AgriAudit Docs.
+# Cada PR que toque estas rutas pide automáticamente revisión a quien figure aquí.
+# Sintaxis: https://docs.github.com/es/repositories/managing-your-repositories-permissions-and-settings/customizing-your-repository/about-code-owners
+
+# Propietario por defecto de todo el repositorio.
+*                       @emilgo95

@@ -225,8 +225,9 @@ agriaudit-docs/
 ├── docker-compose.yml
 ├── Makefile
 ├── .env.example
+├── LICENSE                      # software propietario — todos los derechos reservados
 ├── .devcontainer/               # GitHub Codespaces
-├── .github/workflows/           # CI (build + tests + e2e con docker compose)
+├── .github/                     # workflows de CI + CODEOWNERS
 ├── docs/                        # documentación interna — SOLO LOCAL (en .gitignore)
 ├── backend/
 │   └── src/main/
@@ -239,3 +240,11 @@ agriaudit-docs/
 ├── e2e/                          # tests E2E de UI + accesibilidad (Playwright)
 └── api-tests/                    # tests de API (Karate)
 ```
+
+---
+
+## Licencia
+
+Software **propietario**. Copyright © 2026 emilgo95. Todos los derechos
+reservados. No se concede ninguna licencia de uso, copia, modificación o
+distribución sin consentimiento previo por escrito. Ver [`LICENSE`](LICENSE).
