@@ -25,6 +25,7 @@
         <springdoc.version>2.6.0</springdoc.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <spring-modulith.version>1.2.13</spring-modulith.version>
+        <anthropic-java.version>2.62.0</anthropic-java.version>
     </properties>
 
     <dependencyManagement>
@@ -136,6 +137,13 @@
         <dependency>
             <groupId>org.springframework.modulith</groupId>
             <artifactId>spring-modulith-api</artifactId>
+        </dependency>
+
+        <!-- IA: SDK oficial de Anthropic (solo lo usa ai.infrastructure, RT-A01 / RS-IA-09) -->
+        <dependency>
+            <groupId>com.anthropic</groupId>
+            <artifactId>anthropic-java</artifactId>
+            <version>${anthropic-java.version}</version>
         </dependency>
 
         <!-- Test -->

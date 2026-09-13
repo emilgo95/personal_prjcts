@@ -39,6 +39,8 @@ services:
       ADMIN_ORG_NAME: ${ADMIN_ORG_NAME:-Organización Demo}
       AGRIAUDIT_DEMO_SEED: ${AGRIAUDIT_DEMO_SEED:-true}
       AGRIAUDIT_OCR_URL: ${AGRIAUDIT_OCR_URL:-http://ocr:8000}
+      AGRIAUDIT_AI_PROVIDER: ${AGRIAUDIT_AI_PROVIDER:-none}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       STORAGE_DIR: ${STORAGE_DIR:-/data/storage}
     depends_on:
       db:
