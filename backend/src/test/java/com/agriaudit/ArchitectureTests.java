@@ -29,6 +29,7 @@ class ArchitectureTests {
     /** Módulos ya extraídos de los paquetes por capas (crece con WS-1). */
     static final String[] EXTRACTED_MODULES = {
             "com.agriaudit.common..", "com.agriaudit.catalog..", "com.agriaudit.identity..", "com.agriaudit.fieldbook..",
+            "com.agriaudit.storage..",
     };
 
     /** Paquetes por capas heredados, que desaparecen al terminar WS-1. */

@@ -1,6 +1,6 @@
 package com.agriaudit.web.dto;
 
-import com.agriaudit.web.dto.AttachmentDtos.AttachmentDto;
+import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import jakarta.validation.constraints.NotBlank;
 
 import java.time.Instant;

@@ -2,14 +2,13 @@ package com.agriaudit.service.ocr;
 
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
-import com.agriaudit.domain.Attachment;
+import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
+import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.catalog.domain.ControlPoint;
 import com.agriaudit.catalog.domain.ControlLevel;
-import com.agriaudit.repo.AttachmentRepository;
 import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.service.AuditService;
-import com.agriaudit.service.document.DocumentStorageService;
 import com.agriaudit.service.ocr.OcrClient.OcrResult;
 import com.agriaudit.web.dto.EvidenceAnalysisDtos.EvidenceAnalysis;
 import com.agriaudit.web.dto.EvidenceAnalysisDtos.SuggestedFinding;
@@ -56,20 +55,18 @@ public class EvidenceAnalysisService {
     };
 
     private final AuditService auditService;
-    private final AttachmentRepository attachments;
+    private final AttachmentStore attachments;
     private final CatalogLookup catalog;
-    private final DocumentStorageService storage;
     private final OcrClient ocrClient;
     private final double minConfidenceWarn;
 
-    public EvidenceAnalysisService(AuditService auditService, AttachmentRepository attachments,
-                                   CatalogLookup catalog, DocumentStorageService storage,
+    public EvidenceAnalysisService(AuditService auditService, AttachmentStore attachments,
+                                   CatalogLookup catalog,
                                    OcrClient ocrClient,
                                    @Value("${agriaudit.ocr.min-confidence-warn:0.55}") double minConfidenceWarn) {
         this.auditService = auditService;
         this.attachments = attachments;
         this.catalog = catalog;
-        this.storage = storage;
         this.ocrClient = ocrClient;
         this.minConfidenceWarn = minConfidenceWarn;
     }
@@ -81,16 +78,17 @@ public class EvidenceAnalysisService {
     @Transactional(readOnly = true)
     public EvidenceAnalysis analyze(Long auditId, Long attachmentId, Long controlPointId) {
         auditService.requireAudit(auditId);
-        Attachment att = attachments.findByIdAndOrganizationId(attachmentId, SecurityUtils.currentOrganizationId())
+        Long orgId = SecurityUtils.currentOrganizationId();
+        AttachmentDto att = attachments.find(orgId, attachmentId)
                 .orElseThrow(() -> new NotFoundException("Adjunto no encontrado: " + attachmentId));
 
-        String ct = att.getContentType() == null ? "" : att.getContentType().toLowerCase();
+        String ct = att.contentType() == null ? "" : att.contentType().toLowerCase();
         if (!ct.startsWith("image/") && !ct.equals("application/pdf")) {
             throw new BadRequestException("Solo se puede reconocer texto de imágenes y PDF");
         }
 
-        byte[] data = storage.load(att.getStorageKey());
-        OcrResult ocr = ocrClient.recognize(data, att.getFileName(), att.getContentType());
+        byte[] data = attachments.content(orgId, attachmentId);
+        OcrResult ocr = ocrClient.recognize(data, att.fileName(), att.contentType());
 
         String text = ocr.text().trim();
         List<String> warnings = new ArrayList<>();
@@ -139,15 +137,15 @@ public class EvidenceAnalysisService {
             findings.add(new SuggestedFinding(
                     "Posible incumplimiento detectado en la evidencia adjunta",
                     excerptAround(text, normalized, triggers)
-                            + "\n\n(Texto extraído automáticamente por OCR de «" + att.getFileName()
+                            + "\n\n(Texto extraído automáticamente por OCR de «" + att.fileName()
                             + "». Revísese y edítese antes de guardar.)",
                     classification));
         }
 
-        String note = buildNote(att.getFileName(), text);
+        String note = buildNote(att.fileName(), text);
 
         return new EvidenceAnalysis(
-                att.getId(), att.getFileName(), ocr.engine(), ocr.pages(), ocr.truncated(),
+                att.id(), att.fileName(), ocr.engine(), ocr.pages(), ocr.truncated(),
                 round(ocr.meanConfidence()), text, note, compliance, rationale, findings, warnings);
     }
 

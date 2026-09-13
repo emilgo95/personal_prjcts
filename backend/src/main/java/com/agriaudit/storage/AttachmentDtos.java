@@ -1,4 +1,4 @@
-package com.agriaudit.web.dto;
+package com.agriaudit.storage;
 
 import java.time.Instant;
 

@@ -1,6 +1,5 @@
-package com.agriaudit.repo;
+package com.agriaudit.storage.infrastructure.persistence;
 
-import com.agriaudit.domain.Attachment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

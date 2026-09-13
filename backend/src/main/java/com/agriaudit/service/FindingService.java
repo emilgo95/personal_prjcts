@@ -6,7 +6,8 @@ import com.agriaudit.domain.Audit;
 import com.agriaudit.catalog.domain.ControlPoint;
 import com.agriaudit.domain.CorrectiveAction;
 import com.agriaudit.domain.Finding;
-import com.agriaudit.domain.enums.AttachmentEntityType;
+import com.agriaudit.storage.AttachmentEntityType;
+import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.domain.enums.CorrectiveActionStatus;
 import com.agriaudit.domain.enums.FindingClassification;
 import com.agriaudit.domain.enums.FindingStatus;
@@ -28,12 +29,12 @@ public class FindingService {
     private final CorrectiveActionRepository correctiveActions;
     private final CatalogLookup catalog;
     private final AuditService auditService;
-    private final AttachmentLookup attachmentLookup;
+    private final AttachmentStore attachmentLookup;
     private final ReferenceSequenceRepository referenceSequences;
 
     public FindingService(FindingRepository findings, CorrectiveActionRepository correctiveActions,
                           CatalogLookup catalog, AuditService auditService,
-                          AttachmentLookup attachmentLookup, ReferenceSequenceRepository referenceSequences) {
+                          AttachmentStore attachmentLookup, ReferenceSequenceRepository referenceSequences) {
         this.findings = findings;
         this.correctiveActions = correctiveActions;
         this.catalog = catalog;

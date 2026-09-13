@@ -1,6 +1,6 @@
 package com.agriaudit.service.document;
 
-import com.agriaudit.web.dto.AttachmentDtos.AttachmentDto;
+import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import com.agriaudit.web.dto.AuditDtos.AuditDetailDto;
 import com.agriaudit.web.dto.AuditDtos.AuditItemResultDto;
 import com.agriaudit.catalog.CatalogDtos.ChapterDto;

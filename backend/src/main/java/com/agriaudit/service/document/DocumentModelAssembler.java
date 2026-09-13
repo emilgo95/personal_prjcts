@@ -1,17 +1,16 @@
 package com.agriaudit.service.document;
 
 import com.agriaudit.domain.Audit;
-import com.agriaudit.domain.enums.AttachmentEntityType;
-import com.agriaudit.repo.AttachmentRepository;
+import com.agriaudit.storage.AttachmentEntityType;
+import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.identity.OrganizationDirectory;
 import com.agriaudit.identity.SecurityUtils;
-import com.agriaudit.service.AttachmentLookup;
 import com.agriaudit.service.AuditService;
 import com.agriaudit.catalog.CatalogService;
 import com.agriaudit.service.FindingService;
 import com.agriaudit.service.ScoringService;
 import com.agriaudit.service.document.DocumentModel.EvidenceRef;
-import com.agriaudit.web.dto.AttachmentDtos.AttachmentDto;
+import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import com.agriaudit.web.dto.AuditDtos.AuditDetailDto;
 import com.agriaudit.web.dto.AuditDtos.AuditItemResultDto;
 import com.agriaudit.catalog.CatalogDtos.StandardDetailDto;
@@ -22,12 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Set;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,22 +46,17 @@ public class DocumentModelAssembler {
     private final FindingService findingService;
     private final ScoringService scoringService;
     private final OrganizationDirectory organizations;
-    private final AttachmentLookup attachmentLookup;
-    private final AttachmentRepository attachmentRepository;
-    private final DocumentStorageService storage;
+    private final AttachmentStore attachmentLookup;
 
     public DocumentModelAssembler(AuditService auditService, CatalogService catalogService,
                                   FindingService findingService, ScoringService scoringService,
-                                  OrganizationDirectory organizations, AttachmentLookup attachmentLookup,
-                                  AttachmentRepository attachmentRepository, DocumentStorageService storage) {
+                                  OrganizationDirectory organizations, AttachmentStore attachmentLookup) {
         this.auditService = auditService;
         this.catalogService = catalogService;
         this.findingService = findingService;
         this.scoringService = scoringService;
         this.organizations = organizations;
         this.attachmentLookup = attachmentLookup;
-        this.attachmentRepository = attachmentRepository;
-        this.storage = storage;
     }
 
     @Transactional(readOnly = true)
@@ -142,10 +136,9 @@ public class DocumentModelAssembler {
 
     private String loadDataUri(AttachmentDto a) {
         try {
-            return attachmentRepository.findById(a.id())
-                    .map(entity -> "data:" + a.contentType().toLowerCase() + ";base64,"
-                            + Base64.getEncoder().encodeToString(storage.load(entity.getStorageKey())))
-                    .orElse(null);
+            return "data:" + a.contentType().toLowerCase() + ";base64,"
+                    + Base64.getEncoder().encodeToString(
+                            attachmentLookup.content(SecurityUtils.currentOrganizationId(), a.id()));
         } catch (Exception e) {
             return null;
         }

@@ -13,6 +13,7 @@ import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.service.AuditService;
 import com.agriaudit.web.dto.DocumentDtos.DocumentOptionDto;
 import com.agriaudit.web.dto.DocumentDtos.GeneratedDocumentDto;
+import com.agriaudit.storage.BlobStore;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,14 +43,14 @@ public class DocumentGenerationService {
 
     private final DocumentTemplateRepository templates;
     private final GeneratedDocumentRepository generatedDocuments;
-    private final DocumentStorageService storage;
+    private final BlobStore storage;
     private final DocumentModelAssembler assembler;
     private final AuditService auditService;
     private final List<DocumentRenderer> renderers;
 
     public DocumentGenerationService(DocumentTemplateRepository templates,
                                      GeneratedDocumentRepository generatedDocuments,
-                                     DocumentStorageService storage,
+                                     BlobStore storage,
                                      DocumentModelAssembler assembler,
                                      AuditService auditService,
                                      List<DocumentRenderer> renderers) {
@@ -84,7 +85,7 @@ public class DocumentGenerationService {
         }
 
         String fileName = buildFileName(type, format, audit.getReference());
-        String storageKey = storage.store(bytes, fileName);
+        String storageKey = storage.store(bytes, fileName, "documents");
 
         GeneratedDocument doc = new GeneratedDocument();
         doc.setAuditId(auditId);

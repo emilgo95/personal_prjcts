@@ -1,13 +1,12 @@
 package com.agriaudit.service.ocr;
 
-import com.agriaudit.domain.Attachment;
 import com.agriaudit.catalog.domain.ControlPoint;
 import com.agriaudit.catalog.domain.ControlLevel;
-import com.agriaudit.repo.AttachmentRepository;
+import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
+import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.identity.AppUserPrincipal;
 import com.agriaudit.service.AuditService;
-import com.agriaudit.service.document.DocumentStorageService;
 import com.agriaudit.service.ocr.OcrClient.OcrResult;
 import com.agriaudit.web.dto.EvidenceAnalysisDtos.EvidenceAnalysis;
 import org.junit.jupiter.api.AfterEach;
@@ -26,20 +25,18 @@ import static org.mockito.Mockito.*;
 class EvidenceAnalysisServiceTest {
 
     private AuditService auditService;
-    private AttachmentRepository attachments;
+    private AttachmentStore attachments;
     private CatalogLookup catalog;
-    private DocumentStorageService storage;
     private OcrClient ocrClient;
     private EvidenceAnalysisService service;
 
     @BeforeEach
     void setUp() {
         auditService = mock(AuditService.class);
-        attachments = mock(AttachmentRepository.class);
+        attachments = mock(AttachmentStore.class);
         catalog = mock(CatalogLookup.class);
-        storage = mock(DocumentStorageService.class);
         ocrClient = mock(OcrClient.class);
-        service = new EvidenceAnalysisService(auditService, attachments, catalog, storage, ocrClient, 0.55);
+        service = new EvidenceAnalysisService(auditService, attachments, catalog, ocrClient, 0.55);
 
         AppUserPrincipal principal = mock(AppUserPrincipal.class);
         when(principal.getOrganizationId()).thenReturn(1L);
@@ -48,14 +45,10 @@ class EvidenceAnalysisServiceTest {
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, List.of()));
 
-        Attachment att = new Attachment();
-        att.setId(9L);
-        att.setOrganizationId(1L);
-        att.setFileName("nota.jpg");
-        att.setContentType("image/jpeg");
-        att.setStorageKey("attachments/2026/x-nota.jpg");
-        when(attachments.findByIdAndOrganizationId(9L, 1L)).thenReturn(Optional.of(att));
-        when(storage.load(any())).thenReturn(new byte[]{1, 2, 3});
+        AttachmentDto att = new AttachmentDto(9L, "AUDIT_ITEM_RESULT", 1L, "nota.jpg", "image/jpeg", 3L,
+                "ana@demo.test", null, true);
+        when(attachments.find(1L, 9L)).thenReturn(Optional.of(att));
+        when(attachments.content(1L, 9L)).thenReturn(new byte[]{1, 2, 3});
     }
 
     @AfterEach

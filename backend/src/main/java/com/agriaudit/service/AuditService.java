@@ -3,7 +3,8 @@ package com.agriaudit.service;
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.domain.*;
-import com.agriaudit.domain.enums.AttachmentEntityType;
+import com.agriaudit.storage.AttachmentEntityType;
+import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.domain.enums.AuditStatus;
 import com.agriaudit.domain.enums.AuditType;
 import com.agriaudit.domain.enums.ComplianceResult;
@@ -36,13 +37,13 @@ public class AuditService {
     private final AuditItemResultRepository results;
     private final FindingRepository findings;
     private final ScoringService scoringService;
-    private final AttachmentLookup attachmentLookup;
+    private final AttachmentStore attachmentLookup;
     private final ReferenceSequenceRepository referenceSequences;
 
     public AuditService(AuditRepository audits, FarmDirectory farms,
                         CatalogLookup catalog, AuditItemResultRepository results,
                         FindingRepository findings, ScoringService scoringService,
-                        AttachmentLookup attachmentLookup, ReferenceSequenceRepository referenceSequences) {
+                        AttachmentStore attachmentLookup, ReferenceSequenceRepository referenceSequences) {
         this.audits = audits;
         this.farms = farms;
         this.catalog = catalog;

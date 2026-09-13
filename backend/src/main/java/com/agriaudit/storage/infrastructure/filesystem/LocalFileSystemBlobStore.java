@@ -1,8 +1,9 @@
-package com.agriaudit.service.document;
+package com.agriaudit.storage.infrastructure.filesystem;
 
 import com.agriaudit.common.NotFoundException;
+import com.agriaudit.storage.BlobStore;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -12,12 +13,13 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.UUID;
 
-@Service
-public class DocumentStorageService {
+/** Adaptador de {@link BlobStore} sobre un directorio local (volumen {@code docdata} en Docker). */
+@Component
+class LocalFileSystemBlobStore implements BlobStore {
 
     private final Path root;
 
-    public DocumentStorageService(@Value("${agriaudit.storage.dir:./data/storage}") String dir) {
+    LocalFileSystemBlobStore(@Value("${agriaudit.storage.dir:./data/storage}") String dir) {
         this.root = Paths.get(dir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.root.resolve("documents"));
@@ -26,12 +28,7 @@ public class DocumentStorageService {
         }
     }
 
-    /** Guarda los bytes en la categoría "documents" y devuelve la clave relativa. */
-    public String store(byte[] data, String fileName) {
-        return store(data, fileName, "documents");
-    }
-
-    /** Guarda los bytes bajo la categoría indicada y devuelve la clave relativa de almacenamiento. */
+    @Override
     public String store(byte[] data, String fileName, String category) {
         String safeCategory = category.replaceAll("[^A-Za-z0-9_-]", "_");
         String safeName = fileName.replaceAll("[^A-Za-z0-9._-]", "_");
@@ -49,6 +46,7 @@ public class DocumentStorageService {
         return key;
     }
 
+    @Override
     public byte[] load(String storageKey) {
         Path target = root.resolve(storageKey).normalize();
         if (!target.startsWith(root) || !Files.exists(target)) {
@@ -61,7 +59,7 @@ public class DocumentStorageService {
         }
     }
 
-    /** Borra el fichero si existe. No falla si ya no está. */
+    @Override
     public void delete(String storageKey) {
         Path target = root.resolve(storageKey).normalize();
         if (!target.startsWith(root)) {
