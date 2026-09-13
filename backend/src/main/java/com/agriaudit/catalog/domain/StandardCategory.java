@@ -1,4 +1,4 @@
-package com.agriaudit.domain.enums;
+package com.agriaudit.catalog.domain;
 
 public enum StandardCategory {
     GAP,

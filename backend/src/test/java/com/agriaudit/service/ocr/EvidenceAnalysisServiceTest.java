@@ -1,10 +1,10 @@
 package com.agriaudit.service.ocr;
 
 import com.agriaudit.domain.Attachment;
-import com.agriaudit.domain.ControlPoint;
-import com.agriaudit.domain.enums.ControlLevel;
+import com.agriaudit.catalog.domain.ControlPoint;
+import com.agriaudit.catalog.domain.ControlLevel;
 import com.agriaudit.repo.AttachmentRepository;
-import com.agriaudit.repo.ControlPointRepository;
+import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.security.AppUserPrincipal;
 import com.agriaudit.service.AuditService;
 import com.agriaudit.service.document.DocumentStorageService;
@@ -27,7 +27,7 @@ class EvidenceAnalysisServiceTest {
 
     private AuditService auditService;
     private AttachmentRepository attachments;
-    private ControlPointRepository controlPoints;
+    private CatalogLookup catalog;
     private DocumentStorageService storage;
     private OcrClient ocrClient;
     private EvidenceAnalysisService service;
@@ -36,10 +36,10 @@ class EvidenceAnalysisServiceTest {
     void setUp() {
         auditService = mock(AuditService.class);
         attachments = mock(AttachmentRepository.class);
-        controlPoints = mock(ControlPointRepository.class);
+        catalog = mock(CatalogLookup.class);
         storage = mock(DocumentStorageService.class);
         ocrClient = mock(OcrClient.class);
-        service = new EvidenceAnalysisService(auditService, attachments, controlPoints, storage, ocrClient, 0.55);
+        service = new EvidenceAnalysisService(auditService, attachments, catalog, storage, ocrClient, 0.55);
 
         AppUserPrincipal principal = mock(AppUserPrincipal.class);
         when(principal.getOrganizationId()).thenReturn(1L);
@@ -72,7 +72,7 @@ class EvidenceAnalysisServiceTest {
     void detectsNonComplianceAndProposesFinding() {
         ocrReturns("Inspección del almacén de fitosanitarios. Se observa que NO se dispone de "
                 + "kit de derrames y el inventario está caducado. No conforme.", 0.82);
-        when(controlPoints.findById(50L)).thenReturn(Optional.of(cp(ControlLevel.MAJOR_MUST)));
+        when(catalog.findControlPoint(50L)).thenReturn(Optional.of(cp(ControlLevel.MAJOR_MUST)));
 
         EvidenceAnalysis a = service.analyze(1L, 9L, 50L);
 

@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Set;
+import com.agriaudit.catalog.domain.ControlPoint;
+import com.agriaudit.catalog.CatalogLookup;
 
 @Service
 @Transactional
@@ -33,19 +35,19 @@ public class AttachmentService {
     private final AuditService auditService;
     private final FindingRepository findings;
     private final AuditItemResultRepository results;
-    private final ControlPointRepository controlPoints;
+    private final CatalogLookup catalog;
 
     public AttachmentService(AttachmentRepository attachments, AttachmentLookup lookup,
                              DocumentStorageService storage, AuditService auditService,
                              FindingRepository findings, AuditItemResultRepository results,
-                             ControlPointRepository controlPoints) {
+                             CatalogLookup catalog) {
         this.attachments = attachments;
         this.lookup = lookup;
         this.storage = storage;
         this.auditService = auditService;
         this.findings = findings;
         this.results = results;
-        this.controlPoints = controlPoints;
+        this.catalog = catalog;
     }
 
     // ---- subir ----
@@ -209,7 +211,7 @@ public class AttachmentService {
     private AuditItemResult getOrCreateResult(Long auditId, Long controlPointId) {
         Audit audit = auditService.requireAudit(auditId);
         return results.findByAuditIdAndControlPointId(auditId, controlPointId).orElseGet(() -> {
-            ControlPoint cp = controlPoints.findById(controlPointId)
+            ControlPoint cp = catalog.findControlPoint(controlPointId)
                     .orElseThrow(() -> new NotFoundException("Punto de control no encontrado: " + controlPointId));
             if (!cp.getChapter().getStandard().getId().equals(audit.getStandard().getId())) {
                 throw new BadRequestException("El punto de control no pertenece al estándar de la auditoría");

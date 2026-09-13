@@ -3,14 +3,14 @@ package com.agriaudit.service;
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.domain.Audit;
-import com.agriaudit.domain.ControlPoint;
+import com.agriaudit.catalog.domain.ControlPoint;
 import com.agriaudit.domain.CorrectiveAction;
 import com.agriaudit.domain.Finding;
 import com.agriaudit.domain.enums.AttachmentEntityType;
 import com.agriaudit.domain.enums.CorrectiveActionStatus;
 import com.agriaudit.domain.enums.FindingClassification;
 import com.agriaudit.domain.enums.FindingStatus;
-import com.agriaudit.repo.ControlPointRepository;
+import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.repo.CorrectiveActionRepository;
 import com.agriaudit.repo.FindingRepository;
 import com.agriaudit.repo.ReferenceSequenceRepository;
@@ -26,17 +26,17 @@ public class FindingService {
 
     private final FindingRepository findings;
     private final CorrectiveActionRepository correctiveActions;
-    private final ControlPointRepository controlPoints;
+    private final CatalogLookup catalog;
     private final AuditService auditService;
     private final AttachmentLookup attachmentLookup;
     private final ReferenceSequenceRepository referenceSequences;
 
     public FindingService(FindingRepository findings, CorrectiveActionRepository correctiveActions,
-                          ControlPointRepository controlPoints, AuditService auditService,
+                          CatalogLookup catalog, AuditService auditService,
                           AttachmentLookup attachmentLookup, ReferenceSequenceRepository referenceSequences) {
         this.findings = findings;
         this.correctiveActions = correctiveActions;
-        this.controlPoints = controlPoints;
+        this.catalog = catalog;
         this.auditService = auditService;
         this.attachmentLookup = attachmentLookup;
         this.referenceSequences = referenceSequences;
@@ -117,7 +117,7 @@ public class FindingService {
             finding.setControlPoint(null);
             return;
         }
-        ControlPoint cp = controlPoints.findById(controlPointId)
+        ControlPoint cp = catalog.findControlPoint(controlPointId)
                 .orElseThrow(() -> new NotFoundException("Punto de control no encontrado: " + controlPointId));
         if (!cp.getChapter().getStandard().getId().equals(audit.getStandard().getId())) {
             throw new BadRequestException("El punto de control no pertenece al estándar de la auditoría");

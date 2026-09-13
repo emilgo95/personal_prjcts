@@ -8,6 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import com.agriaudit.catalog.domain.AuditStandard;
 
 @Entity
 @Table(name = "audits")

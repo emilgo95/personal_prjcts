@@ -3,10 +3,10 @@ package com.agriaudit.service.ocr;
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.domain.Attachment;
-import com.agriaudit.domain.ControlPoint;
-import com.agriaudit.domain.enums.ControlLevel;
+import com.agriaudit.catalog.domain.ControlPoint;
+import com.agriaudit.catalog.domain.ControlLevel;
 import com.agriaudit.repo.AttachmentRepository;
-import com.agriaudit.repo.ControlPointRepository;
+import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.security.SecurityUtils;
 import com.agriaudit.service.AuditService;
 import com.agriaudit.service.document.DocumentStorageService;
@@ -57,18 +57,18 @@ public class EvidenceAnalysisService {
 
     private final AuditService auditService;
     private final AttachmentRepository attachments;
-    private final ControlPointRepository controlPoints;
+    private final CatalogLookup catalog;
     private final DocumentStorageService storage;
     private final OcrClient ocrClient;
     private final double minConfidenceWarn;
 
     public EvidenceAnalysisService(AuditService auditService, AttachmentRepository attachments,
-                                   ControlPointRepository controlPoints, DocumentStorageService storage,
+                                   CatalogLookup catalog, DocumentStorageService storage,
                                    OcrClient ocrClient,
                                    @Value("${agriaudit.ocr.min-confidence-warn:0.55}") double minConfidenceWarn) {
         this.auditService = auditService;
         this.attachments = attachments;
-        this.controlPoints = controlPoints;
+        this.catalog = catalog;
         this.storage = storage;
         this.ocrClient = ocrClient;
         this.minConfidenceWarn = minConfidenceWarn;
@@ -157,7 +157,7 @@ public class EvidenceAnalysisService {
         if (controlPointId == null) {
             return false;
         }
-        return controlPoints.findById(controlPointId)
+        return catalog.findControlPoint(controlPointId)
                 .map(ControlPoint::getLevel)
                 .map(l -> l == ControlLevel.MAJOR_MUST || l == ControlLevel.CORE)
                 .orElse(false);

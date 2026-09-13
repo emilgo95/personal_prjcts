@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.agriaudit.catalog.domain.AuditStandard;
+import com.agriaudit.catalog.domain.ControlPoint;
+import com.agriaudit.catalog.CatalogLookup;
 
 @Service
 @Transactional
@@ -28,22 +31,20 @@ public class AuditService {
 
     private final AuditRepository audits;
     private final FarmRepository farms;
-    private final AuditStandardRepository standards;
-    private final ControlPointRepository controlPoints;
+    private final CatalogLookup catalog;
     private final AuditItemResultRepository results;
     private final FindingRepository findings;
     private final ScoringService scoringService;
     private final AttachmentLookup attachmentLookup;
     private final ReferenceSequenceRepository referenceSequences;
 
-    public AuditService(AuditRepository audits, FarmRepository farms, AuditStandardRepository standards,
-                        ControlPointRepository controlPoints, AuditItemResultRepository results,
+    public AuditService(AuditRepository audits, FarmRepository farms,
+                        CatalogLookup catalog, AuditItemResultRepository results,
                         FindingRepository findings, ScoringService scoringService,
                         AttachmentLookup attachmentLookup, ReferenceSequenceRepository referenceSequences) {
         this.audits = audits;
         this.farms = farms;
-        this.standards = standards;
-        this.controlPoints = controlPoints;
+        this.catalog = catalog;
         this.results = results;
         this.findings = findings;
         this.scoringService = scoringService;
@@ -66,7 +67,7 @@ public class AuditService {
         Long orgId = SecurityUtils.currentOrganizationId();
         Farm farm = farms.findByIdAndOrganizationId(request.farmId(), orgId)
                 .orElseThrow(() -> new NotFoundException("Explotación no encontrada: " + request.farmId()));
-        AuditStandard standard = standards.findByCode(request.standardCode())
+        AuditStandard standard = catalog.findStandard(request.standardCode())
                 .orElseThrow(() -> new NotFoundException("Estándar no encontrado: " + request.standardCode()));
 
         Audit audit = new Audit();
@@ -119,7 +120,7 @@ public class AuditService {
             existing.put(r.getControlPoint().getId(), r);
         }
         List<AuditItemResultDto> out = new ArrayList<>();
-        for (ControlPoint cp : controlPoints.findByStandardCode(audit.getStandard().getCode())) {
+        for (ControlPoint cp : catalog.controlPointsOf(audit.getStandard().getCode())) {
             AuditItemResult r = existing.get(cp.getId());
             out.add(new AuditItemResultDto(
                     r == null ? null : r.getId(),
@@ -153,7 +154,7 @@ public class AuditService {
             }
             AuditItemResult r = existing.get(u.controlPointId());
             if (r == null) {
-                ControlPoint cp = controlPoints.findById(u.controlPointId())
+                ControlPoint cp = catalog.findControlPoint(u.controlPointId())
                         .orElseThrow(() -> new NotFoundException("Punto de control no encontrado: " + u.controlPointId()));
                 if (!cp.getChapter().getStandard().getId().equals(audit.getStandard().getId())) {
                     throw new BadRequestException("El punto de control no pertenece al estándar de la auditoría");
@@ -214,7 +215,7 @@ public class AuditService {
     }
 
     private AuditSummaryDto toSummary(Audit a) {
-        int total = controlPoints.findByStandardCode(a.getStandard().getCode()).size();
+        int total = catalog.controlPointsOf(a.getStandard().getCode()).size();
         int assessed = (int) results.findByAuditId(a.getId()).stream()
                 .filter(r -> r.getCompliance() != ComplianceResult.NOT_ASSESSED).count();
         int progress = total == 0 ? 0 : Math.round(100f * assessed / total);
@@ -226,7 +227,7 @@ public class AuditService {
     }
 
     private AuditDetailDto toDetail(Audit a) {
-        int total = controlPoints.findByStandardCode(a.getStandard().getCode()).size();
+        int total = catalog.controlPointsOf(a.getStandard().getCode()).size();
         int assessed = (int) results.findByAuditId(a.getId()).stream()
                 .filter(r -> r.getCompliance() != ComplianceResult.NOT_ASSESSED).count();
         int progress = total == 0 ? 0 : Math.round(100f * assessed / total);

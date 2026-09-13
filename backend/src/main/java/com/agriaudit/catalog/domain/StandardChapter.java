@@ -1,4 +1,4 @@
-package com.agriaudit.domain;
+package com.agriaudit.catalog.domain;
 
 import jakarta.persistence.*;
 

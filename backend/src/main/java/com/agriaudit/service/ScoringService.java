@@ -2,10 +2,10 @@ package com.agriaudit.service;
 
 import com.agriaudit.domain.Audit;
 import com.agriaudit.domain.AuditItemResult;
-import com.agriaudit.domain.ControlPoint;
+import com.agriaudit.catalog.domain.ControlPoint;
 import com.agriaudit.domain.enums.ComplianceResult;
 import com.agriaudit.repo.AuditItemResultRepository;
-import com.agriaudit.repo.ControlPointRepository;
+import com.agriaudit.catalog.CatalogLookup;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -24,21 +24,21 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class ScoringService {
 
-    private final ControlPointRepository controlPoints;
+    private final CatalogLookup catalog;
     private final AuditItemResultRepository results;
     private final ObjectMapper objectMapper;
 
-    public ScoringService(ControlPointRepository controlPoints,
+    public ScoringService(CatalogLookup catalog,
                           AuditItemResultRepository results,
                           ObjectMapper objectMapper) {
-        this.controlPoints = controlPoints;
+        this.catalog = catalog;
         this.results = results;
         this.objectMapper = objectMapper;
     }
 
     public ScoreResult score(Audit audit) {
         String standardCode = audit.getStandard().getCode();
-        List<ControlPoint> cps = controlPoints.findByStandardCode(standardCode);
+        List<ControlPoint> cps = catalog.controlPointsOf(standardCode);
         Map<Long, ComplianceResult> byCp = new LinkedHashMap<>();
         for (AuditItemResult r : results.findByAuditId(audit.getId())) {
             byCp.put(r.getControlPoint().getId(), r.getCompliance());

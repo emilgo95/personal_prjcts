@@ -24,7 +24,20 @@
         <poi.version>5.3.0</poi.version>
         <springdoc.version>2.6.0</springdoc.version>
         <testcontainers.version>1.21.4</testcontainers.version>
+        <spring-modulith.version>1.2.13</spring-modulith.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.modulith</groupId>
+                <artifactId>spring-modulith-bom</artifactId>
+                <version>${spring-modulith.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -119,7 +132,18 @@
             <version>${springdoc.version}</version>
         </dependency>
 
+        <!-- Monolito modular: anotaciones de API de módulo (@NamedInterface, @ApplicationModule) -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-api</artifactId>
+        </dependency>
+
         <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

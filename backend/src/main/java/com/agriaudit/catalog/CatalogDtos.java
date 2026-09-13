@@ -1,4 +1,4 @@
-package com.agriaudit.web.dto;
+package com.agriaudit.catalog;
 
 import java.util.List;
 

@@ -1,14 +1,14 @@
-package com.agriaudit.service;
+package com.agriaudit.catalog;
 
 import com.agriaudit.common.NotFoundException;
-import com.agriaudit.domain.AuditStandard;
-import com.agriaudit.domain.ControlPoint;
-import com.agriaudit.domain.Regulation;
-import com.agriaudit.domain.StandardChapter;
-import com.agriaudit.repo.AuditStandardRepository;
-import com.agriaudit.repo.ControlPointRepository;
-import com.agriaudit.repo.RegulationRepository;
-import com.agriaudit.web.dto.CatalogDtos.*;
+import com.agriaudit.catalog.domain.AuditStandard;
+import com.agriaudit.catalog.domain.ControlPoint;
+import com.agriaudit.catalog.domain.Regulation;
+import com.agriaudit.catalog.domain.StandardChapter;
+import com.agriaudit.catalog.infrastructure.persistence.AuditStandardRepository;
+import com.agriaudit.catalog.infrastructure.persistence.ControlPointRepository;
+import com.agriaudit.catalog.infrastructure.persistence.RegulationRepository;
+import com.agriaudit.catalog.CatalogDtos.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +17,11 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
-public class CatalogService {
+public class CatalogService implements CatalogLookup {
 
     private final AuditStandardRepository standards;
     private final ControlPointRepository controlPoints;
@@ -86,6 +87,23 @@ public class CatalogService {
     public RegulationDto getRegulation(String code) {
         return regulations.findByCode(code).map(this::toRegulationDto)
                 .orElseThrow(() -> new NotFoundException("Normativa no encontrada: " + code));
+    }
+
+    // ---- CatalogLookup ----
+
+    @Override
+    public Optional<AuditStandard> findStandard(String code) {
+        return standards.findByCode(code);
+    }
+
+    @Override
+    public List<ControlPoint> controlPointsOf(String standardCode) {
+        return controlPoints.findByStandardCode(standardCode);
+    }
+
+    @Override
+    public Optional<ControlPoint> findControlPoint(Long id) {
+        return controlPoints.findById(id);
     }
 
     private ControlPointDto toControlPointDto(ControlPoint cp) {

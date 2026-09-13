@@ -1,4 +1,4 @@
-package com.agriaudit.domain.enums;
+package com.agriaudit.catalog.domain;
 
 /**
  * Nivel/obligatoriedad de un punto de control. El significado exacto depende del

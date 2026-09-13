@@ -2,10 +2,10 @@ package com.agriaudit.service;
 
 import com.agriaudit.domain.*;
 import com.agriaudit.domain.enums.ComplianceResult;
-import com.agriaudit.domain.enums.ControlLevel;
-import com.agriaudit.domain.enums.StandardCategory;
+import com.agriaudit.catalog.domain.ControlLevel;
+import com.agriaudit.catalog.domain.StandardCategory;
 import com.agriaudit.repo.AuditItemResultRepository;
-import com.agriaudit.repo.ControlPointRepository;
+import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.web.dto.ScoreDtos.ScoreResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,19 +18,22 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.agriaudit.catalog.domain.AuditStandard;
+import com.agriaudit.catalog.domain.ControlPoint;
+import com.agriaudit.catalog.domain.StandardChapter;
 
 class ScoringServiceTest {
 
-    private ControlPointRepository controlPoints;
+    private CatalogLookup catalog;
     private AuditItemResultRepository results;
     private ScoringService scoringService;
     private final AtomicLong ids = new AtomicLong(1);
 
     @BeforeEach
     void setUp() {
-        controlPoints = mock(ControlPointRepository.class);
+        catalog = mock(CatalogLookup.class);
         results = mock(AuditItemResultRepository.class);
-        scoringService = new ScoringService(controlPoints, results, new ObjectMapper());
+        scoringService = new ScoringService(catalog, results, new ObjectMapper());
     }
 
     private Audit globalgapAudit() {
@@ -88,7 +91,7 @@ class ScoringServiceTest {
             cps.add(c);
             res.add(result(c, i == 0 ? ComplianceResult.NON_COMPLIANT : ComplianceResult.COMPLIANT));
         }
-        when(controlPoints.findByStandardCode("GLOBALGAP_IFA_V6")).thenReturn(cps);
+        when(catalog.controlPointsOf("GLOBALGAP_IFA_V6")).thenReturn(cps);
         when(results.findByAuditId(1L)).thenReturn(res);
 
         ScoreResult score = scoringService.score(audit);
@@ -103,7 +106,7 @@ class ScoringServiceTest {
         StandardChapter ch = chapter(audit.getStandard(), "MGMT");
         ControlPoint major = cp(ch, ControlLevel.MAJOR_MUST);
         ControlPoint minor = cp(ch, ControlLevel.MINOR_MUST);
-        when(controlPoints.findByStandardCode("GLOBALGAP_IFA_V6")).thenReturn(List.of(major, minor));
+        when(catalog.controlPointsOf("GLOBALGAP_IFA_V6")).thenReturn(List.of(major, minor));
         when(results.findByAuditId(1L)).thenReturn(List.of(
                 result(major, ComplianceResult.NON_COMPLIANT),
                 result(minor, ComplianceResult.COMPLIANT)));
@@ -118,7 +121,7 @@ class ScoringServiceTest {
         Audit audit = globalgapAudit();
         StandardChapter ch = chapter(audit.getStandard(), "MGMT");
         ControlPoint major = cp(ch, ControlLevel.MAJOR_MUST);
-        when(controlPoints.findByStandardCode("GLOBALGAP_IFA_V6")).thenReturn(List.of(major));
+        when(catalog.controlPointsOf("GLOBALGAP_IFA_V6")).thenReturn(List.of(major));
         when(results.findByAuditId(1L)).thenReturn(List.of());
 
         ScoreResult score = scoringService.score(audit);
@@ -145,7 +148,7 @@ class ScoringServiceTest {
         ControlPoint c2 = cp(ch, ControlLevel.MAJOR_MUST);
         c2.setApplicableScopes("HEALTH_SAFETY");
 
-        when(controlPoints.findByStandardCode("SMETA_6_1")).thenReturn(List.of(c1, c2));
+        when(catalog.controlPointsOf("SMETA_6_1")).thenReturn(List.of(c1, c2));
         when(results.findByAuditId(2L)).thenReturn(List.of(
                 result(c1, ComplianceResult.COMPLIANT),
                 result(c2, ComplianceResult.NON_COMPLIANT)));

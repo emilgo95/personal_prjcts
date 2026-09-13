@@ -1,7 +1,7 @@
-package com.agriaudit.web;
+package com.agriaudit.catalog.infrastructure.web;
 
-import com.agriaudit.service.CatalogService;
-import com.agriaudit.web.dto.CatalogDtos.*;
+import com.agriaudit.catalog.CatalogService;
+import com.agriaudit.catalog.CatalogDtos.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

@@ -1,6 +1,5 @@
-package com.agriaudit.domain;
+package com.agriaudit.catalog.domain;
 
-import com.agriaudit.domain.enums.ControlLevel;
 import jakarta.persistence.*;
 
 import java.util.LinkedHashSet;

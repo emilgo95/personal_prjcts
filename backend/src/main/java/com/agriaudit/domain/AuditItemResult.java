@@ -4,6 +4,7 @@ import com.agriaudit.domain.enums.ComplianceResult;
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import com.agriaudit.catalog.domain.ControlPoint;
 
 @Entity
 @Table(name = "audit_item_results")

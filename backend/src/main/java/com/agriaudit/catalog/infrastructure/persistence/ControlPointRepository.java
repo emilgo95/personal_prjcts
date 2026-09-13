@@ -1,6 +1,6 @@
-package com.agriaudit.repo;
+package com.agriaudit.catalog.infrastructure.persistence;
 
-import com.agriaudit.domain.ControlPoint;
+import com.agriaudit.catalog.domain.ControlPoint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

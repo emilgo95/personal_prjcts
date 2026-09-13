@@ -18,6 +18,9 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import com.agriaudit.catalog.domain.AuditStandard;
+import com.agriaudit.catalog.domain.ControlPoint;
+import com.agriaudit.catalog.CatalogLookup;
 
 /**
  * Carga un juego de datos ficticio pero coherente para demostraciones:
@@ -40,7 +43,7 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final AppUserRepository users;
     private final FarmRepository farms;
     private final AuditRepository audits;
-    private final ControlPointRepository controlPoints;
+    private final CatalogLookup catalog;
     private final AuditItemResultRepository results;
     private final FindingRepository findings;
     private final CorrectiveActionRepository correctiveActions;
@@ -49,7 +52,7 @@ public class DemoDataSeeder implements CommandLineRunner {
     public DemoDataSeeder(@Value("${agriaudit.demo.seed:true}") boolean enabled,
                           @Value("${agriaudit.admin.org-name}") String orgName,
                           OrganizationRepository organizations, AppUserRepository users, FarmRepository farms,
-                          AuditRepository audits, ControlPointRepository controlPoints,
+                          AuditRepository audits, CatalogLookup catalog,
                           AuditItemResultRepository results, FindingRepository findings,
                           CorrectiveActionRepository correctiveActions, PasswordEncoder passwordEncoder) {
         this.enabled = enabled;
@@ -58,7 +61,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         this.users = users;
         this.farms = farms;
         this.audits = audits;
-        this.controlPoints = controlPoints;
+        this.catalog = catalog;
         this.results = results;
         this.findings = findings;
         this.correctiveActions = correctiveActions;
@@ -189,7 +192,7 @@ public class DemoDataSeeder implements CommandLineRunner {
 
     private int audit(Long orgId, int seq, Farm farm, String standardCode, AuditType type, AuditStatus status,
                       LocalDate date, String leadAuditor, String team, String scope) {
-        AuditStandard standard = controlPoints.findByStandardCode(standardCode).stream()
+        AuditStandard standard = catalog.controlPointsOf(standardCode).stream()
                 .findFirst().map(cp -> cp.getChapter().getStandard()).orElse(null);
         if (standard == null) {
             log.warn("Estándar {} sin puntos de control; se omite la auditoría de demo", standardCode);
@@ -218,7 +221,7 @@ public class DemoDataSeeder implements CommandLineRunner {
 
     private void seedResultsAndFindings(Audit audit, String standardCode, AuditStatus status,
                                        LocalDate date, String leadAuditor) {
-        List<ControlPoint> cps = controlPoints.findByStandardCode(standardCode);
+        List<ControlPoint> cps = catalog.controlPointsOf(standardCode);
         double coverage = switch (status) {
             case DRAFT -> 0.12;
             case IN_PROGRESS -> 0.65;
