@@ -87,6 +87,9 @@ agriaudit:
       "[claude-opus-5]": { input-per-million: 5.00, output-per-million: 25.00 }
     # Versión activa de cada prompt (resources/ai/prompts/<id>.v<N>.md, RT-A10).
     prompts: {}
+    # Embeddings para RAG sobre pgvector (RT-A06). none | fake; Voyage o bge-m3 se decide en WS-5.
+    embeddings:
+      provider: ${AGRIAUDIT_AI_EMBEDDINGS_PROVIDER:none}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8080}
 

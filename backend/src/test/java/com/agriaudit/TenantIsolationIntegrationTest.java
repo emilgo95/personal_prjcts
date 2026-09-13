@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.util.LinkedMultiValueMap;
+import com.agriaudit.support.TestPostgres;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -34,7 +35,7 @@ class TenantIsolationIntegrationTest {
     private static final String OTHER_PASSWORD = "Intruso123!";
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer<?> postgres = TestPostgres.container();
 
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry registry) {

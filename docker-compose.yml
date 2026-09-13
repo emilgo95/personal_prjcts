@@ -4,7 +4,8 @@ name: agriaudit-docs
 
 services:
   db:
-    image: postgres:16-alpine
+    # PostgreSQL 16 con la extensión pgvector (RAG del módulo ai, RT-A06).
+    image: pgvector/pgvector:pg16
     container_name: agriaudit-db
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-agriaudit}

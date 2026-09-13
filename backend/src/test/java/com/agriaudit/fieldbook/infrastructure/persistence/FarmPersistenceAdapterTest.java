@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import com.agriaudit.support.TestPostgres;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -20,7 +21,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class FarmPersistenceAdapterTest extends FarmRepositoryContract {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer<?> postgres = TestPostgres.container();
 
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry registry) {
