@@ -1,4 +1,4 @@
-package com.agriaudit.domain.enums;
+package com.agriaudit.identity;
 
 public enum Role {
     ADMIN,

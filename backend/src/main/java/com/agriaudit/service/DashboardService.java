@@ -5,7 +5,7 @@ import com.agriaudit.domain.enums.FindingStatus;
 import com.agriaudit.repo.FarmRepository;
 import com.agriaudit.repo.FindingRepository;
 import com.agriaudit.repo.GeneratedDocumentRepository;
-import com.agriaudit.security.SecurityUtils;
+import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.web.dto.AuditDtos.AuditSummaryDto;
 import com.agriaudit.web.dto.DashboardDto;
 import org.springframework.stereotype.Service;

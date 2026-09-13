@@ -9,7 +9,7 @@ import com.agriaudit.domain.enums.DocumentFormat;
 import com.agriaudit.domain.enums.DocumentType;
 import com.agriaudit.repo.DocumentTemplateRepository;
 import com.agriaudit.repo.GeneratedDocumentRepository;
-import com.agriaudit.security.SecurityUtils;
+import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.service.AuditService;
 import com.agriaudit.web.dto.DocumentDtos.DocumentOptionDto;
 import com.agriaudit.web.dto.DocumentDtos.GeneratedDocumentDto;

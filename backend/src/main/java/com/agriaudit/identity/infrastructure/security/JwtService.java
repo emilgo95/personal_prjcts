@@ -1,4 +1,4 @@
-package com.agriaudit.security;
+package com.agriaudit.identity.infrastructure.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Map;
+import com.agriaudit.identity.AppUserPrincipal;
 
 @Service
 public class JwtService {

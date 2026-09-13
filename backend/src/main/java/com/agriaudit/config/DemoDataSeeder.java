@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +20,9 @@ import java.util.List;
 import com.agriaudit.catalog.domain.AuditStandard;
 import com.agriaudit.catalog.domain.ControlPoint;
 import com.agriaudit.catalog.CatalogLookup;
+import com.agriaudit.identity.Role;
+import com.agriaudit.identity.UserProvisioning;
+import com.agriaudit.identity.OrganizationDirectory;
 
 /**
  * Carga un juego de datos ficticio pero coherente para demostraciones:
@@ -39,22 +41,21 @@ public class DemoDataSeeder implements CommandLineRunner {
 
     private final boolean enabled;
     private final String orgName;
-    private final OrganizationRepository organizations;
-    private final AppUserRepository users;
+    private final OrganizationDirectory organizations;
+    private final UserProvisioning users;
     private final FarmRepository farms;
     private final AuditRepository audits;
     private final CatalogLookup catalog;
     private final AuditItemResultRepository results;
     private final FindingRepository findings;
     private final CorrectiveActionRepository correctiveActions;
-    private final PasswordEncoder passwordEncoder;
 
     public DemoDataSeeder(@Value("${agriaudit.demo.seed:true}") boolean enabled,
                           @Value("${agriaudit.admin.org-name}") String orgName,
-                          OrganizationRepository organizations, AppUserRepository users, FarmRepository farms,
+                          OrganizationDirectory organizations, UserProvisioning users, FarmRepository farms,
                           AuditRepository audits, CatalogLookup catalog,
                           AuditItemResultRepository results, FindingRepository findings,
-                          CorrectiveActionRepository correctiveActions, PasswordEncoder passwordEncoder) {
+                          CorrectiveActionRepository correctiveActions) {
         this.enabled = enabled;
         this.orgName = orgName;
         this.organizations = organizations;
@@ -65,7 +66,6 @@ public class DemoDataSeeder implements CommandLineRunner {
         this.results = results;
         this.findings = findings;
         this.correctiveActions = correctiveActions;
-        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -78,16 +78,16 @@ public class DemoDataSeeder implements CommandLineRunner {
             log.info("Datos de demostración ya presentes; se omite el sembrado");
             return;
         }
-        Organization org = organizations.findByName(orgName).orElseGet(() ->
-                organizations.findAll().stream().findFirst().orElse(null));
-        if (org == null) {
+        Long orgId = organizations.findOrganizationIdByName(orgName)
+                .or(organizations::anyOrganizationId).orElse(null);
+        if (orgId == null) {
             log.warn("No hay organización disponible; se omite el sembrado de demostración");
             return;
         }
-        Long orgId = org.getId();
-        log.info("Sembrando datos de demostración para la organización '{}'", org.getName());
+        log.info("Sembrando datos de demostración para la organización '{}'",
+                organizations.organizationName(orgId).orElse(orgName));
 
-        seedUsers(org);
+        seedUsers(orgId);
         List<Farm> demoFarms = seedFarms(orgId);
         seedAudits(orgId, demoFarms);
 
@@ -95,23 +95,9 @@ public class DemoDataSeeder implements CommandLineRunner {
                 demoFarms.size(), audits.countByOrganizationId(orgId));
     }
 
-    private void seedUsers(Organization org) {
-        addUser(org, "ana.auditora@demo.test", "Ana Auditora", Role.AUDITOR);
-        addUser(org, "carlos.lector@demo.test", "Carlos Lector", Role.VIEWER);
-    }
-
-    private void addUser(Organization org, String email, String name, Role role) {
-        if (users.existsByEmailIgnoreCase(email)) {
-            return;
-        }
-        AppUser u = new AppUser();
-        u.setOrganization(org);
-        u.setEmail(email);
-        u.setFullName(name);
-        u.setRole(role);
-        u.setActive(true);
-        u.setPasswordHash(passwordEncoder.encode("Demo1234!"));
-        users.save(u);
+    private void seedUsers(Long orgId) {
+        users.ensureUser(orgId, "ana.auditora@demo.test", "Ana Auditora", Role.AUDITOR, "Demo1234!");
+        users.ensureUser(orgId, "carlos.lector@demo.test", "Carlos Lector", Role.VIEWER, "Demo1234!");
     }
 
     private List<Farm> seedFarms(Long orgId) {

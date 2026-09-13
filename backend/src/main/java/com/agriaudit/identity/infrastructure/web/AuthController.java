@@ -1,11 +1,11 @@
-package com.agriaudit.web;
+package com.agriaudit.identity.infrastructure.web;
 
-import com.agriaudit.security.SecurityUtils;
-import com.agriaudit.service.AuthService;
-import com.agriaudit.web.dto.AuthDtos.LoginRequest;
-import com.agriaudit.web.dto.AuthDtos.RefreshRequest;
-import com.agriaudit.web.dto.AuthDtos.TokenResponse;
-import com.agriaudit.web.dto.AuthDtos.UserDto;
+import com.agriaudit.identity.SecurityUtils;
+import com.agriaudit.identity.application.AuthService;
+import com.agriaudit.identity.application.AuthDtos.LoginRequest;
+import com.agriaudit.identity.application.AuthDtos.RefreshRequest;
+import com.agriaudit.identity.application.AuthDtos.TokenResponse;
+import com.agriaudit.identity.application.AuthDtos.UserDto;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 

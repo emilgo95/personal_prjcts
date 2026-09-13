@@ -1,4 +1,4 @@
-package com.agriaudit.web.dto;
+package com.agriaudit.identity.application;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

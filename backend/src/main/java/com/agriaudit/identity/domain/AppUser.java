@@ -1,6 +1,6 @@
-package com.agriaudit.domain;
+package com.agriaudit.identity.domain;
 
-import com.agriaudit.domain.enums.Role;
+import com.agriaudit.identity.Role;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;

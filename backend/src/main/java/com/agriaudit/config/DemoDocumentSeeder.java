@@ -4,8 +4,7 @@ import com.agriaudit.domain.Audit;
 import com.agriaudit.domain.enums.AuditStatus;
 import com.agriaudit.repo.AuditRepository;
 import com.agriaudit.repo.GeneratedDocumentRepository;
-import com.agriaudit.security.AppUserDetailsService;
-import com.agriaudit.security.AppUserPrincipal;
+import com.agriaudit.identity.AppUserPrincipal;
 import com.agriaudit.service.document.DocumentGenerationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +13,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -34,13 +34,13 @@ public class DemoDocumentSeeder implements CommandLineRunner {
     private final boolean enabled;
     private final String adminEmail;
     private final AuditRepository audits;
-    private final AppUserDetailsService userDetailsService;
+    private final UserDetailsService userDetailsService;
     private final GeneratedDocumentRepository generatedDocuments;
     private final DocumentGenerationService documentGenerationService;
 
     public DemoDocumentSeeder(@Value("${agriaudit.demo.seed:true}") boolean enabled,
                               @Value("${agriaudit.admin.email}") String adminEmail,
-                              AuditRepository audits, AppUserDetailsService userDetailsService,
+                              AuditRepository audits, UserDetailsService userDetailsService,
                               GeneratedDocumentRepository generatedDocuments,
                               DocumentGenerationService documentGenerationService) {
         this.enabled = enabled;

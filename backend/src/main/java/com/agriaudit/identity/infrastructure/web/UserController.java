@@ -1,9 +1,9 @@
-package com.agriaudit.web;
+package com.agriaudit.identity.infrastructure.web;
 
-import com.agriaudit.service.UserService;
-import com.agriaudit.web.dto.AuthDtos.UserDto;
-import com.agriaudit.web.dto.UserDtos.UserCreateRequest;
-import com.agriaudit.web.dto.UserDtos.UserUpdateRequest;
+import com.agriaudit.identity.application.UserService;
+import com.agriaudit.identity.application.AuthDtos.UserDto;
+import com.agriaudit.identity.application.UserDtos.UserCreateRequest;
+import com.agriaudit.identity.application.UserDtos.UserUpdateRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;

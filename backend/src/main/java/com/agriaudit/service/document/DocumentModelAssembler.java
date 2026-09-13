@@ -1,11 +1,10 @@
 package com.agriaudit.service.document;
 
 import com.agriaudit.domain.Audit;
-import com.agriaudit.domain.Organization;
 import com.agriaudit.domain.enums.AttachmentEntityType;
 import com.agriaudit.repo.AttachmentRepository;
-import com.agriaudit.repo.OrganizationRepository;
-import com.agriaudit.security.SecurityUtils;
+import com.agriaudit.identity.OrganizationDirectory;
+import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.service.AttachmentLookup;
 import com.agriaudit.service.AuditService;
 import com.agriaudit.catalog.CatalogService;
@@ -47,14 +46,14 @@ public class DocumentModelAssembler {
     private final CatalogService catalogService;
     private final FindingService findingService;
     private final ScoringService scoringService;
-    private final OrganizationRepository organizations;
+    private final OrganizationDirectory organizations;
     private final AttachmentLookup attachmentLookup;
     private final AttachmentRepository attachmentRepository;
     private final DocumentStorageService storage;
 
     public DocumentModelAssembler(AuditService auditService, CatalogService catalogService,
                                   FindingService findingService, ScoringService scoringService,
-                                  OrganizationRepository organizations, AttachmentLookup attachmentLookup,
+                                  OrganizationDirectory organizations, AttachmentLookup attachmentLookup,
                                   AttachmentRepository attachmentRepository, DocumentStorageService storage) {
         this.auditService = auditService;
         this.catalogService = catalogService;
@@ -75,8 +74,8 @@ public class DocumentModelAssembler {
         List<FindingDto> findings = findingService.listByAudit(auditId);
         ScoreResult score = scoringService.score(audit);
 
-        String orgName = organizations.findById(SecurityUtils.currentOrganizationId())
-                .map(Organization::getName).orElse("Organización");
+        String orgName = organizations.organizationName(SecurityUtils.currentOrganizationId())
+                .orElse("Organización");
 
         var resultsByCp = results.stream().collect(Collectors.toMap(
                 AuditItemResultDto::controlPointId, Function.identity(), (a, b) -> a));

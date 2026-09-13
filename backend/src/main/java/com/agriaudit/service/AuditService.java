@@ -8,7 +8,7 @@ import com.agriaudit.domain.enums.AuditStatus;
 import com.agriaudit.domain.enums.AuditType;
 import com.agriaudit.domain.enums.ComplianceResult;
 import com.agriaudit.repo.*;
-import com.agriaudit.security.SecurityUtils;
+import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.web.dto.AuditDtos.*;
 import com.agriaudit.web.dto.FarmDtos.FarmDto;
 import com.agriaudit.web.dto.ScoreDtos.ScoreResult;

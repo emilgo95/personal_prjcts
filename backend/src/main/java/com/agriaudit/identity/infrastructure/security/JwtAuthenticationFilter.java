@@ -1,4 +1,4 @@
-package com.agriaudit.security;
+package com.agriaudit.identity.infrastructure.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;

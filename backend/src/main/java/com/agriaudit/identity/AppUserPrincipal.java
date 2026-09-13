@@ -1,7 +1,6 @@
-package com.agriaudit.security;
+package com.agriaudit.identity;
 
-import com.agriaudit.domain.AppUser;
-import com.agriaudit.domain.enums.Role;
+import com.agriaudit.identity.domain.AppUser;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

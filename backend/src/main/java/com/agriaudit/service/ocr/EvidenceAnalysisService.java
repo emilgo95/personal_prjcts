@@ -7,7 +7,7 @@ import com.agriaudit.catalog.domain.ControlPoint;
 import com.agriaudit.catalog.domain.ControlLevel;
 import com.agriaudit.repo.AttachmentRepository;
 import com.agriaudit.catalog.CatalogLookup;
-import com.agriaudit.security.SecurityUtils;
+import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.service.AuditService;
 import com.agriaudit.service.document.DocumentStorageService;
 import com.agriaudit.service.ocr.OcrClient.OcrResult;

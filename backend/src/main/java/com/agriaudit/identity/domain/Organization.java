@@ -1,4 +1,4 @@
-package com.agriaudit.domain;
+package com.agriaudit.identity.domain;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;

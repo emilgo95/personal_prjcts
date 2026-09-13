@@ -3,7 +3,7 @@ package com.agriaudit.service;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.domain.Farm;
 import com.agriaudit.repo.FarmRepository;
-import com.agriaudit.security.SecurityUtils;
+import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.web.dto.FarmDtos.FarmDto;
 import com.agriaudit.web.dto.FarmDtos.FarmRequest;
 import org.springframework.stereotype.Service;

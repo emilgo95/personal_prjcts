@@ -1,6 +1,6 @@
-package com.agriaudit.repo;
+package com.agriaudit.identity.infrastructure.persistence;
 
-import com.agriaudit.domain.Organization;
+import com.agriaudit.identity.domain.Organization;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

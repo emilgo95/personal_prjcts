@@ -6,7 +6,7 @@ import com.agriaudit.domain.*;
 import com.agriaudit.domain.enums.AttachmentEntityType;
 import com.agriaudit.domain.enums.ComplianceResult;
 import com.agriaudit.repo.*;
-import com.agriaudit.security.SecurityUtils;
+import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.service.document.DocumentStorageService;
 import com.agriaudit.web.dto.AttachmentDtos.AttachmentDto;
 import org.springframework.stereotype.Service;

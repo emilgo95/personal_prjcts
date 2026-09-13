@@ -53,7 +53,7 @@ class ArchitectureTests {
 
     @Test
     void extractedModulesDoNotDependOnLegacyLayers() {
-        noClasses().that().resideInAnyPackage("com.agriaudit.catalog..", "com.agriaudit.common..")
+        noClasses().that().resideInAnyPackage("com.agriaudit.catalog..", "com.agriaudit.common..", "com.agriaudit.identity..")
                 .should().dependOnClassesThat().resideInAnyPackage(LEGACY_LAYERS)
                 .check(classes);
     }

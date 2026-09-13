@@ -1,12 +1,12 @@
-package com.agriaudit.service;
+package com.agriaudit.identity.application;
 
 import com.agriaudit.common.NotFoundException;
-import com.agriaudit.domain.AppUser;
-import com.agriaudit.repo.AppUserRepository;
-import com.agriaudit.security.AppUserPrincipal;
-import com.agriaudit.security.JwtService;
-import com.agriaudit.web.dto.AuthDtos.TokenResponse;
-import com.agriaudit.web.dto.AuthDtos.UserDto;
+import com.agriaudit.identity.domain.AppUser;
+import com.agriaudit.identity.infrastructure.persistence.AppUserRepository;
+import com.agriaudit.identity.AppUserPrincipal;
+import com.agriaudit.identity.infrastructure.security.JwtService;
+import com.agriaudit.identity.application.AuthDtos.TokenResponse;
+import com.agriaudit.identity.application.AuthDtos.UserDto;
 import io.jsonwebtoken.Claims;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;

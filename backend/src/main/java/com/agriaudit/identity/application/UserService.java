@@ -1,16 +1,16 @@
-package com.agriaudit.service;
+package com.agriaudit.identity.application;
 
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
-import com.agriaudit.domain.AppUser;
-import com.agriaudit.domain.Organization;
-import com.agriaudit.domain.enums.Role;
-import com.agriaudit.repo.AppUserRepository;
-import com.agriaudit.repo.OrganizationRepository;
-import com.agriaudit.security.SecurityUtils;
-import com.agriaudit.web.dto.AuthDtos.UserDto;
-import com.agriaudit.web.dto.UserDtos.UserCreateRequest;
-import com.agriaudit.web.dto.UserDtos.UserUpdateRequest;
+import com.agriaudit.identity.domain.AppUser;
+import com.agriaudit.identity.domain.Organization;
+import com.agriaudit.identity.Role;
+import com.agriaudit.identity.infrastructure.persistence.AppUserRepository;
+import com.agriaudit.identity.infrastructure.persistence.OrganizationRepository;
+import com.agriaudit.identity.SecurityUtils;
+import com.agriaudit.identity.application.AuthDtos.UserDto;
+import com.agriaudit.identity.application.UserDtos.UserCreateRequest;
+import com.agriaudit.identity.application.UserDtos.UserUpdateRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

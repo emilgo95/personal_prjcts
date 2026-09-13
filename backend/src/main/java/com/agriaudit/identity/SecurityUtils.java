@@ -1,4 +1,4 @@
-package com.agriaudit.security;
+package com.agriaudit.identity;
 
 import com.agriaudit.common.BadRequestException;
 import org.springframework.security.core.Authentication;

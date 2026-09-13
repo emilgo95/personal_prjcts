@@ -1,10 +1,10 @@
-package com.agriaudit.config;
+package com.agriaudit.identity.infrastructure.bootstrap;
 
-import com.agriaudit.domain.AppUser;
-import com.agriaudit.domain.Organization;
-import com.agriaudit.domain.enums.Role;
-import com.agriaudit.repo.AppUserRepository;
-import com.agriaudit.repo.OrganizationRepository;
+import com.agriaudit.identity.domain.AppUser;
+import com.agriaudit.identity.domain.Organization;
+import com.agriaudit.identity.Role;
+import com.agriaudit.identity.infrastructure.persistence.AppUserRepository;
+import com.agriaudit.identity.infrastructure.persistence.OrganizationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,9 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Component
 @Order(10)
-public class DataInitializer implements CommandLineRunner {
+public class AdminInitializer implements CommandLineRunner {
 
-    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+    private static final Logger log = LoggerFactory.getLogger(AdminInitializer.class);
 
     private final OrganizationRepository organizations;
     private final AppUserRepository users;
@@ -31,7 +31,7 @@ public class DataInitializer implements CommandLineRunner {
     private final String adminPassword;
     private final String adminOrgName;
 
-    public DataInitializer(OrganizationRepository organizations,
+    public AdminInitializer(OrganizationRepository organizations,
                            AppUserRepository users,
                            PasswordEncoder passwordEncoder,
                            @Value("${agriaudit.admin.email}") String adminEmail,
