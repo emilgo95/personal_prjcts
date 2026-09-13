@@ -1,4 +1,4 @@
-package com.agriaudit.service.document;
+package com.agriaudit.documents.infrastructure.render;
 
 import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.*;
@@ -11,6 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
 import java.util.Base64;
 import java.util.List;
+import com.agriaudit.documents.application.DocumentModel;
 
 /** Utilidades para construir documentos Word con Apache POI. */
 final class DocxSupport {

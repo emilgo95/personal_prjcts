@@ -12,7 +12,7 @@
 <p>
     <span class="result"
           th:classappend="${m.score.overallResult == 'PASS'} ? 'r-pass' : (${m.score.overallResult == 'FAIL'} ? 'r-fail' : 'r-other')"
-          th:text="${T(com.agriaudit.service.document.DocLabels).overallResult(m.score.overallResult)}">Resultado</span>
+          th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).overallResult(m.score.overallResult)}">Resultado</span>
     &nbsp; Progreso: <b th:text="${m.score.progressPct} + '%'"></b>
 </p>
 <ul>
@@ -23,7 +23,7 @@
 <table>
     <tr><th>Nivel</th><th>Total</th><th>Conformes</th><th>No conformes</th><th>No aplica</th><th>Sin evaluar</th><th>% cumplimiento</th></tr>
     <tr th:each="l : ${m.score.levelBreakdown}">
-        <td th:text="${T(com.agriaudit.service.document.DocLabels).level(l.level)}"></td>
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).level(l.level)}"></td>
         <td th:text="${l.total}"></td>
         <td th:text="${l.compliant}"></td>
         <td th:text="${l.nonCompliant}"></td>

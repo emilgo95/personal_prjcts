@@ -1,4 +1,4 @@
-package com.agriaudit.domain.enums;
+package com.agriaudit.documents.domain;
 
 public enum DocumentFormat {
     PDF,

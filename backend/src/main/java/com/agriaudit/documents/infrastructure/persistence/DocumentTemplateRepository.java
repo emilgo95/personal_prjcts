@@ -1,8 +1,8 @@
-package com.agriaudit.repo;
+package com.agriaudit.documents.infrastructure.persistence;
 
-import com.agriaudit.domain.DocumentTemplate;
-import com.agriaudit.domain.enums.DocumentFormat;
-import com.agriaudit.domain.enums.DocumentType;
+import com.agriaudit.documents.domain.DocumentTemplate;
+import com.agriaudit.documents.domain.DocumentFormat;
+import com.agriaudit.documents.domain.DocumentType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

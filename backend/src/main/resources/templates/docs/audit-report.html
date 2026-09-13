@@ -12,7 +12,7 @@
 <p>
     <span class="result"
           th:classappend="${m.score.overallResult == 'PASS'} ? 'r-pass' : (${m.score.overallResult == 'FAIL'} ? 'r-fail' : 'r-other')"
-          th:text="${T(com.agriaudit.service.document.DocLabels).overallResult(m.score.overallResult)}">Resultado</span>
+          th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).overallResult(m.score.overallResult)}">Resultado</span>
 </p>
 <table class="kv">
     <tr><td>Progreso de la evaluación</td><td th:text="${m.score.progressPct} + '%'"></td></tr>
@@ -50,12 +50,12 @@
         <tr th:each="cp : ${ch.controlPoints}" th:with="r=${m.resultsByControlPoint.get(cp.id)}">
             <td th:text="${cp.ref}"></td>
             <td th:text="${cp.title}"></td>
-            <td th:text="${T(com.agriaudit.service.document.DocLabels).level(cp.level)}"></td>
+            <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).level(cp.level)}"></td>
             <td>
                 <span class="badge"
                       th:with="c=${r != null ? r.compliance : 'NOT_ASSESSED'}"
                       th:classappend="${c == 'COMPLIANT'} ? 'b-ok' : (${c == 'NON_COMPLIANT'} ? 'b-no' : (${c == 'NOT_APPLICABLE'} ? 'b-na' : 'b-pend'))"
-                      th:text="${T(com.agriaudit.service.document.DocLabels).compliance(c)}">-</span>
+                      th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).compliance(c)}">-</span>
             </td>
             <td>
                 <span th:if="${r != null and r.evidenceNotes != null}" th:text="${r.evidenceNotes}"></span>
@@ -73,14 +73,14 @@
     <tr th:each="f : ${m.findings}">
         <td th:text="${f.reference} ?: ''"></td>
         <td th:text="${f.controlPointRef} ?: '-'"></td>
-        <td th:text="${T(com.agriaudit.service.document.DocLabels).classification(f.classification)}"></td>
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).classification(f.classification)}"></td>
         <td>
             <b th:if="${f.title}" th:text="${f.title}"></b>
             <span th:if="${f.description}" th:text="${(f.title != null ? ' — ' : '') + f.description}"></span>
             <div th:replace="~{docs/_common :: evidence(${m.evidenceByFinding.get(f.id)})}"></div>
         </td>
         <td th:text="${f.dueDate} ?: '-'"></td>
-        <td th:text="${T(com.agriaudit.service.document.DocLabels).findingStatus(f.status)}"></td>
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).findingStatus(f.status)}"></td>
     </tr>
 </table>
 

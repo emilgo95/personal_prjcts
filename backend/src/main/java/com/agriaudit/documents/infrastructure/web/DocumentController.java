@@ -1,10 +1,10 @@
-package com.agriaudit.web;
+package com.agriaudit.documents.infrastructure.web;
 
-import com.agriaudit.service.document.DocumentGenerationService;
-import com.agriaudit.service.document.DocumentGenerationService.DownloadedDocument;
-import com.agriaudit.web.dto.DocumentDtos.DocumentOptionDto;
-import com.agriaudit.web.dto.DocumentDtos.GenerateRequest;
-import com.agriaudit.web.dto.DocumentDtos.GeneratedDocumentDto;
+import com.agriaudit.documents.application.DocumentGenerationService;
+import com.agriaudit.documents.application.DocumentGenerationService.DownloadedDocument;
+import com.agriaudit.documents.DocumentDtos.DocumentOptionDto;
+import com.agriaudit.documents.DocumentDtos.GenerateRequest;
+import com.agriaudit.documents.DocumentDtos.GeneratedDocumentDto;
 import jakarta.validation.Valid;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;

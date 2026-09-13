@@ -1,6 +1,6 @@
-package com.agriaudit.service.document;
+package com.agriaudit.documents.application;
 
-import com.agriaudit.domain.DocumentTemplate;
+import com.agriaudit.documents.domain.DocumentTemplate;
 
 public interface DocumentRenderer {
 

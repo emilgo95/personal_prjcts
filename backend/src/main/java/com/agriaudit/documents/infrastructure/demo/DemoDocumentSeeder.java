@@ -1,11 +1,11 @@
-package com.agriaudit.config;
+package com.agriaudit.documents.infrastructure.demo;
 
 import com.agriaudit.audit.AuditLookup;
 import com.agriaudit.audit.AuditRef;
 import com.agriaudit.audit.AuditStatus;
-import com.agriaudit.repo.GeneratedDocumentRepository;
+import com.agriaudit.documents.infrastructure.persistence.GeneratedDocumentRepository;
 import com.agriaudit.identity.AppUserPrincipal;
-import com.agriaudit.service.document.DocumentGenerationService;
+import com.agriaudit.documents.application.DocumentGenerationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,8 +1,8 @@
-package com.agriaudit.service.document;
+package com.agriaudit.documents.infrastructure.render;
 
-import com.agriaudit.domain.DocumentTemplate;
-import com.agriaudit.domain.enums.DocumentFormat;
-import com.agriaudit.domain.enums.DocumentType;
+import com.agriaudit.documents.domain.DocumentTemplate;
+import com.agriaudit.documents.domain.DocumentFormat;
+import com.agriaudit.documents.domain.DocumentType;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.junit.jupiter.api.Test;
@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.agriaudit.documents.application.DocumentModel;
 
 class DocumentRendererTest {
 

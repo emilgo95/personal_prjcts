@@ -37,7 +37,7 @@
                 <span class="badge"
                       th:with="c=${r != null ? r.compliance : 'NOT_ASSESSED'}"
                       th:classappend="${c == 'COMPLIANT'} ? 'b-ok' : (${c == 'NON_COMPLIANT'} ? 'b-no' : (${c == 'NOT_APPLICABLE'} ? 'b-na' : 'b-pend'))"
-                      th:text="${T(com.agriaudit.service.document.DocLabels).compliance(c)}">-</span>
+                      th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).compliance(c)}">-</span>
             </td>
             <td>
                 <span th:if="${r != null and r.evidenceNotes != null}" th:text="${r.evidenceNotes}"></span>
@@ -55,7 +55,7 @@
     <tr th:each="f : ${m.findings}">
         <td th:text="${f.reference} ?: ''"></td>
         <td th:text="${f.controlPointRef ?: (f.area ?: '-')}"></td>
-        <td th:text="${T(com.agriaudit.service.document.DocLabels).classification(f.classification)}"></td>
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).classification(f.classification)}"></td>
         <td th:text="${f.description ?: (f.title ?: '')}"></td>
         <td th:text="${!f.correctiveActions.isEmpty() ? (f.correctiveActions[0].correction ?: 'Ver CAPR') : 'Pendiente'}"></td>
         <td th:text="${f.dueDate} ?: '-'"></td>

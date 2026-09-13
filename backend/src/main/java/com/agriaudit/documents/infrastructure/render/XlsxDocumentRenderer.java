@@ -1,7 +1,7 @@
-package com.agriaudit.service.document;
+package com.agriaudit.documents.infrastructure.render;
 
 import com.agriaudit.common.BadRequestException;
-import com.agriaudit.domain.DocumentTemplate;
+import com.agriaudit.documents.domain.DocumentTemplate;
 import com.agriaudit.audit.AuditDtos.AuditItemResultDto;
 import com.agriaudit.findings.FindingDtos.CorrectiveActionDto;
 import com.agriaudit.findings.FindingDtos.FindingDto;
@@ -11,6 +11,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
+import com.agriaudit.documents.application.DocumentModel;
+import com.agriaudit.documents.application.DocumentRenderer;
 
 @Component
 public class XlsxDocumentRenderer implements DocumentRenderer {

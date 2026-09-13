@@ -1,4 +1,4 @@
-package com.agriaudit.service.document;
+package com.agriaudit.documents.infrastructure.render;
 
 /** Traducciones al español de los códigos de enumeración para los documentos. */
 public final class DocLabels {

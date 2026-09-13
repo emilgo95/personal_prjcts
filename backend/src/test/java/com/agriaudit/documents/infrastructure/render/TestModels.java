@@ -1,4 +1,4 @@
-package com.agriaudit.service.document;
+package com.agriaudit.documents.infrastructure.render;
 
 import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import com.agriaudit.audit.AuditDtos.AuditDetailDto;
@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import com.agriaudit.documents.application.DocumentModel;
 
 public final class TestModels {
 

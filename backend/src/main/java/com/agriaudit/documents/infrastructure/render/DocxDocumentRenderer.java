@@ -1,7 +1,7 @@
-package com.agriaudit.service.document;
+package com.agriaudit.documents.infrastructure.render;
 
 import com.agriaudit.common.BadRequestException;
-import com.agriaudit.domain.DocumentTemplate;
+import com.agriaudit.documents.domain.DocumentTemplate;
 import com.agriaudit.audit.AuditDtos.AuditDetailDto;
 import com.agriaudit.audit.AuditDtos.AuditItemResultDto;
 import com.agriaudit.catalog.CatalogDtos.ChapterDto;
@@ -16,7 +16,9 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayOutputStream;
 import java.util.Objects;
 
-import static com.agriaudit.service.document.DocxSupport.*;
+import static com.agriaudit.documents.infrastructure.render.DocxSupport.*;
+import com.agriaudit.documents.application.DocumentModel;
+import com.agriaudit.documents.application.DocumentRenderer;
 
 @Component
 public class DocxDocumentRenderer implements DocumentRenderer {

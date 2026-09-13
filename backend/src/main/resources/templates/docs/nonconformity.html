@@ -26,14 +26,14 @@
             <span th:text="${f.controlPointRef} ?: '-'"></span>
             <span th:if="${f.controlPointTitle}" class="muted" th:text="' · ' + ${f.controlPointTitle}"></span>
         </td>
-        <td th:text="${T(com.agriaudit.service.document.DocLabels).classification(f.classification)}"></td>
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).classification(f.classification)}"></td>
         <td>
             <b th:if="${f.title}" th:text="${f.title}"></b>
             <span th:if="${f.description}" th:text="${(f.title != null ? ' — ' : '') + f.description}"></span>
             <div th:replace="~{docs/_common :: evidence(${m.evidenceByFinding.get(f.id)})}"></div>
         </td>
         <td th:text="${f.dueDate} ?: '-'"></td>
-        <td th:text="${T(com.agriaudit.service.document.DocLabels).findingStatus(f.status)}"></td>
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).findingStatus(f.status)}"></td>
     </tr>
 </table>
 <p th:if="${m.findings.isEmpty()}">No se han registrado no conformidades en esta auditoría.</p>

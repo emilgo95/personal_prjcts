@@ -50,8 +50,8 @@
         <tr><td>Nº de registro (GGN / otro)</td><td th:text="${m.farm.registrationNumber ?: '-'}"></td></tr>
         <tr><td>Emplazamiento</td><td th:text="${m.audit.siteAddress ?: (m.farm.address ?: '-')}"></td></tr>
         <tr><td>País</td><td th:text="${m.farm.country ?: '-'}"></td></tr>
-        <tr><td>Tipo de auditoría</td><td th:text="${T(com.agriaudit.service.document.DocLabels).auditType(m.audit.auditType)}"></td></tr>
-        <tr><td>Estado</td><td th:text="${T(com.agriaudit.service.document.DocLabels).auditStatus(m.audit.status)}"></td></tr>
+        <tr><td>Tipo de auditoría</td><td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).auditType(m.audit.auditType)}"></td></tr>
+        <tr><td>Estado</td><td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).auditStatus(m.audit.status)}"></td></tr>
         <tr><td>Fecha prevista</td><td th:text="${m.audit.plannedStartDate ?: '-'}"></td></tr>
         <tr><td>Fecha de auditoría</td><td th:text="${m.audit.actualDate ?: '-'}"></td></tr>
         <tr><td>Auditor responsable</td><td th:text="${m.audit.leadAuditor ?: '-'}"></td></tr>

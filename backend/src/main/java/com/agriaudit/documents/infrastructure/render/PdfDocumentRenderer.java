@@ -1,7 +1,7 @@
-package com.agriaudit.service.document;
+package com.agriaudit.documents.infrastructure.render;
 
 import com.agriaudit.common.BadRequestException;
-import com.agriaudit.domain.DocumentTemplate;
+import com.agriaudit.documents.domain.DocumentTemplate;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -12,6 +12,8 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Locale;
+import com.agriaudit.documents.application.DocumentModel;
+import com.agriaudit.documents.application.DocumentRenderer;
 
 @Component
 public class PdfDocumentRenderer implements DocumentRenderer {

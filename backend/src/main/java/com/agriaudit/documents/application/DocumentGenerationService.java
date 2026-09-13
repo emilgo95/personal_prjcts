@@ -1,18 +1,19 @@
-package com.agriaudit.service.document;
+package com.agriaudit.documents.application;
 
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
+import com.agriaudit.documents.DocumentLookup;
 import com.agriaudit.audit.AuditLookup;
 import com.agriaudit.audit.AuditRef;
-import com.agriaudit.domain.DocumentTemplate;
-import com.agriaudit.domain.GeneratedDocument;
-import com.agriaudit.domain.enums.DocumentFormat;
-import com.agriaudit.domain.enums.DocumentType;
-import com.agriaudit.repo.DocumentTemplateRepository;
-import com.agriaudit.repo.GeneratedDocumentRepository;
+import com.agriaudit.documents.domain.DocumentTemplate;
+import com.agriaudit.documents.domain.GeneratedDocument;
+import com.agriaudit.documents.domain.DocumentFormat;
+import com.agriaudit.documents.domain.DocumentType;
+import com.agriaudit.documents.infrastructure.persistence.DocumentTemplateRepository;
+import com.agriaudit.documents.infrastructure.persistence.GeneratedDocumentRepository;
 import com.agriaudit.identity.SecurityUtils;
-import com.agriaudit.web.dto.DocumentDtos.DocumentOptionDto;
-import com.agriaudit.web.dto.DocumentDtos.GeneratedDocumentDto;
+import com.agriaudit.documents.DocumentDtos.DocumentOptionDto;
+import com.agriaudit.documents.DocumentDtos.GeneratedDocumentDto;
 import com.agriaudit.storage.BlobStore;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class DocumentGenerationService {
+public class DocumentGenerationService implements DocumentLookup {
 
     private static final DateTimeFormatter FILE_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -107,6 +108,12 @@ public class DocumentGenerationService {
         AuditRef audit = auditService.requireAudit(auditId);
         return generatedDocuments.findByAuditIdOrderByGeneratedAtDesc(auditId).stream()
                 .map(d -> toDto(d, audit.reference())).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countGenerated(Long organizationId) {
+        return generatedDocuments.countByOrganizationId(organizationId);
     }
 
     @Transactional(readOnly = true)

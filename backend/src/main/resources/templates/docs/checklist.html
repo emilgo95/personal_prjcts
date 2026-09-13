@@ -13,7 +13,7 @@
     Resultado global:
     <span class="result"
           th:classappend="${m.score.overallResult == 'PASS'} ? 'r-pass' : (${m.score.overallResult == 'FAIL'} ? 'r-fail' : 'r-other')"
-          th:text="${T(com.agriaudit.service.document.DocLabels).overallResult(m.score.overallResult)}">Resultado</span>
+          th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).overallResult(m.score.overallResult)}">Resultado</span>
     &nbsp; Progreso: <b th:text="${m.score.progressPct} + '%'">0%</b>
     &nbsp; Evaluados: <b th:text="${m.score.assessedCount} + ' / ' + ${m.score.totalControlPoints}"></b>
 </p>
@@ -31,12 +31,12 @@
         <tr th:each="cp : ${ch.controlPoints}" th:with="r=${m.resultsByControlPoint.get(cp.id)}">
             <td th:text="${cp.ref}"></td>
             <td th:text="${cp.title}"></td>
-            <td th:text="${T(com.agriaudit.service.document.DocLabels).level(cp.level)}"></td>
+            <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).level(cp.level)}"></td>
             <td>
                 <span class="badge"
                       th:with="c=${r != null ? r.compliance : 'NOT_ASSESSED'}"
                       th:classappend="${c == 'COMPLIANT'} ? 'b-ok' : (${c == 'NON_COMPLIANT'} ? 'b-no' : (${c == 'NOT_APPLICABLE'} ? 'b-na' : 'b-pend'))"
-                      th:text="${T(com.agriaudit.service.document.DocLabels).compliance(c)}">-</span>
+                      th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).compliance(c)}">-</span>
             </td>
             <td>
                 <span th:if="${r != null and r.evidenceNotes != null}" th:text="${r.evidenceNotes}"></span>

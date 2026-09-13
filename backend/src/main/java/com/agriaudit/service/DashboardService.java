@@ -2,7 +2,7 @@ package com.agriaudit.service;
 
 import com.agriaudit.fieldbook.FarmDirectory;
 import com.agriaudit.findings.FindingLookup;
-import com.agriaudit.repo.GeneratedDocumentRepository;
+import com.agriaudit.documents.DocumentLookup;
 import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.audit.AuditDtos.AuditSummaryDto;
 import com.agriaudit.web.dto.DashboardDto;
@@ -22,14 +22,14 @@ public class DashboardService {
     private final AuditLookup auditService;
     private final FarmDirectory farms;
     private final FindingLookup findings;
-    private final GeneratedDocumentRepository generatedDocuments;
+    private final DocumentLookup documents;
 
     public DashboardService(AuditLookup auditService, FarmDirectory farms,
-                            FindingLookup findings, GeneratedDocumentRepository generatedDocuments) {
+                            FindingLookup findings, DocumentLookup documents) {
         this.auditService = auditService;
         this.farms = farms;
         this.findings = findings;
-        this.generatedDocuments = generatedDocuments;
+        this.documents = documents;
     }
 
     public DashboardDto load() {
@@ -52,7 +52,7 @@ public class DashboardService {
                 byStatus,
                 open,
                 overdue,
-                generatedDocuments.findByOrganizationIdOrderByGeneratedAtDesc(orgId).size(),
+                documents.countGenerated(orgId),
                 recent);
     }
 }

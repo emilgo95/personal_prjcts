@@ -1,4 +1,4 @@
-package com.agriaudit.service.document;
+package com.agriaudit.documents.application;
 
 import com.agriaudit.audit.AuditDtos.AuditDetailDto;
 import com.agriaudit.audit.AuditDtos.AuditItemResultDto;

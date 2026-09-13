@@ -1,4 +1,4 @@
-package com.agriaudit.service.document;
+package com.agriaudit.documents.application;
 
 import com.agriaudit.audit.AuditLookup;
 import com.agriaudit.audit.AuditRef;
@@ -8,7 +8,7 @@ import com.agriaudit.identity.OrganizationDirectory;
 import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.catalog.CatalogService;
 import com.agriaudit.findings.FindingLookup;
-import com.agriaudit.service.document.DocumentModel.EvidenceRef;
+import com.agriaudit.documents.application.DocumentModel.EvidenceRef;
 import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import com.agriaudit.audit.AuditDtos.AuditDetailDto;
 import com.agriaudit.audit.AuditDtos.AuditItemResultDto;

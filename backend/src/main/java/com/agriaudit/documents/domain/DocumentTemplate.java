@@ -1,7 +1,5 @@
-package com.agriaudit.domain;
+package com.agriaudit.documents.domain;
 
-import com.agriaudit.domain.enums.DocumentFormat;
-import com.agriaudit.domain.enums.DocumentType;
 import jakarta.persistence.*;
 
 @Entity

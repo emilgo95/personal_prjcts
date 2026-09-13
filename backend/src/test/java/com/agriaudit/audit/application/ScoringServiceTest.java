@@ -1,6 +1,5 @@
 package com.agriaudit.audit.application;
 
-import com.agriaudit.domain.*;
 import com.agriaudit.audit.domain.ComplianceResult;
 import com.agriaudit.catalog.domain.ControlLevel;
 import com.agriaudit.catalog.domain.StandardCategory;
