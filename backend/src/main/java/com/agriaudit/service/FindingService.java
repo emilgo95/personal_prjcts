@@ -13,6 +13,7 @@ import com.agriaudit.domain.enums.FindingStatus;
 import com.agriaudit.repo.ControlPointRepository;
 import com.agriaudit.repo.CorrectiveActionRepository;
 import com.agriaudit.repo.FindingRepository;
+import com.agriaudit.repo.ReferenceSequenceRepository;
 import com.agriaudit.web.dto.FindingDtos.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,15 +29,17 @@ public class FindingService {
     private final ControlPointRepository controlPoints;
     private final AuditService auditService;
     private final AttachmentLookup attachmentLookup;
+    private final ReferenceSequenceRepository referenceSequences;
 
     public FindingService(FindingRepository findings, CorrectiveActionRepository correctiveActions,
                           ControlPointRepository controlPoints, AuditService auditService,
-                          AttachmentLookup attachmentLookup) {
+                          AttachmentLookup attachmentLookup, ReferenceSequenceRepository referenceSequences) {
         this.findings = findings;
         this.correctiveActions = correctiveActions;
         this.controlPoints = controlPoints;
         this.auditService = auditService;
         this.attachmentLookup = attachmentLookup;
+        this.referenceSequences = referenceSequences;
     }
 
     @Transactional(readOnly = true)
@@ -177,8 +180,7 @@ public class FindingService {
     }
 
     private String nextReference(Long auditId) {
-        long count = findings.countByAuditId(auditId);
-        return String.format("NC-%03d", count + 1);
+        return String.format("NC-%03d", referenceSequences.nextFindingNumber(auditId));
     }
 
     private FindingDto toDto(Finding f) {

@@ -34,11 +34,12 @@ public class AuditService {
     private final FindingRepository findings;
     private final ScoringService scoringService;
     private final AttachmentLookup attachmentLookup;
+    private final ReferenceSequenceRepository referenceSequences;
 
     public AuditService(AuditRepository audits, FarmRepository farms, AuditStandardRepository standards,
                         ControlPointRepository controlPoints, AuditItemResultRepository results,
                         FindingRepository findings, ScoringService scoringService,
-                        AttachmentLookup attachmentLookup) {
+                        AttachmentLookup attachmentLookup, ReferenceSequenceRepository referenceSequences) {
         this.audits = audits;
         this.farms = farms;
         this.standards = standards;
@@ -47,6 +48,7 @@ public class AuditService {
         this.findings = findings;
         this.scoringService = scoringService;
         this.attachmentLookup = attachmentLookup;
+        this.referenceSequences = referenceSequences;
     }
 
     @Transactional(readOnly = true)
@@ -208,15 +210,7 @@ public class AuditService {
     }
 
     private String nextReference(Long orgId) {
-        int year = LocalDate.now().getYear();
-        long base = audits.countByOrganizationId(orgId);
-        for (int i = 1; i <= 10_000; i++) {
-            String ref = String.format("AUD-%d-%04d", year, base + i);
-            if (!audits.existsByOrganizationIdAndReference(orgId, ref)) {
-                return ref;
-            }
-        }
-        return "AUD-" + year + "-" + Instant.now().toEpochMilli();
+        return String.format("AUD-%d-%04d", LocalDate.now().getYear(), referenceSequences.nextAuditNumber(orgId));
     }
 
     private AuditSummaryDto toSummary(Audit a) {

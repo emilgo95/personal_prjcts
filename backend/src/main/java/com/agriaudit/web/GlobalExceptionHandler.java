@@ -2,6 +2,7 @@ package com.agriaudit.web;
 
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -55,6 +56,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(body(HttpStatus.FORBIDDEN, "No tiene permisos para esta operación"));
+    }
+
+    /** Violación de una restricción de la BD (p. ej. UNIQUE): conflicto, sin exponer el detalle SQL. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(body(HttpStatus.CONFLICT, "La operación entra en conflicto con datos existentes; vuelva a intentarlo"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

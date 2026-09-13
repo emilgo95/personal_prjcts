@@ -10,5 +10,4 @@ public interface AuditRepository extends JpaRepository<Audit, Long> {
     List<Audit> findByOrganizationIdOrderByCreatedAtDesc(Long organizationId);
     Optional<Audit> findByIdAndOrganizationId(Long id, Long organizationId);
     long countByOrganizationId(Long organizationId);
-    boolean existsByOrganizationIdAndReference(Long organizationId, String reference);
 }
