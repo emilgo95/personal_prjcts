@@ -1,11 +1,10 @@
-package com.agriaudit.service;
+package com.agriaudit.dashboard.application;
 
 import com.agriaudit.fieldbook.FarmDirectory;
 import com.agriaudit.findings.FindingLookup;
 import com.agriaudit.documents.DocumentLookup;
 import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.audit.AuditDtos.AuditSummaryDto;
-import com.agriaudit.web.dto.DashboardDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

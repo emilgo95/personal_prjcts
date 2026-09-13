@@ -1,7 +1,7 @@
-package com.agriaudit.web;
+package com.agriaudit.ai.infrastructure.web;
 
-import com.agriaudit.service.ocr.EvidenceAnalysisService;
-import com.agriaudit.web.dto.EvidenceAnalysisDtos.EvidenceAnalysis;
+import com.agriaudit.ai.application.EvidenceAnalysisService;
+import com.agriaudit.ai.application.EvidenceAnalysisDtos.EvidenceAnalysis;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 

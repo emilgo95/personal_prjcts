@@ -1,4 +1,4 @@
-package com.agriaudit.web;
+package com.agriaudit.platform.web;
 
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;

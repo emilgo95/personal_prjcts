@@ -22,20 +22,15 @@ class ArchitectureTests {
     static final String[] HEXAGONAL_DOMAINS = {
             "com.agriaudit.fieldbook.domain..",
             "com.agriaudit.fieldbook.port..",
+            "com.agriaudit.ai.port..",
             "com.agriaudit.evidence.domain..",
             "com.agriaudit.ai.domain..",
     };
 
-    /** Módulos ya extraídos de los paquetes por capas (crece con WS-1). */
-    static final String[] EXTRACTED_MODULES = {
-            "com.agriaudit.common..", "com.agriaudit.catalog..", "com.agriaudit.identity..", "com.agriaudit.fieldbook..",
-            "com.agriaudit.storage..", "com.agriaudit.audit..", "com.agriaudit.findings..",
-            "com.agriaudit.documents..",
-    };
-
-    /** Paquetes por capas heredados, que desaparecen al terminar WS-1. */
+    /** Paquetes por capas previos al monolito modular: no deben volver a aparecer. */
     static final String[] LEGACY_LAYERS = {
             "com.agriaudit.service..", "com.agriaudit.web..", "com.agriaudit.repo..", "com.agriaudit.domain..",
+            "com.agriaudit.config..", "com.agriaudit.security..",
     };
 
     static final JavaClasses classes = new ClassFileImporter()
@@ -60,9 +55,9 @@ class ArchitectureTests {
     }
 
     @Test
-    void extractedModulesDoNotDependOnLegacyLayers() {
-        noClasses().that().resideInAnyPackage(EXTRACTED_MODULES)
-                .should().dependOnClassesThat().resideInAnyPackage(LEGACY_LAYERS)
+    void noCodeLivesInLegacyLayerPackages() {
+        noClasses().should().resideInAnyPackage(LEGACY_LAYERS)
+                .because("todo el código vive en un módulo (monolito modular, RT-00)")
                 .check(classes);
     }
 

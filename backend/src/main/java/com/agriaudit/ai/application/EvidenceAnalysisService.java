@@ -1,4 +1,4 @@
-package com.agriaudit.service.ocr;
+package com.agriaudit.ai.application;
 
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
@@ -9,9 +9,10 @@ import com.agriaudit.catalog.domain.ControlLevel;
 import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.audit.AuditLookup;
-import com.agriaudit.service.ocr.OcrClient.OcrResult;
-import com.agriaudit.web.dto.EvidenceAnalysisDtos.EvidenceAnalysis;
-import com.agriaudit.web.dto.EvidenceAnalysisDtos.SuggestedFinding;
+import com.agriaudit.ai.domain.ExtractedText;
+import com.agriaudit.ai.port.DocExtractionPort;
+import com.agriaudit.ai.application.EvidenceAnalysisDtos.EvidenceAnalysis;
+import com.agriaudit.ai.application.EvidenceAnalysisDtos.SuggestedFinding;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,22 +58,22 @@ public class EvidenceAnalysisService {
     private final AuditLookup auditService;
     private final AttachmentStore attachments;
     private final CatalogLookup catalog;
-    private final OcrClient ocrClient;
+    private final DocExtractionPort extraction;
     private final double minConfidenceWarn;
 
     public EvidenceAnalysisService(AuditLookup auditService, AttachmentStore attachments,
                                    CatalogLookup catalog,
-                                   OcrClient ocrClient,
+                                   DocExtractionPort extraction,
                                    @Value("${agriaudit.ocr.min-confidence-warn:0.55}") double minConfidenceWarn) {
         this.auditService = auditService;
         this.attachments = attachments;
         this.catalog = catalog;
-        this.ocrClient = ocrClient;
+        this.extraction = extraction;
         this.minConfidenceWarn = minConfidenceWarn;
     }
 
     public boolean isEnabled() {
-        return ocrClient.isEnabled();
+        return extraction.isAvailable();
     }
 
     @Transactional(readOnly = true)
@@ -88,7 +89,7 @@ public class EvidenceAnalysisService {
         }
 
         byte[] data = attachments.content(orgId, attachmentId);
-        OcrResult ocr = ocrClient.recognize(data, att.fileName(), att.contentType());
+        ExtractedText ocr = extraction.extract(data, att.fileName(), att.contentType());
 
         String text = ocr.text().trim();
         List<String> warnings = new ArrayList<>();

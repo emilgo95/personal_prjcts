@@ -1,4 +1,4 @@
-package com.agriaudit.web.dto;
+package com.agriaudit.ai.application;
 
 import java.util.List;
 

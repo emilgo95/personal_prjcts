@@ -1,6 +1,6 @@
-package com.agriaudit.web;
+package com.agriaudit.ai.infrastructure.web;
 
-import com.agriaudit.service.ocr.EvidenceAnalysisService;
+import com.agriaudit.ai.application.EvidenceAnalysisService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

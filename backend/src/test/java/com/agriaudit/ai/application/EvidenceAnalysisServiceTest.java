@@ -1,4 +1,4 @@
-package com.agriaudit.service.ocr;
+package com.agriaudit.ai.application;
 
 import com.agriaudit.catalog.domain.ControlPoint;
 import com.agriaudit.catalog.domain.ControlLevel;
@@ -7,8 +7,9 @@ import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.identity.AppUserPrincipal;
 import com.agriaudit.audit.AuditLookup;
-import com.agriaudit.service.ocr.OcrClient.OcrResult;
-import com.agriaudit.web.dto.EvidenceAnalysisDtos.EvidenceAnalysis;
+import com.agriaudit.ai.domain.ExtractedText;
+import com.agriaudit.ai.port.DocExtractionPort;
+import com.agriaudit.ai.application.EvidenceAnalysisDtos.EvidenceAnalysis;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,7 @@ class EvidenceAnalysisServiceTest {
     private AuditLookup auditService;
     private AttachmentStore attachments;
     private CatalogLookup catalog;
-    private OcrClient ocrClient;
+    private DocExtractionPort ocrClient;
     private EvidenceAnalysisService service;
 
     @BeforeEach
@@ -35,7 +36,7 @@ class EvidenceAnalysisServiceTest {
         auditService = mock(AuditLookup.class);
         attachments = mock(AttachmentStore.class);
         catalog = mock(CatalogLookup.class);
-        ocrClient = mock(OcrClient.class);
+        ocrClient = mock(DocExtractionPort.class);
         service = new EvidenceAnalysisService(auditService, attachments, catalog, ocrClient, 0.55);
 
         AppUserPrincipal principal = mock(AppUserPrincipal.class);
@@ -57,8 +58,8 @@ class EvidenceAnalysisServiceTest {
     }
 
     private void ocrReturns(String text, double confidence) {
-        when(ocrClient.recognize(any(), any(), any())).thenReturn(new OcrResult(
-                "rapidocr-onnxruntime", "nota.jpg", 1, false, 3, confidence, 120, text, List.of()));
+        when(ocrClient.extract(any(), any(), any())).thenReturn(
+                new ExtractedText("rapidocr-onnxruntime", text, 1, false, confidence));
     }
 
     @Test

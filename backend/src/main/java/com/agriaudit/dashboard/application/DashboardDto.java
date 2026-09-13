@@ -1,4 +1,4 @@
-package com.agriaudit.web.dto;
+package com.agriaudit.dashboard.application;
 
 import com.agriaudit.audit.AuditDtos.AuditSummaryDto;
 

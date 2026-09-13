@@ -1,5 +1,7 @@
-package com.agriaudit.service.ocr;
+package com.agriaudit.ai.infrastructure.ocr;
 
+import com.agriaudit.ai.domain.ExtractedText;
+import com.agriaudit.ai.port.DocExtractionPort;
 import com.agriaudit.common.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,18 +18,18 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * Cliente del servicio de OCR autoalojado (contenedor "ocr", RapidOCR / PP-OCR).
- * Gratuito, sin clave de API y sin envío de datos a terceros.
+ * Adaptador de {@link DocExtractionPort} sobre el servicio de OCR autoalojado (contenedor "ocr",
+ * RapidOCR / PP-OCR). Gratuito, sin clave de API y sin envío de datos a terceros.
  */
 @Component
-public class OcrClient {
+class RapidOcrClient implements DocExtractionPort {
 
-    private static final Logger log = LoggerFactory.getLogger(OcrClient.class);
+    private static final Logger log = LoggerFactory.getLogger(RapidOcrClient.class);
 
     private final String baseUrl;
     private final RestClient restClient;
 
-    public OcrClient(@Value("${agriaudit.ocr.url:}") String baseUrl,
+    RapidOcrClient(@Value("${agriaudit.ocr.url:}") String baseUrl,
                      @Value("${agriaudit.ocr.timeout-seconds:120}") long timeoutSeconds) {
         this.baseUrl = baseUrl == null ? "" : baseUrl.trim();
         SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
@@ -36,12 +38,19 @@ public class OcrClient {
         this.restClient = RestClient.builder().requestFactory(rf).build();
     }
 
-    public boolean isEnabled() {
+    @Override
+    public boolean isAvailable() {
         return !baseUrl.isBlank();
     }
 
-    public OcrResult recognize(byte[] data, String fileName, String contentType) {
-        if (!isEnabled()) {
+    @Override
+    public ExtractedText extract(byte[] data, String fileName, String contentType) {
+        OcrResult r = recognize(data, fileName, contentType);
+        return new ExtractedText(r.engine(), r.text(), r.pages(), r.truncated(), r.meanConfidence());
+    }
+
+    OcrResult recognize(byte[] data, String fileName, String contentType) {
+        if (!isAvailable()) {
             throw new BadRequestException("El reconocimiento de texto (OCR) no está configurado en este entorno");
         }
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -82,7 +91,7 @@ public class OcrClient {
     }
 
     /** Respuesta del servicio de OCR. */
-    public record OcrResult(
+    record OcrResult(
             String engine,
             String fileName,
             int pages,
@@ -102,6 +111,6 @@ public class OcrClient {
         }
     }
 
-    public record OcrLine(int page, String text, double confidence, List<Double> box) {
+    record OcrLine(int page, String text, double confidence, List<Double> box) {
     }
 }

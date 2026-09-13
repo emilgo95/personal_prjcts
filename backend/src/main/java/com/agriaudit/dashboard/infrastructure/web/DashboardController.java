@@ -1,7 +1,7 @@
-package com.agriaudit.web;
+package com.agriaudit.dashboard.infrastructure.web;
 
-import com.agriaudit.service.DashboardService;
-import com.agriaudit.web.dto.DashboardDto;
+import com.agriaudit.dashboard.application.DashboardService;
+import com.agriaudit.dashboard.application.DashboardDto;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

@@ -71,9 +71,17 @@ jobs:
         working-directory: backend
         run: mvn -B -ntp clean verify
 
-      # La verificación de límites de módulo (Spring Modulith / ArchUnit) forma
-      # parte de `mvn verify`: el test ModularityTests#verifiesModularStructure
-      # y las reglas de hexagonal (dominio sin imports de jakarta.persistence).
+      # La verificación de límites de módulo forma parte de `mvn verify` y es
+      # bloqueante: ModularityTests (Spring Modulith `verify()`: sin ciclos ni
+      # acceso a internals) y ArchitectureTests (hexagonal, sin capas heredadas).
+
+      - name: Diagramas de módulos (Spring Modulith)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: modulith-docs
+          path: backend/target/spring-modulith-docs/
+          if-no-files-found: ignore
 
       - name: Informe de cobertura
         uses: actions/upload-artifact@v4
