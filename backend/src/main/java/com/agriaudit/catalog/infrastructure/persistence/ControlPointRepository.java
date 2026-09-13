@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface ControlPointRepository extends JpaRepository<ControlPoint, Long> {
 
@@ -18,6 +17,4 @@ public interface ControlPointRepository extends JpaRepository<ControlPoint, Long
             order by ch.sortOrder asc, cp.sortOrder asc
             """)
     List<ControlPoint> findByStandardCode(@Param("standardCode") String standardCode);
-
-    Optional<ControlPoint> findByChapterStandardCodeAndRef(String standardCode, String ref);
 }

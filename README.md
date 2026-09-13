@@ -142,8 +142,8 @@ Configuración: `AGRIAUDIT_OCR_URL` (por defecto `http://ocr:8000`). Si lo dejas
 queda desactivada y el botón *Analizar* no aparece.
 
 > La heurística de cumplimiento/no conformidad es de palabras clave (gratuita y determinista).
-> El interfaz `OcrClient` está aislado para poder sustituir el motor o añadir un LLM para una
-> interpretación más fina en el futuro.
+> El OCR está detrás del puerto `DocExtractionPort` del módulo `ai`, de modo que el motor se puede
+> sustituir (p. ej. por la visión de un LLM) sin tocar el resto.
 
 ---
 
@@ -188,7 +188,9 @@ Roles: **ADMIN** (todo + usuarios), **AUDITOR** (explotaciones, auditorías, doc
 
 ### Backend
 
-Requisitos: JDK 21, Maven 3.9, PostgreSQL 16 en `localhost:5432` con base `agriaudit`.
+Requisitos: JDK 21, Maven 3.9 y PostgreSQL 16 **con la extensión pgvector** en `localhost:5432` con base
+`agriaudit` (la migración `V10` ejecuta `CREATE EXTENSION vector`). Lo más sencillo es levantar solo la
+base de datos del Compose: `docker compose up -d db` (imagen `pgvector/pgvector:pg16`).
 
 ```bash
 cd backend
@@ -269,7 +271,9 @@ agriaudit-docs/
 ├── docs/                        # documentación interna — SOLO LOCAL (en .gitignore)
 ├── backend/
 │   └── src/main/
-│       ├── java/com/agriaudit/   # domain · repo · security · service · web
+│       ├── java/com/agriaudit/   # monolito modular (Spring Modulith, verificado en CI):
+│       │                         #   identity · catalog · fieldbook · storage · audit · findings
+│       │                         #   documents · dashboard · ai · platform · common
 │       └── resources/
 │           ├── db/migration/     # Flyway: esquema + datos semilla
 │           └── templates/docs/   # plantillas Thymeleaf de los PDF

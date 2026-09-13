@@ -83,13 +83,6 @@ jobs:
           path: backend/target/spring-modulith-docs/
           if-no-files-found: ignore
 
-      - name: Informe de cobertura
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-backend
-          path: backend/target/site/jacoco/
-          if-no-files-found: warn
-
   # ---------------------------------------------------------------------------
   # 2b. CodeQL (SAST) — job propio, análisis de fuente (build-mode: none).
   #     Informativo: sube hallazgos a la pestaña Security; NO forma parte de
@@ -227,10 +220,9 @@ jobs:
         run: docker compose down -v
 
   # NOTA: la construcción y publicación de imágenes a un registro (GHCR) se
-  # añadirá cuando exista un destino de despliegue real (ver docs/FASE-0.md,
-  # local-only). Hoy `compose-smoke` ya construye las imágenes para probarlas.
-  # Cuando vuelva, fijar las acciones por SHA (RS-SUPPLY-06) y usar una versión
-  # válida de aquasecurity/trivy-action.
+  # añadirá cuando exista un destino de despliegue real. Hoy el job `e2e` ya
+  # construye las imágenes para probarlas. Cuando vuelva, fijar las acciones por
+  # SHA (RS-SUPPLY-06) y escanear las imágenes (Trivy, RS-SUPPLY-05).
 
   # ---------------------------------------------------------------------------
   # 4. Escaneo de secretos (gitleaks) — sustituto del secret scanning nativo de

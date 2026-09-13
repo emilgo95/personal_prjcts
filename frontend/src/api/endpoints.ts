@@ -79,10 +79,6 @@ export const FindingApi = {
 };
 
 export const AttachmentApi = {
-  listForControlPoint: (auditId: number, controlPointId: number) =>
-    api
-      .get<Attachment[]>(`/audits/${auditId}/results/${controlPointId}/attachments`)
-      .then((r) => r.data),
   uploadForControlPoint: (auditId: number, controlPointId: number, file: File) => {
     const form = new FormData();
     form.append('file', file);
@@ -92,8 +88,6 @@ export const AttachmentApi = {
       })
       .then((r) => r.data);
   },
-  listForFinding: (auditId: number, findingId: number) =>
-    api.get<Attachment[]>(`/audits/${auditId}/findings/${findingId}/attachments`).then((r) => r.data),
   uploadForFinding: (auditId: number, findingId: number, file: File) => {
     const form = new FormData();
     form.append('file', file);

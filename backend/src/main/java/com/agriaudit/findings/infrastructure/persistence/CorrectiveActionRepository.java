@@ -7,5 +7,4 @@ import java.util.List;
 
 public interface CorrectiveActionRepository extends JpaRepository<CorrectiveAction, Long> {
     List<CorrectiveAction> findByFindingIdOrderByIdAsc(Long findingId);
-    List<CorrectiveAction> findByFindingIdInOrderByIdAsc(List<Long> findingIds);
 }
