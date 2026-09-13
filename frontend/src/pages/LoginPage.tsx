@@ -1,22 +1,8 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { keyframes } from '@emotion/react';
-import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Alert, Avatar, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
 import SpaIcon from '@mui/icons-material/Spa';
-import EnergySavingsLeafIcon from '@mui/icons-material/EnergySavingsLeaf';
-import VerifiedIcon from '@mui/icons-material/Verified';
-import FactCheckIcon from '@mui/icons-material/FactCheck';
 import LoginIcon from '@mui/icons-material/Login';
 import { useAuth } from '../auth/AuthContext';
 import { extractErrorMessage } from '../api/client';
@@ -26,15 +12,6 @@ const kenBurns = keyframes`
   from { transform: scale(1.02) translate3d(0, 0, 0); }
   to { transform: scale(1.1) translate3d(-1.5%, -1%, 0); }
 `;
-
-const glassChip = {
-  color: 'common.white',
-  bgcolor: 'rgba(15, 46, 43, 0.62)',
-  border: '1px solid rgba(255, 255, 255, 0.28)',
-  backdropFilter: 'blur(6px)',
-  fontWeight: 600,
-  '& .MuiChip-icon': { color: '#b9e28c' },
-} as const;
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -106,31 +83,27 @@ export default function LoginPage() {
           alignItems: 'center',
           gap: { xs: 3, md: 6 },
           px: { xs: 2, sm: 4, md: 8 },
-          py: 4,
+          pt: 4,
+          pb: { xs: 12, md: 4 },
         }}
       >
-        <Box
+        {/* Propuesta de valor: una sola frase, centrada en el beneficio para el cliente */}
+        <Typography
+          component="p"
           sx={{
             display: { xs: 'none', md: 'block' },
             color: 'common.white',
-            maxWidth: 580,
-            textShadow: '0 2px 14px rgba(0,0,0,0.45)',
+            maxWidth: 620,
+            fontSize: { md: '3.4rem', lg: '4.2rem' },
+            fontWeight: 700,
+            lineHeight: 1.05,
+            letterSpacing: '-0.025em',
+            textShadow: '0 2px 24px rgba(0,0,0,0.35)',
+            textWrap: 'balance',
           }}
         >
-          <Chip icon={<SpaIcon />} label={`${scene.dayLabel} · ${scene.title} · ${scene.place}`} sx={glassChip} />
-          <Typography component="p" variant="h3" fontWeight={800} mt={3} lineHeight={1.1}>
-            Del campo al expediente de auditoría
-          </Typography>
-          <Typography component="p" variant="h6" fontWeight={400} mt={2} sx={{ opacity: 0.95 }}>
-            Checklist, evidencias, no conformidades y documentos de cada auditoría GLOBALG.A.P., GRASP y SMETA,
-            en un único lugar.
-          </Typography>
-          <Stack direction="row" spacing={1} mt={3} flexWrap="wrap" useFlexGap>
-            <Chip icon={<EnergySavingsLeafIcon />} label="Agricultura sostenible" sx={glassChip} />
-            <Chip icon={<VerifiedIcon />} label="Trazabilidad completa" sx={glassChip} />
-            <Chip icon={<FactCheckIcon />} label="Listo para auditar" sx={glassChip} />
-          </Stack>
-        </Box>
+          Tus auditorías, listas sin papeleo.
+        </Typography>
 
         <Card
           elevation={0}
@@ -201,20 +174,41 @@ export default function LoginPage() {
                 </Button>
               </Stack>
             </form>
-
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              display={{ xs: 'flex', md: 'none' }}
-              alignItems="center"
-              gap={0.5}
-              mt={3}
-            >
-              <SpaIcon sx={{ fontSize: 14, color: 'primary.main' }} />
-              {scene.dayLabel} · {scene.title} · {scene.place}
-            </Typography>
           </CardContent>
         </Card>
+      </Box>
+
+      {/* Pie de la ilustración del día, como en una fotografía editorial */}
+      <Box
+        data-testid="login-scene-caption"
+        sx={{
+          position: 'absolute',
+          zIndex: 1,
+          left: { xs: 20, md: 64 },
+          bottom: { xs: 24, md: 40 },
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          color: 'common.white',
+          textShadow: '0 1px 10px rgba(0,0,0,0.55)',
+        }}
+      >
+        <Box aria-hidden sx={{ width: 36, height: '1px', bgcolor: 'rgba(255,255,255,0.75)' }} />
+        <Box>
+          <Typography
+            component="p"
+            sx={{ fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.24em', textTransform: 'uppercase', opacity: 0.85 }}
+          >
+            {scene.dayLabel}
+          </Typography>
+          <Typography component="p" sx={{ fontSize: '0.9rem', fontWeight: 500, letterSpacing: '0.01em' }}>
+            {scene.title}
+            <Box component="span" sx={{ opacity: 0.75, fontWeight: 400 }}>
+              {' — '}
+              {scene.place}
+            </Box>
+          </Typography>
+        </Box>
       </Box>
     </Box>
   );
