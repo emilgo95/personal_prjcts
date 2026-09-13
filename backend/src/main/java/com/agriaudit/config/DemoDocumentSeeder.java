@@ -1,8 +1,8 @@
 package com.agriaudit.config;
 
-import com.agriaudit.domain.Audit;
-import com.agriaudit.domain.enums.AuditStatus;
-import com.agriaudit.repo.AuditRepository;
+import com.agriaudit.audit.AuditLookup;
+import com.agriaudit.audit.AuditRef;
+import com.agriaudit.audit.AuditStatus;
 import com.agriaudit.repo.GeneratedDocumentRepository;
 import com.agriaudit.identity.AppUserPrincipal;
 import com.agriaudit.service.document.DocumentGenerationService;
@@ -33,14 +33,14 @@ public class DemoDocumentSeeder implements CommandLineRunner {
 
     private final boolean enabled;
     private final String adminEmail;
-    private final AuditRepository audits;
+    private final AuditLookup audits;
     private final UserDetailsService userDetailsService;
     private final GeneratedDocumentRepository generatedDocuments;
     private final DocumentGenerationService documentGenerationService;
 
     public DemoDocumentSeeder(@Value("${agriaudit.demo.seed:true}") boolean enabled,
                               @Value("${agriaudit.admin.email}") String adminEmail,
-                              AuditRepository audits, UserDetailsService userDetailsService,
+                              AuditLookup audits, UserDetailsService userDetailsService,
                               GeneratedDocumentRepository generatedDocuments,
                               DocumentGenerationService documentGenerationService) {
         this.enabled = enabled;
@@ -67,11 +67,11 @@ public class DemoDocumentSeeder implements CommandLineRunner {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         try {
             int total = 0;
-            for (Audit audit : audits.findByOrganizationIdOrderByCreatedAtDesc(principal.getOrganizationId())) {
-                if (!isFinished(audit.getStatus())) {
+            for (AuditRef audit : audits.findByOrganization(principal.getOrganizationId())) {
+                if (!isFinished(audit.status())) {
                     continue;
                 }
-                if (!generatedDocuments.findByAuditIdOrderByGeneratedAtDesc(audit.getId()).isEmpty()) {
+                if (!generatedDocuments.findByAuditIdOrderByGeneratedAtDesc(audit.id()).isEmpty()) {
                     continue;
                 }
                 total += generateFor(audit);
@@ -88,8 +88,8 @@ public class DemoDocumentSeeder implements CommandLineRunner {
         return status == AuditStatus.CLOSED || status == AuditStatus.SUBMITTED || status == AuditStatus.CLOSING;
     }
 
-    private int generateFor(Audit audit) {
-        List<String[]> docs = switch (audit.getStandard().getCode()) {
+    private int generateFor(AuditRef audit) {
+        List<String[]> docs = switch (audit.standardCode()) {
             case "GRASP_V2" -> List.of(
                     new String[]{"GRASP_ASSESSMENT", "PDF"},
                     new String[]{"GRASP_ASSESSMENT", "XLSX"},
@@ -108,11 +108,11 @@ public class DemoDocumentSeeder implements CommandLineRunner {
         int count = 0;
         for (String[] d : docs) {
             try {
-                documentGenerationService.generate(audit.getId(), d[0], d[1]);
+                documentGenerationService.generate(audit.id(), d[0], d[1]);
                 count++;
             } catch (Exception e) {
                 log.warn("No se pudo generar el documento de demo {}/{} para {}: {}",
-                        d[0], d[1], audit.getReference(), e.getMessage());
+                        d[0], d[1], audit.reference(), e.getMessage());
             }
         }
         return count;

@@ -2,7 +2,8 @@ package com.agriaudit.service.document;
 
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
-import com.agriaudit.domain.Audit;
+import com.agriaudit.audit.AuditLookup;
+import com.agriaudit.audit.AuditRef;
 import com.agriaudit.domain.DocumentTemplate;
 import com.agriaudit.domain.GeneratedDocument;
 import com.agriaudit.domain.enums.DocumentFormat;
@@ -10,7 +11,6 @@ import com.agriaudit.domain.enums.DocumentType;
 import com.agriaudit.repo.DocumentTemplateRepository;
 import com.agriaudit.repo.GeneratedDocumentRepository;
 import com.agriaudit.identity.SecurityUtils;
-import com.agriaudit.service.AuditService;
 import com.agriaudit.web.dto.DocumentDtos.DocumentOptionDto;
 import com.agriaudit.web.dto.DocumentDtos.GeneratedDocumentDto;
 import com.agriaudit.storage.BlobStore;
@@ -45,14 +45,14 @@ public class DocumentGenerationService {
     private final GeneratedDocumentRepository generatedDocuments;
     private final BlobStore storage;
     private final DocumentModelAssembler assembler;
-    private final AuditService auditService;
+    private final AuditLookup auditService;
     private final List<DocumentRenderer> renderers;
 
     public DocumentGenerationService(DocumentTemplateRepository templates,
                                      GeneratedDocumentRepository generatedDocuments,
                                      BlobStore storage,
                                      DocumentModelAssembler assembler,
-                                     AuditService auditService,
+                                     AuditLookup auditService,
                                      List<DocumentRenderer> renderers) {
         this.templates = templates;
         this.generatedDocuments = generatedDocuments;
@@ -64,12 +64,12 @@ public class DocumentGenerationService {
 
     @Transactional
     public GeneratedDocumentDto generate(Long auditId, String documentTypeRaw, String formatRaw) {
-        Audit audit = auditService.requireAudit(auditId);
+        AuditRef audit = auditService.requireAudit(auditId);
         DocumentType type = parseType(documentTypeRaw);
         DocumentFormat format = parseFormat(formatRaw);
 
         DocumentTemplate template = templates
-                .findByStandardCodeAndDocumentTypeAndFormat(audit.getStandard().getCode(), type, format)
+                .findByStandardCodeAndDocumentTypeAndFormat(audit.standardCode(), type, format)
                 .or(() -> templates.findByStandardCodeIsNullAndDocumentTypeAndFormat(type, format))
                 .orElseThrow(() -> new BadRequestException("No hay plantilla para " + type + " en formato " + format));
 
@@ -84,14 +84,14 @@ public class DocumentGenerationService {
             throw new IllegalStateException("El documento generado está vacío");
         }
 
-        String fileName = buildFileName(type, format, audit.getReference());
+        String fileName = buildFileName(type, format, audit.reference());
         String storageKey = storage.store(bytes, fileName, "documents");
 
         GeneratedDocument doc = new GeneratedDocument();
         doc.setAuditId(auditId);
         doc.setOrganizationId(SecurityUtils.currentOrganizationId());
         doc.setDocumentType(type);
-        doc.setStandardCode(audit.getStandard().getCode());
+        doc.setStandardCode(audit.standardCode());
         doc.setFormat(format);
         doc.setFileName(fileName);
         doc.setStorageKey(storageKey);
@@ -99,14 +99,14 @@ public class DocumentGenerationService {
         doc.setSha256(sha256(bytes));
         doc.setGeneratedBy(SecurityUtils.currentUsername());
         doc.setParams("{\"documentType\":\"" + type + "\",\"format\":\"" + format + "\"}");
-        return toDto(generatedDocuments.save(doc), audit.getReference());
+        return toDto(generatedDocuments.save(doc), audit.reference());
     }
 
     @Transactional(readOnly = true)
     public List<GeneratedDocumentDto> listForAudit(Long auditId) {
-        Audit audit = auditService.requireAudit(auditId);
+        AuditRef audit = auditService.requireAudit(auditId);
         return generatedDocuments.findByAuditIdOrderByGeneratedAtDesc(auditId).stream()
-                .map(d -> toDto(d, audit.getReference())).toList();
+                .map(d -> toDto(d, audit.reference())).toList();
     }
 
     @Transactional(readOnly = true)
@@ -126,8 +126,8 @@ public class DocumentGenerationService {
 
     @Transactional(readOnly = true)
     public List<DocumentOptionDto> optionsForAudit(Long auditId) {
-        Audit audit = auditService.requireAudit(auditId);
-        String standardCode = audit.getStandard().getCode();
+        AuditRef audit = auditService.requireAudit(auditId);
+        String standardCode = audit.standardCode();
         Map<DocumentType, Set<String>> byType = new LinkedHashMap<>();
         for (DocumentTemplate t : templates.findByActiveTrue()) {
             if (t.getStandardCode() == null || t.getStandardCode().equals(standardCode)) {

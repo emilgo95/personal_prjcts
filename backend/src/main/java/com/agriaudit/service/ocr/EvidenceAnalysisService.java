@@ -8,7 +8,7 @@ import com.agriaudit.catalog.domain.ControlPoint;
 import com.agriaudit.catalog.domain.ControlLevel;
 import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.identity.SecurityUtils;
-import com.agriaudit.service.AuditService;
+import com.agriaudit.audit.AuditLookup;
 import com.agriaudit.service.ocr.OcrClient.OcrResult;
 import com.agriaudit.web.dto.EvidenceAnalysisDtos.EvidenceAnalysis;
 import com.agriaudit.web.dto.EvidenceAnalysisDtos.SuggestedFinding;
@@ -54,13 +54,13 @@ public class EvidenceAnalysisService {
             "no aplica", "no aplicable", "no procede en esta explotacion"
     };
 
-    private final AuditService auditService;
+    private final AuditLookup auditService;
     private final AttachmentStore attachments;
     private final CatalogLookup catalog;
     private final OcrClient ocrClient;
     private final double minConfidenceWarn;
 
-    public EvidenceAnalysisService(AuditService auditService, AttachmentStore attachments,
+    public EvidenceAnalysisService(AuditLookup auditService, AttachmentStore attachments,
                                    CatalogLookup catalog,
                                    OcrClient ocrClient,
                                    @Value("${agriaudit.ocr.min-confidence-warn:0.55}") double minConfidenceWarn) {

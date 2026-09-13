@@ -2,13 +2,13 @@ package com.agriaudit.service.document;
 
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.domain.DocumentTemplate;
-import com.agriaudit.web.dto.AuditDtos.AuditDetailDto;
-import com.agriaudit.web.dto.AuditDtos.AuditItemResultDto;
+import com.agriaudit.audit.AuditDtos.AuditDetailDto;
+import com.agriaudit.audit.AuditDtos.AuditItemResultDto;
 import com.agriaudit.catalog.CatalogDtos.ChapterDto;
 import com.agriaudit.catalog.CatalogDtos.ControlPointDto;
-import com.agriaudit.web.dto.FindingDtos.CorrectiveActionDto;
-import com.agriaudit.web.dto.FindingDtos.FindingDto;
-import com.agriaudit.web.dto.ScoreDtos.GroupScore;
+import com.agriaudit.findings.FindingDtos.CorrectiveActionDto;
+import com.agriaudit.findings.FindingDtos.FindingDto;
+import com.agriaudit.audit.ScoreDtos.GroupScore;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.springframework.stereotype.Component;

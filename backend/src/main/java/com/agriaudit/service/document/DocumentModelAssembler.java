@@ -1,21 +1,20 @@
 package com.agriaudit.service.document;
 
-import com.agriaudit.domain.Audit;
+import com.agriaudit.audit.AuditLookup;
+import com.agriaudit.audit.AuditRef;
 import com.agriaudit.storage.AttachmentEntityType;
 import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.identity.OrganizationDirectory;
 import com.agriaudit.identity.SecurityUtils;
-import com.agriaudit.service.AuditService;
 import com.agriaudit.catalog.CatalogService;
-import com.agriaudit.service.FindingService;
-import com.agriaudit.service.ScoringService;
+import com.agriaudit.findings.FindingLookup;
 import com.agriaudit.service.document.DocumentModel.EvidenceRef;
 import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
-import com.agriaudit.web.dto.AuditDtos.AuditDetailDto;
-import com.agriaudit.web.dto.AuditDtos.AuditItemResultDto;
+import com.agriaudit.audit.AuditDtos.AuditDetailDto;
+import com.agriaudit.audit.AuditDtos.AuditItemResultDto;
 import com.agriaudit.catalog.CatalogDtos.StandardDetailDto;
-import com.agriaudit.web.dto.FindingDtos.FindingDto;
-import com.agriaudit.web.dto.ScoreDtos.ScoreResult;
+import com.agriaudit.findings.FindingDtos.FindingDto;
+import com.agriaudit.audit.ScoreDtos.ScoreResult;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,32 +40,30 @@ public class DocumentModelAssembler {
     private static final long MAX_EMBED_BYTES = 4L * 1024 * 1024;
     private static final int MAX_IMAGES_PER_ENTITY = 6;
 
-    private final AuditService auditService;
+    private final AuditLookup auditService;
     private final CatalogService catalogService;
-    private final FindingService findingService;
-    private final ScoringService scoringService;
+    private final FindingLookup findingService;
     private final OrganizationDirectory organizations;
     private final AttachmentStore attachmentLookup;
 
-    public DocumentModelAssembler(AuditService auditService, CatalogService catalogService,
-                                  FindingService findingService, ScoringService scoringService,
+    public DocumentModelAssembler(AuditLookup auditService, CatalogService catalogService,
+                                  FindingLookup findingService,
                                   OrganizationDirectory organizations, AttachmentStore attachmentLookup) {
         this.auditService = auditService;
         this.catalogService = catalogService;
         this.findingService = findingService;
-        this.scoringService = scoringService;
         this.organizations = organizations;
         this.attachmentLookup = attachmentLookup;
     }
 
     @Transactional(readOnly = true)
     public DocumentModel assemble(Long auditId, String documentTitle) {
-        Audit audit = auditService.requireAudit(auditId);
+        AuditRef audit = auditService.requireAudit(auditId);
         AuditDetailDto detail = auditService.get(auditId);
-        StandardDetailDto standard = catalogService.getStandard(audit.getStandard().getCode());
+        StandardDetailDto standard = catalogService.getStandard(audit.standardCode());
         List<AuditItemResultDto> results = auditService.getResults(auditId);
         List<FindingDto> findings = findingService.listByAudit(auditId);
-        ScoreResult score = scoringService.score(audit);
+        ScoreResult score = auditService.score(auditId);
 
         String orgName = organizations.organizationName(SecurityUtils.currentOrganizationId())
                 .orElse("Organización");

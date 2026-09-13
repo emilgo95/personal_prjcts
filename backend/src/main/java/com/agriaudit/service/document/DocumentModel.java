@@ -1,12 +1,12 @@
 package com.agriaudit.service.document;
 
-import com.agriaudit.web.dto.AuditDtos.AuditDetailDto;
-import com.agriaudit.web.dto.AuditDtos.AuditItemResultDto;
+import com.agriaudit.audit.AuditDtos.AuditDetailDto;
+import com.agriaudit.audit.AuditDtos.AuditItemResultDto;
 import com.agriaudit.catalog.CatalogDtos.ChapterDto;
 import com.agriaudit.catalog.CatalogDtos.StandardDetailDto;
 import com.agriaudit.fieldbook.FarmDtos.FarmDto;
-import com.agriaudit.web.dto.FindingDtos.FindingDto;
-import com.agriaudit.web.dto.ScoreDtos.ScoreResult;
+import com.agriaudit.findings.FindingDtos.FindingDto;
+import com.agriaudit.audit.ScoreDtos.ScoreResult;
 
 import java.util.List;
 import java.util.Map;

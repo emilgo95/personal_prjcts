@@ -1,6 +1,6 @@
 package com.agriaudit.web.dto;
 
-import com.agriaudit.web.dto.AuditDtos.AuditSummaryDto;
+import com.agriaudit.audit.AuditDtos.AuditSummaryDto;
 
 import java.util.List;
 import java.util.Map;

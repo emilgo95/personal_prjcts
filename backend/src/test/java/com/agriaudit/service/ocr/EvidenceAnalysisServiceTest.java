@@ -6,7 +6,7 @@ import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.identity.AppUserPrincipal;
-import com.agriaudit.service.AuditService;
+import com.agriaudit.audit.AuditLookup;
 import com.agriaudit.service.ocr.OcrClient.OcrResult;
 import com.agriaudit.web.dto.EvidenceAnalysisDtos.EvidenceAnalysis;
 import org.junit.jupiter.api.AfterEach;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 
 class EvidenceAnalysisServiceTest {
 
-    private AuditService auditService;
+    private AuditLookup auditService;
     private AttachmentStore attachments;
     private CatalogLookup catalog;
     private OcrClient ocrClient;
@@ -32,7 +32,7 @@ class EvidenceAnalysisServiceTest {
 
     @BeforeEach
     void setUp() {
-        auditService = mock(AuditService.class);
+        auditService = mock(AuditLookup.class);
         attachments = mock(AttachmentStore.class);
         catalog = mock(CatalogLookup.class);
         ocrClient = mock(OcrClient.class);
