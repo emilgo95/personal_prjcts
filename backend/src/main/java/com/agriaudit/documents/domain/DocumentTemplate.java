@@ -3,7 +3,7 @@ package com.agriaudit.documents.domain;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "document_templates")
+@Table(schema = "documents", name = "document_templates")
 public class DocumentTemplate {
 
     @Id

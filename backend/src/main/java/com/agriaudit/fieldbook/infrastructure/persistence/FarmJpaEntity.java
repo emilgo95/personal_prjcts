@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity(name = "Farm")
-@Table(name = "farms")
+@Table(schema = "fieldbook", name = "farms")
 public class FarmJpaEntity {
 
     @Id

@@ -1,12 +1,14 @@
 package com.agriaudit.catalog.domain;
 
+import com.agriaudit.catalog.ControlLevel;
+
 import jakarta.persistence.*;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "control_points")
+@Table(schema = "catalog", name = "control_points")
 public class ControlPoint {
 
     @Id
@@ -43,7 +45,7 @@ public class ControlPoint {
     private int sortOrder = 0;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "control_point_regulations",
+    @JoinTable(schema = "catalog", name = "control_point_regulations",
             joinColumns = @JoinColumn(name = "control_point_id"),
             inverseJoinColumns = @JoinColumn(name = "regulation_id"))
     private Set<Regulation> regulations = new LinkedHashSet<>();

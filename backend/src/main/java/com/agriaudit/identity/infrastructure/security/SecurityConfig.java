@@ -36,6 +36,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                // Sin CSRF: la autenticación va solo en la cabecera Authorization (Bearer), sin cookies ni
+                // sesión, y el navegador no la añade en peticiones entre sitios. Excepción registrada en
+                // .github/codeql-exceptions.json y protegida por StatelessAuthenticationIntegrationTest.
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -61,7 +64,8 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Content-Disposition"));
-        config.setAllowCredentials(true);
+        // Sin credenciales de navegador (cookies): el token viaja en la cabecera Authorization.
+        config.setAllowCredentials(false);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;

@@ -6,7 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "generated_documents")
+@Table(schema = "documents", name = "generated_documents")
 public class GeneratedDocument {
 
     @Id

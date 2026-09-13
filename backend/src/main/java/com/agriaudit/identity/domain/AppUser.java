@@ -8,7 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "app_users")
+@Table(schema = "identity", name = "app_users")
 public class AppUser {
 
     @Id

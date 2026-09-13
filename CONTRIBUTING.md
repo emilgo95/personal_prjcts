@@ -42,10 +42,19 @@ El hook `pre-push` rechaza el push a `main`. Excepción puntual justificada:
 `.github/workflows/ci.yml` compila y testea backend y frontend, y en el job
 `e2e` levanta la app con Docker Compose para pasar el *smoke test*, los tests
 **End-to-End de UI y accesibilidad (Playwright)** y los tests de **API
-(Karate)**; los informes se publican como artefactos. CodeQL corre aparte. El
-job `secrets-scan` pasa **gitleaks** sobre los commits (configuración y lista de
-permitidos en `.gitleaks.toml`). El job `ci-ok` resume el resultado: es el que
-hay que ver en verde antes de fusionar.
+(Karate)**; los informes se publican como artefactos. El job `codeql` analiza
+Java y TypeScript con la CLI de **CodeQL**: como el repositorio es privado y no admite
+*code scanning*, no sube resultados a GitHub; `.github/scripts/codeql_gate.py` anota los
+hallazgos en el PR y **bloquea con severidad alta o crítica** (el SARIF queda como
+artefacto). Un hallazgo que no aplica se registra en `.github/codeql-exceptions.json`
+con su justificación, el test que protege esa premisa y una fecha de revisión. El job `secrets-scan` pasa **gitleaks** sobre los commits (configuración
+y lista de permitidos en `.gitleaks.toml`). El job `ci-ok` resume el resultado de
+todos: es el que hay que ver en verde antes de fusionar.
+
+Dentro de `mvn verify` son bloqueantes los límites de módulo (Spring Modulith y
+ArchUnit) y la higiene de datos entre módulos: cada entidad declara el esquema de
+su módulo (`@Table(schema = "<módulo>")`) y entre módulos se guarda el identificador,
+nunca una asociación JPA; los datos de otro módulo se leen por su API.
 
 ## Tests
 

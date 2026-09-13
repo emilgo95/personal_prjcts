@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 
 /**
  * Contador atómico de referencias de auditoría por organización (RT-27), sobre la tabla
- * {@code reference_sequences} (ámbitos {@code AUDIT:org:<id>}).
+ * {@code audit.reference_sequences} (ámbitos {@code AUDIT:org:<id>}).
  *
  * <p>Un único {@code INSERT ... ON CONFLICT DO UPDATE ... RETURNING}: la fila queda bloqueada hasta que
  * termina la transacción del alta. El valor es {@code max(contador, mayor número ya usado) + 1}, así
@@ -15,11 +15,11 @@ import org.springframework.stereotype.Repository;
 public class AuditReferenceSequence {
 
     private static final String NEXT_AUDIT_NUMBER = """
-            INSERT INTO reference_sequences (scope, last_value)
+            INSERT INTO audit.reference_sequences AS rs (scope, last_value)
             VALUES (?, (SELECT COALESCE(MAX(substring(reference FROM '-(\\d{1,9})$')::BIGINT), 0)
-                        FROM audits WHERE organization_id = ?) + 1)
+                        FROM audit.audits WHERE organization_id = ?) + 1)
             ON CONFLICT (scope) DO UPDATE
-                SET last_value = GREATEST(reference_sequences.last_value, EXCLUDED.last_value - 1) + 1
+                SET last_value = GREATEST(rs.last_value, EXCLUDED.last_value - 1) + 1
             RETURNING last_value
             """;
 

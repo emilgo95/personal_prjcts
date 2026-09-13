@@ -24,9 +24,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.agriaudit.catalog.domain.AuditStandard;
-import com.agriaudit.catalog.domain.ControlPoint;
 import com.agriaudit.catalog.CatalogLookup;
+import com.agriaudit.catalog.ControlPointView;
+import com.agriaudit.catalog.StandardView;
 import com.agriaudit.audit.domain.Audit;
 import com.agriaudit.audit.domain.AuditItemResult;
 import com.agriaudit.audit.infrastructure.persistence.AuditItemResultRepository;
@@ -76,13 +76,13 @@ public class AuditService implements AuditLookup {
     public AuditDetailDto create(AuditRequest request) {
         Long orgId = SecurityUtils.currentOrganizationId();
         FarmDto farm = requireFarm(orgId, request.farmId());
-        AuditStandard standard = catalog.findStandard(request.standardCode())
+        StandardView standard = catalog.findStandard(request.standardCode())
                 .orElseThrow(() -> new NotFoundException("Estándar no encontrado: " + request.standardCode()));
 
         Audit audit = new Audit();
         audit.setOrganizationId(orgId);
         audit.setFarmId(farm.id());
-        audit.setStandard(standard);
+        audit.setStandardId(standard.id());
         audit.setReference(nextReference(orgId));
         audit.setAuditType(parseType(request.auditType()));
         audit.setStatus(AuditStatus.DRAFT);
@@ -93,7 +93,7 @@ public class AuditService implements AuditLookup {
 
     public AuditDetailDto update(Long id, AuditRequest request) {
         Audit audit = requireAuditEntity(id);
-        if (!audit.getStandard().getCode().equals(request.standardCode())) {
+        if (!standardOf(audit).code().equals(request.standardCode())) {
             throw new BadRequestException("No se puede cambiar el estándar de una auditoría existente");
         }
         FarmDto farm = requireFarm(audit.getOrganizationId(), request.farmId());
@@ -122,16 +122,16 @@ public class AuditService implements AuditLookup {
         Audit audit = requireAuditEntity(id);
         Map<Long, AuditItemResult> existing = new HashMap<>();
         for (AuditItemResult r : results.findByAuditId(audit.getId())) {
-            existing.put(r.getControlPoint().getId(), r);
+            existing.put(r.getControlPointId(), r);
         }
         List<AuditItemResultDto> out = new ArrayList<>();
-        for (ControlPoint cp : catalog.controlPointsOf(audit.getStandard().getCode())) {
-            AuditItemResult r = existing.get(cp.getId());
+        for (ControlPointView cp : catalog.controlPointsOf(standardOf(audit).code())) {
+            AuditItemResult r = existing.get(cp.id());
             out.add(new AuditItemResultDto(
                     r == null ? null : r.getId(),
-                    cp.getId(), cp.getRef(), cp.getTitle(), cp.getDescription(), cp.getGuidance(),
-                    cp.getLevel().name(), cp.getApplicableScopes(),
-                    cp.getChapter().getCode(), cp.getChapter().getTitle(),
+                    cp.id(), cp.ref(), cp.title(), cp.description(), cp.guidance(),
+                    cp.level().name(), cp.applicableScopes(),
+                    cp.chapterCode(), cp.chapterTitle(),
                     r == null ? ComplianceResult.NOT_ASSESSED.name() : r.getCompliance().name(),
                     r == null ? null : r.getEvidenceNotes(),
                     r == null ? null : r.getAuditorComment(),
@@ -147,7 +147,7 @@ public class AuditService implements AuditLookup {
         Audit audit = requireAuditEntity(id);
         Map<Long, AuditItemResult> existing = new HashMap<>();
         for (AuditItemResult r : results.findByAuditId(audit.getId())) {
-            existing.put(r.getControlPoint().getId(), r);
+            existing.put(r.getControlPointId(), r);
         }
         String user = SecurityUtils.currentUsername();
         for (ResultUpdate u : request.results()) {
@@ -159,15 +159,15 @@ public class AuditService implements AuditLookup {
             }
             AuditItemResult r = existing.get(u.controlPointId());
             if (r == null) {
-                ControlPoint cp = catalog.findControlPoint(u.controlPointId())
+                ControlPointView cp = catalog.findControlPoint(u.controlPointId())
                         .orElseThrow(() -> new NotFoundException("Punto de control no encontrado: " + u.controlPointId()));
-                if (!cp.getChapter().getStandard().getId().equals(audit.getStandard().getId())) {
+                if (!cp.belongsTo(audit.getStandardId())) {
                     throw new BadRequestException("El punto de control no pertenece al estándar de la auditoría");
                 }
                 r = new AuditItemResult();
                 r.setAuditId(audit.getId());
-                r.setControlPoint(cp);
-                existing.put(cp.getId(), r);
+                r.setControlPointId(cp.id());
+                existing.put(cp.id(), r);
             }
             r.setCompliance(compliance);
             r.setEvidenceNotes(u.evidenceNotes());
@@ -199,7 +199,7 @@ public class AuditService implements AuditLookup {
     @Override
     @Transactional(readOnly = true)
     public List<AuditRef> findByOrganization(Long organizationId) {
-        return audits.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream().map(AuditService::toRef).toList();
+        return audits.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream().map(this::toRef).toList();
     }
 
     /** Entidad de la auditoría de la organización del usuario; solo para uso interno del módulo. */
@@ -237,32 +237,40 @@ public class AuditService implements AuditLookup {
         return String.format("AUD-%d-%04d", LocalDate.now().getYear(), referenceSequences.nextAuditNumber(orgId));
     }
 
-    static AuditRef toRef(Audit a) {
-        return new AuditRef(a.getId(), a.getOrganizationId(), a.getReference(), a.getStandard().getCode(),
+    /** Estándar de la auditoría, leído del catálogo por su id. */
+    StandardView standardOf(Audit audit) {
+        return catalog.findStandard(audit.getStandardId())
+                .orElseThrow(() -> new IllegalStateException("Estándar inexistente: " + audit.getStandardId()));
+    }
+
+    private AuditRef toRef(Audit a) {
+        return new AuditRef(a.getId(), a.getOrganizationId(), a.getReference(), standardOf(a).code(),
                 a.getStatus(), a.getPlannedStartDate(), a.getLeadAuditor());
     }
 
     private AuditSummaryDto toSummary(Audit a, FarmDto farm) {
-        int total = catalog.controlPointsOf(a.getStandard().getCode()).size();
+        StandardView standard = standardOf(a);
+        int total = catalog.controlPointsOf(standard.code()).size();
         int assessed = (int) results.findByAuditId(a.getId()).stream()
                 .filter(r -> r.getCompliance() != ComplianceResult.NOT_ASSESSED).count();
         int progress = total == 0 ? 0 : Math.round(100f * assessed / total);
         return new AuditSummaryDto(
                 a.getId(), a.getReference(), a.getFarmId(), farm == null ? null : farm.legalName(),
-                a.getStandard().getCode(), a.getStandard().getName(), a.getAuditType().name(), a.getStatus().name(),
+                standard.code(), standard.name(), a.getAuditType().name(), a.getStatus().name(),
                 a.getPlannedStartDate(), a.getActualDate(), a.getLeadAuditor(), a.getCreatedAt(),
                 findings.countByAudit(a.getId()), assessed, total, progress);
     }
 
     private AuditDetailDto toDetail(Audit a) {
-        int total = catalog.controlPointsOf(a.getStandard().getCode()).size();
+        StandardView standard = standardOf(a);
+        int total = catalog.controlPointsOf(standard.code()).size();
         int assessed = (int) results.findByAuditId(a.getId()).stream()
                 .filter(r -> r.getCompliance() != ComplianceResult.NOT_ASSESSED).count();
         int progress = total == 0 ? 0 : Math.round(100f * assessed / total);
         FarmDto farmDto = requireFarm(a.getOrganizationId(), a.getFarmId());
         return new AuditDetailDto(
-                a.getId(), a.getReference(), a.getStandard().getCode(), a.getStandard().getName(),
-                a.getStandard().getVersion(), a.getAuditType().name(), a.getStatus().name(),
+                a.getId(), a.getReference(), standard.code(), standard.name(),
+                standard.version(), a.getAuditType().name(), a.getStatus().name(),
                 a.getScopeDescription(), a.getPlannedStartDate(), a.getPlannedEndDate(), a.getActualDate(),
                 a.getLeadAuditor(), a.getAuditTeam(), a.getSiteAddress(), a.getProductsInScope(),
                 a.getCreatedAt(), a.getUpdatedAt(), farmDto, total, assessed, progress,

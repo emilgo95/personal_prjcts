@@ -64,7 +64,7 @@ class AiProposalIntegrationTest {
 
     @Test
     void propuestaPendienteRevisadaPorUnaPersonaYAisladaPorOrganizacion() {
-        Long orgId = jdbc.queryForObject("SELECT id FROM organizations WHERE name = 'Organización Demo'", Long.class);
+        Long orgId = jdbc.queryForObject("SELECT id FROM identity.organizations WHERE name = 'Organización Demo'", Long.class);
         HttpHeaders admin = login("admin@demo.test", "Admin123!");
 
         JsonNode features = rest.exchange("/api/features", HttpMethod.GET, new HttpEntity<>(admin), JsonNode.class).getBody();
@@ -110,9 +110,9 @@ class AiProposalIntegrationTest {
     }
 
     private HttpHeaders otherOrganizationUser() {
-        Long otherOrg = jdbc.queryForObject("INSERT INTO organizations (name) VALUES ('Otra Cooperativa IA') "
+        Long otherOrg = jdbc.queryForObject("INSERT INTO identity.organizations (name) VALUES ('Otra Cooperativa IA') "
                 + "ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id", Long.class);
-        jdbc.update("INSERT INTO app_users (organization_id, email, password_hash, full_name, role) "
+        jdbc.update("INSERT INTO identity.app_users (organization_id, email, password_hash, full_name, role) "
                         + "VALUES (?, 'otra@ia.test', ?, 'Otra', 'AUDITOR') ON CONFLICT (email) DO NOTHING",
                 otherOrg, passwordEncoder.encode("Otra12345!"));
         return login("otra@ia.test", "Otra12345!");

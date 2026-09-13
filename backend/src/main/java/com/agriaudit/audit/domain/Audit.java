@@ -7,10 +7,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import com.agriaudit.catalog.domain.AuditStandard;
 
 @Entity
-@Table(name = "audits")
+@Table(schema = "audit", name = "audits")
 public class Audit {
 
     @Id
@@ -24,9 +23,9 @@ public class Audit {
     @Column(name = "farm_id", nullable = false)
     private Long farmId;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "standard_id", nullable = false)
-    private AuditStandard standard;
+    /** Estándar auditado (módulo catalog); referencia por id, sin asociación JPA entre módulos. */
+    @Column(name = "standard_id", nullable = false)
+    private Long standardId;
 
     @Column(nullable = false)
     private String reference;
@@ -80,8 +79,8 @@ public class Audit {
     public void setOrganizationId(Long organizationId) { this.organizationId = organizationId; }
     public Long getFarmId() { return farmId; }
     public void setFarmId(Long farmId) { this.farmId = farmId; }
-    public AuditStandard getStandard() { return standard; }
-    public void setStandard(AuditStandard standard) { this.standard = standard; }
+    public Long getStandardId() { return standardId; }
+    public void setStandardId(Long standardId) { this.standardId = standardId; }
     public String getReference() { return reference; }
     public void setReference(String reference) { this.reference = reference; }
     public AuditType getAuditType() { return auditType; }

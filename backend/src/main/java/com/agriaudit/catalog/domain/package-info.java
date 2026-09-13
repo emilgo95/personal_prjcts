@@ -1,9 +1,5 @@
 /**
- * Entidades del catálogo. Interfaz con nombre {@code catalog::domain}: accesible desde otros módulos
- * de forma transitoria, mientras {@code Audit}, {@code AuditItemResult} y {@code Finding} las
- * referencien con asociaciones JPA.
+ * Entidades JPA del catálogo. Internas del módulo: los demás módulos usan las vistas de
+ * {@link com.agriaudit.catalog.CatalogLookup} y guardan solo identificadores (RT-02).
  */
-@NamedInterface("domain")
 package com.agriaudit.catalog.domain;
-
-import org.springframework.modulith.NamedInterface;

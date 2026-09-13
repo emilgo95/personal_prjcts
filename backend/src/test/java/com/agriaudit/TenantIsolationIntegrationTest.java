@@ -60,9 +60,9 @@ class TenantIsolationIntegrationTest {
 
     @BeforeEach
     void users() {
-        Long otherOrg = jdbc.queryForObject("INSERT INTO organizations (name) VALUES ('Otra Cooperativa') "
+        Long otherOrg = jdbc.queryForObject("INSERT INTO identity.organizations (name) VALUES ('Otra Cooperativa') "
                 + "ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id", Long.class);
-        jdbc.update("INSERT INTO app_users (organization_id, email, password_hash, full_name, role) "
+        jdbc.update("INSERT INTO identity.app_users (organization_id, email, password_hash, full_name, role) "
                         + "VALUES (?, ?, ?, 'Intruso', 'AUDITOR') ON CONFLICT (email) DO NOTHING",
                 otherOrg, OTHER_EMAIL, passwordEncoder.encode(OTHER_PASSWORD));
         owner = login("admin@demo.test", "Admin123!");

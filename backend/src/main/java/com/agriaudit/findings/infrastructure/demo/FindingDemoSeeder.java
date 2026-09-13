@@ -4,7 +4,7 @@ import com.agriaudit.audit.AuditRef;
 import com.agriaudit.audit.AuditStatus;
 import com.agriaudit.audit.DemoAuditSeeded;
 import com.agriaudit.catalog.CatalogLookup;
-import com.agriaudit.catalog.domain.ControlPoint;
+import com.agriaudit.catalog.ControlPointView;
 import com.agriaudit.findings.domain.CorrectiveAction;
 import com.agriaudit.findings.domain.CorrectiveActionStatus;
 import com.agriaudit.findings.domain.Finding;
@@ -50,7 +50,7 @@ class FindingDemoSeeder {
             if (seq >= MAX_FINDINGS_PER_AUDIT) {
                 break;
             }
-            ControlPoint cp = catalog.findControlPoint(cpId).orElse(null);
+            ControlPointView cp = catalog.findControlPoint(cpId).orElse(null);
             if (cp == null) {
                 continue;
             }
@@ -59,23 +59,23 @@ class FindingDemoSeeder {
         }
     }
 
-    private void createFinding(AuditRef audit, ControlPoint cp, int seq) {
+    private void createFinding(AuditRef audit, ControlPointView cp, int seq) {
         AuditStatus status = audit.status();
         LocalDate date = audit.plannedStartDate();
-        FindingClassification classification = switch (cp.getLevel()) {
+        FindingClassification classification = switch (cp.level()) {
             case MAJOR_MUST, CORE -> FindingClassification.MAJOR;
             case MINOR_MUST, IMPROVEMENT_L1 -> FindingClassification.MINOR;
             default -> FindingClassification.OBSERVATION;
         };
         Finding finding = new Finding();
         finding.setAuditId(audit.id());
-        finding.setControlPoint(cp);
+        finding.setControlPointId(cp.id());
         finding.setReference(String.format("NC-%03d", seq));
         finding.setClassification(classification);
-        finding.setTitle("Incumplimiento en " + cp.getRef());
+        finding.setTitle("Incumplimiento en " + cp.ref());
         finding.setDescription("Durante la auditoría no se evidenció el cumplimiento del criterio \""
-                + cp.getTitle() + "\". Debe subsanarse y aportarse evidencia objetiva.");
-        finding.setArea(cp.getChapter().getTitle());
+                + cp.title() + "\". Debe subsanarse y aportarse evidencia objetiva.");
+        finding.setArea(cp.chapterTitle());
         finding.setDueDate(date.plusDays(28));
         finding.setStatus(switch (status) {
             case CLOSED -> FindingStatus.CLOSED;
@@ -91,12 +91,12 @@ class FindingDemoSeeder {
         }
     }
 
-    private void createCorrectiveAction(Finding finding, ControlPoint cp, AuditStatus status, LocalDate date) {
+    private void createCorrectiveAction(Finding finding, ControlPointView cp, AuditStatus status, LocalDate date) {
         CorrectiveAction ca = new CorrectiveAction();
         ca.setFindingId(finding.getId());
         ca.setRootCause("Ausencia de procedimiento documentado y de responsable asignado para "
-                + cp.getChapter().getTitle().toLowerCase() + ".");
-        ca.setCorrection("Se implanta el registro correspondiente y se recopila la evidencia del punto " + cp.getRef() + ".");
+                + cp.chapterTitle().toLowerCase() + ".");
+        ca.setCorrection("Se implanta el registro correspondiente y se recopila la evidencia del punto " + cp.ref() + ".");
         ca.setPreventiveAction("Se incorpora la revisión de este punto a la lista de verificación interna trimestral.");
         ca.setResponsiblePerson("Responsable de calidad");
         ca.setTargetDate(date.plusDays(21));

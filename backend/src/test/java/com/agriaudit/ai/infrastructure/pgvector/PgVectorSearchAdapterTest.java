@@ -58,9 +58,9 @@ class PgVectorSearchAdapterTest {
     void setUp() {
         vectors = new PgVectorSearchAdapter(jdbc);
         index = new SemanticIndexService(new FakeEmbeddingAdapter(), vectors);
-        orgA = jdbc.queryForObject("INSERT INTO organizations (name) VALUES ('RAG A') "
+        orgA = jdbc.queryForObject("INSERT INTO identity.organizations (name) VALUES ('RAG A') "
                 + "ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id", Long.class);
-        orgB = jdbc.queryForObject("INSERT INTO organizations (name) VALUES ('RAG B') "
+        orgB = jdbc.queryForObject("INSERT INTO identity.organizations (name) VALUES ('RAG B') "
                 + "ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id", Long.class);
     }
 
@@ -131,6 +131,6 @@ class PgVectorSearchAdapterTest {
     }
 
     private long countFor(String sourceId) {
-        return jdbc.queryForObject("SELECT count(*) FROM ai_embeddings WHERE source_id = ?", Long.class, sourceId);
+        return jdbc.queryForObject("SELECT count(*) FROM ai.ai_embeddings WHERE source_id = ?", Long.class, sourceId);
     }
 }

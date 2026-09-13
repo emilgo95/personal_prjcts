@@ -7,7 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "organizations")
+@Table(schema = "identity", name = "organizations")
 public class Organization {
 
     @Id

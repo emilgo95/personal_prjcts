@@ -4,7 +4,7 @@ import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.audit.AuditLookup;
 import com.agriaudit.audit.AuditRef;
-import com.agriaudit.catalog.domain.ControlPoint;
+import com.agriaudit.catalog.ControlPointView;
 import com.agriaudit.findings.domain.CorrectiveAction;
 import com.agriaudit.findings.domain.Finding;
 import com.agriaudit.storage.AttachmentEntityType;
@@ -150,15 +150,15 @@ public class FindingService implements FindingLookup {
 
     private void applyControlPoint(Finding finding, Long controlPointId, AuditRef audit) {
         if (controlPointId == null) {
-            finding.setControlPoint(null);
+            finding.setControlPointId(null);
             return;
         }
-        ControlPoint cp = catalog.findControlPoint(controlPointId)
+        ControlPointView cp = catalog.findControlPoint(controlPointId)
                 .orElseThrow(() -> new NotFoundException("Punto de control no encontrado: " + controlPointId));
-        if (!cp.getChapter().getStandard().getCode().equals(audit.standardCode())) {
+        if (!cp.standardCode().equals(audit.standardCode())) {
             throw new BadRequestException("El punto de control no pertenece al estándar de la auditoría");
         }
-        finding.setControlPoint(cp);
+        finding.setControlPointId(cp.id());
     }
 
     private void applyRequest(Finding finding, FindingRequest r) {
@@ -222,11 +222,13 @@ public class FindingService implements FindingLookup {
     private FindingDto toDto(Finding f) {
         List<CorrectiveActionDto> actions = correctiveActions.findByFindingIdOrderByIdAsc(f.getId())
                 .stream().map(this::toDto).toList();
+        ControlPointView cp = f.getControlPointId() == null ? null
+                : catalog.findControlPoint(f.getControlPointId()).orElse(null);
         return new FindingDto(
                 f.getId(), f.getAuditId(),
-                f.getControlPoint() == null ? null : f.getControlPoint().getId(),
-                f.getControlPoint() == null ? null : f.getControlPoint().getRef(),
-                f.getControlPoint() == null ? null : f.getControlPoint().getTitle(),
+                f.getControlPointId(),
+                cp == null ? null : cp.ref(),
+                cp == null ? null : cp.title(),
                 f.getReference(), f.getClassification().name(), f.getTitle(), f.getDescription(),
                 f.getArea(), f.getDueDate(), f.getStatus().name(), f.getRaisedAt(), actions,
                 attachmentLookup.byEntity(AttachmentEntityType.FINDING, f.getId()));

@@ -29,8 +29,8 @@ jobs:
       apitests: ${{ steps.filter.outputs.apitests }}
       compose: ${{ steps.filter.outputs.compose }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -58,10 +58,10 @@ jobs:
     # Los tests de integración levantan Postgres con Testcontainers (usa el
     # Docker del runner); no se necesita un `services:` declarado aquí.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Configurar JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -73,42 +73,90 @@ jobs:
 
       # La verificación de límites de módulo forma parte de `mvn verify` y es
       # bloqueante: ModularityTests (Spring Modulith `verify()`: sin ciclos ni
-      # acceso a internals) y ArchitectureTests (hexagonal, sin capas heredadas).
+      # acceso a internals), ArchitectureTests (hexagonal, sin capas heredadas) y
+      # ModuleDataBoundariesTests + ModuleSchemasIntegrationTest (tablas en el
+      # esquema de su módulo, sin asociaciones JPA entre módulos: RT-02).
 
       - name: Diagramas de módulos (Spring Modulith)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: modulith-docs
           path: backend/target/spring-modulith-docs/
           if-no-files-found: ignore
 
   # ---------------------------------------------------------------------------
-  # 2b. CodeQL (SAST) — job propio, análisis de fuente (build-mode: none).
-  #     Informativo: sube hallazgos a la pestaña Security; NO forma parte de
-  #     `ci-ok`, así que no bloquea la fusión por ahora.
+  # 2b. CodeQL (SAST) — análisis de fuente (build-mode: none), bloqueante.
+  #     El repo es privado y personal: GitHub no permite activar code scanning.
+  #     Por eso se usa la CLI de CodeQL (bundle fijado por versión y SHA-256, en
+  #     caché) en lugar de `github/codeql-action`, que depende de esa API. Mismas
+  #     consultas que el análisis por defecto (suites *code-scanning*).
+  #     `.github/scripts/codeql_gate.py` anota los hallazgos en el PR y falla con
+  #     severidad alta o crítica (>= 7.0), salvo excepciones registradas y
+  #     vigentes en `.github/codeql-exceptions.json`. El SARIF queda como
+  #     artefacto. Forma parte de `ci-ok`.
   # ---------------------------------------------------------------------------
   codeql:
+    name: codeql (${{ matrix.language }})
     needs: changes
     if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
+    env:
+      CODEQL_BUNDLE: codeql-bundle-v2.27.0
+      CODEQL_BUNDLE_SHA256: 5e0f04bcb92c0c0973b6f5597e55316269051fa98bda3f725d8af9a85016721a
     strategy:
       fail-fast: false
       matrix:
-        language: [java-kotlin, javascript-typescript]
+        include:
+          - language: java-kotlin
+            suite: codeql/java-queries:codeql-suites/java-code-scanning.qls
+          - language: javascript-typescript
+            suite: codeql/javascript-queries:codeql-suites/javascript-code-scanning.qls
     steps:
-      - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+      - uses: actions/checkout@v6
+
+      - name: Caché del bundle de CodeQL
+        id: codeql-cache
+        uses: actions/cache@v5
         with:
-          languages: ${{ matrix.language }}
-          build-mode: none
-      - uses: github/codeql-action/analyze@v3
+          path: ${{ runner.temp }}/codeql
+          key: ${{ env.CODEQL_BUNDLE }}-linux64-${{ env.CODEQL_BUNDLE_SHA256 }}
+
+      - name: Descargar CodeQL (verificando el SHA-256)
+        if: steps.codeql-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/codeql.tar.zst" \
+            "https://github.com/github/codeql-action/releases/download/${CODEQL_BUNDLE}/codeql-bundle-linux64.tar.zst"
+          echo "${CODEQL_BUNDLE_SHA256}  $RUNNER_TEMP/codeql.tar.zst" | sha256sum -c -
+          tar --zstd -xf "$RUNNER_TEMP/codeql.tar.zst" -C "$RUNNER_TEMP"
+          rm "$RUNNER_TEMP/codeql.tar.zst"
+
+      - name: Analizar (${{ matrix.language }})
+        run: |
+          codeql="$RUNNER_TEMP/codeql/codeql"
+          "$codeql" version
+          # Sin --ram la CLI usa ~700 MiB de heap y se queda sin memoria: memoria del runner menos 2 GiB.
+          ram=$(( $(awk '/MemTotal/ {print int($2 / 1024)}' /proc/meminfo) - 2048 ))
+          "$codeql" database create "$RUNNER_TEMP/db" --language=${{ matrix.language }} \
+            --build-mode=none --source-root=. --threads=0 --ram="$ram"
+          mkdir -p sarif-results
+          "$codeql" database analyze "$RUNNER_TEMP/db" "${{ matrix.suite }}" --threads=0 --ram="$ram" \
+            --format=sarif-latest --sarif-category="/language:${{ matrix.language }}" \
+            --output=sarif-results/${{ matrix.language }}.sarif
+
+      - name: Revisar hallazgos (bloquea con severidad alta o crítica)
+        run: >-
+          python3 .github/scripts/codeql_gate.py sarif-results
+          --threshold 7.0 --exceptions .github/codeql-exceptions.json
+
+      - name: Publicar resultados SARIF
+        if: always()
+        uses: actions/upload-artifact@v6
         with:
-          category: "/language:${{ matrix.language }}"
+          name: codeql-sarif-${{ matrix.language }}
+          path: sarif-results/
+          if-no-files-found: ignore
+          retention-days: 14
 
   # ---------------------------------------------------------------------------
   # 3. Frontend: typecheck, tests, build
@@ -118,8 +166,8 @@ jobs:
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: npm
@@ -145,7 +193,7 @@ jobs:
       needs.changes.outputs.compose == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Levantar la aplicación
         run: |
@@ -161,7 +209,7 @@ jobs:
           curl -fsS -o /dev/null -w "frontend HTTP %{http_code}\n" http://localhost:8080
 
       - name: Configurar Node 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -180,7 +228,7 @@ jobs:
 
       - name: Configurar JDK 21
         if: always()
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -199,7 +247,7 @@ jobs:
 
       - name: Publicar informe de Playwright
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-report
           path: e2e/playwright-report/
@@ -208,7 +256,7 @@ jobs:
 
       - name: Publicar informe de Karate
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: karate-report
           path: api-tests/target/karate-reports/
@@ -234,10 +282,10 @@ jobs:
   secrets-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -248,7 +296,7 @@ jobs:
   # ---------------------------------------------------------------------------
   ci-ok:
     if: always()
-    needs: [changes, backend, frontend, e2e, secrets-scan]
+    needs: [changes, backend, codeql, frontend, e2e, secrets-scan]
     runs-on: ubuntu-latest
     steps:
       - name: Comprobar resultados

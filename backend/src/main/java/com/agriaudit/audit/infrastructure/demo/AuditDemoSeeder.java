@@ -10,8 +10,8 @@ import com.agriaudit.audit.domain.ComplianceResult;
 import com.agriaudit.audit.infrastructure.persistence.AuditItemResultRepository;
 import com.agriaudit.audit.infrastructure.persistence.AuditRepository;
 import com.agriaudit.catalog.CatalogLookup;
-import com.agriaudit.catalog.domain.AuditStandard;
-import com.agriaudit.catalog.domain.ControlPoint;
+import com.agriaudit.catalog.ControlPointView;
+import com.agriaudit.catalog.StandardView;
 import com.agriaudit.fieldbook.DemoFarmsSeeded;
 import com.agriaudit.fieldbook.FarmDtos.FarmDto;
 import org.slf4j.Logger;
@@ -89,8 +89,8 @@ class AuditDemoSeeder {
 
     private int audit(Long orgId, int seq, FarmDto farm, String standardCode, AuditType type, AuditStatus status,
                       LocalDate date, String leadAuditor, String team, String scope) {
-        AuditStandard standard = catalog.findStandard(standardCode).orElse(null);
-        List<ControlPoint> cps = catalog.controlPointsOf(standardCode);
+        StandardView standard = catalog.findStandard(standardCode).orElse(null);
+        List<ControlPointView> cps = catalog.controlPointsOf(standardCode);
         if (standard == null || cps.isEmpty()) {
             log.warn("Estándar {} sin puntos de control; se omite la auditoría de demo", standardCode);
             return seq + 1;
@@ -98,7 +98,7 @@ class AuditDemoSeeder {
         Audit a = new Audit();
         a.setOrganizationId(orgId);
         a.setFarmId(farm.id());
-        a.setStandard(standard);
+        a.setStandardId(standard.id());
         a.setReference(String.format("AUD-%d-%04d", date.getYear(), seq));
         a.setAuditType(type);
         a.setStatus(status);
@@ -119,7 +119,7 @@ class AuditDemoSeeder {
     }
 
     /** Siembra el checklist y devuelve los puntos de control no conformes, en orden. */
-    private List<Long> seedResults(Audit audit, List<ControlPoint> cps, AuditStatus status, LocalDate date,
+    private List<Long> seedResults(Audit audit, List<ControlPointView> cps, AuditStatus status, LocalDate date,
                                    String leadAuditor) {
         double coverage = switch (status) {
             case DRAFT -> 0.12;
@@ -131,7 +131,7 @@ class AuditDemoSeeder {
 
         List<Long> nonCompliant = new ArrayList<>();
         for (int i = 0; i < cps.size(); i++) {
-            ControlPoint cp = cps.get(i);
+            ControlPointView cp = cps.get(i);
             ComplianceResult compliance;
             if (i >= toAssess) {
                 compliance = ComplianceResult.NOT_ASSESSED;
@@ -145,7 +145,7 @@ class AuditDemoSeeder {
 
             AuditItemResult r = new AuditItemResult();
             r.setAuditId(audit.getId());
-            r.setControlPoint(cp);
+            r.setControlPointId(cp.id());
             r.setCompliance(compliance);
             if (compliance != ComplianceResult.NOT_ASSESSED) {
                 r.setAssessedAt(assessedAt);
@@ -159,7 +159,7 @@ class AuditDemoSeeder {
             }
             results.save(r);
             if (compliance == ComplianceResult.NON_COMPLIANT) {
-                nonCompliant.add(cp.getId());
+                nonCompliant.add(cp.id());
             }
         }
         return nonCompliant;

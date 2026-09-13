@@ -1,24 +1,28 @@
 package com.agriaudit.catalog;
 
-import com.agriaudit.catalog.domain.AuditStandard;
-import com.agriaudit.catalog.domain.ControlPoint;
-
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
  * Consultas del catálogo de estándares que usan los demás módulos (API pública de {@code catalog}).
  *
- * <p>Nadie fuera del módulo accede a sus repositorios. De momento devuelve las entidades del
- * catálogo ({@code catalog.domain}), porque {@code Audit}, {@code AuditItemResult} y {@code Finding}
- * las referencian con asociaciones JPA; sustituirlas por identificadores es el siguiente paso (RT-02).
+ * <p>Devuelve vistas inmutables, nunca entidades: los demás módulos guardan solo el identificador del
+ * estándar o del punto de control y leen el resto por aquí, sin asociaciones JPA ni {@code JOIN} con
+ * las tablas del catálogo (RT-02).
  */
 public interface CatalogLookup {
 
-    Optional<AuditStandard> findStandard(String code);
+    Optional<StandardView> findStandard(String code);
+
+    Optional<StandardView> findStandard(Long id);
 
     /** Puntos de control del estándar, ordenados por capítulo y posición. */
-    List<ControlPoint> controlPointsOf(String standardCode);
+    List<ControlPointView> controlPointsOf(String standardCode);
 
-    Optional<ControlPoint> findControlPoint(Long id);
+    Optional<ControlPointView> findControlPoint(Long id);
+
+    /** Puntos de control por identificador; los que no existen no aparecen en el mapa. */
+    Map<Long, ControlPointView> findControlPoints(Collection<Long> ids);
 }

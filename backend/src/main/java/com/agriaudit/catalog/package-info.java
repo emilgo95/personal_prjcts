@@ -6,9 +6,9 @@
  *
  * <ul>
  *   <li><b>API pública</b> (este paquete): {@link com.agriaudit.catalog.CatalogLookup} para los demás
- *       módulos, {@link com.agriaudit.catalog.CatalogService} y {@link com.agriaudit.catalog.CatalogDtos}.</li>
- *   <li>{@code domain}: entidades, expuestas como interfaz con nombre mientras otros módulos las
- *       referencien con asociaciones JPA.</li>
+ *       módulos (vistas {@link com.agriaudit.catalog.StandardView} y {@link com.agriaudit.catalog.ControlPointView}),
+ *       {@link com.agriaudit.catalog.CatalogService} y {@link com.agriaudit.catalog.CatalogDtos}.</li>
+ *   <li>{@code domain}: entidades JPA, internas del módulo.</li>
  *   <li>{@code infrastructure}: repositorios y controlador REST, internos del módulo.</li>
  * </ul>
  */

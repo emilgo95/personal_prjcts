@@ -5,7 +5,7 @@ import com.agriaudit.audit.domain.AuditItemResult;
 import com.agriaudit.audit.domain.ComplianceResult;
 import com.agriaudit.audit.infrastructure.persistence.AuditItemResultRepository;
 import com.agriaudit.catalog.CatalogLookup;
-import com.agriaudit.catalog.domain.ControlPoint;
+import com.agriaudit.catalog.ControlPointView;
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.identity.SecurityUtils;
@@ -84,14 +84,14 @@ public class AuditAttachmentService {
     private AuditItemResult getOrCreateResult(Long auditId, Long controlPointId) {
         Audit audit = auditService.requireAuditEntity(auditId);
         return results.findByAuditIdAndControlPointId(auditId, controlPointId).orElseGet(() -> {
-            ControlPoint cp = catalog.findControlPoint(controlPointId)
+            ControlPointView cp = catalog.findControlPoint(controlPointId)
                     .orElseThrow(() -> new NotFoundException("Punto de control no encontrado: " + controlPointId));
-            if (!cp.getChapter().getStandard().getId().equals(audit.getStandard().getId())) {
+            if (!cp.belongsTo(audit.getStandardId())) {
                 throw new BadRequestException("El punto de control no pertenece al estándar de la auditoría");
             }
             AuditItemResult r = new AuditItemResult();
             r.setAuditId(auditId);
-            r.setControlPoint(cp);
+            r.setControlPointId(cp.id());
             r.setCompliance(ComplianceResult.NOT_ASSESSED);
             return results.save(r);
         });

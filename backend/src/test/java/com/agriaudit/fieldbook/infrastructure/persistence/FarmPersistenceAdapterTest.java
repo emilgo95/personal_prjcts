@@ -41,9 +41,9 @@ class FarmPersistenceAdapterTest extends FarmRepositoryContract {
 
     @BeforeEach
     void organizations() {
-        orgA = jdbc.queryForObject("INSERT INTO organizations (name) VALUES ('Contrato A') "
+        orgA = jdbc.queryForObject("INSERT INTO identity.organizations (name) VALUES ('Contrato A') "
                 + "ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id", Long.class);
-        orgB = jdbc.queryForObject("INSERT INTO organizations (name) VALUES ('Contrato B') "
+        orgB = jdbc.queryForObject("INSERT INTO identity.organizations (name) VALUES ('Contrato B') "
                 + "ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id", Long.class);
     }
 

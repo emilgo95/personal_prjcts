@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "corrective_actions")
+@Table(schema = "findings", name = "corrective_actions")
 public class CorrectiveAction {
 
     @Id

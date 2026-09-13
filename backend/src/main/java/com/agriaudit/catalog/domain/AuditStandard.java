@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "audit_standards")
+@Table(schema = "catalog", name = "audit_standards")
 public class AuditStandard {
 
     @Id

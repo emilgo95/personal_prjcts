@@ -4,8 +4,8 @@ import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import com.agriaudit.storage.AttachmentStore;
-import com.agriaudit.catalog.domain.ControlPoint;
-import com.agriaudit.catalog.domain.ControlLevel;
+import com.agriaudit.catalog.ControlPointView;
+import com.agriaudit.catalog.ControlLevel;
 import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.audit.AuditLookup;
@@ -157,7 +157,7 @@ public class EvidenceAnalysisService {
             return false;
         }
         return catalog.findControlPoint(controlPointId)
-                .map(ControlPoint::getLevel)
+                .map(ControlPointView::level)
                 .map(l -> l == ControlLevel.MAJOR_MUST || l == ControlLevel.CORE)
                 .orElse(false);
     }

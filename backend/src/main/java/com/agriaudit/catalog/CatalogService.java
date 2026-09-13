@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -92,18 +93,46 @@ public class CatalogService implements CatalogLookup {
     // ---- CatalogLookup ----
 
     @Override
-    public Optional<AuditStandard> findStandard(String code) {
-        return standards.findByCode(code);
+    public Optional<StandardView> findStandard(String code) {
+        return standards.findByCode(code).map(CatalogService::toView);
     }
 
     @Override
-    public List<ControlPoint> controlPointsOf(String standardCode) {
-        return controlPoints.findByStandardCode(standardCode);
+    public Optional<StandardView> findStandard(Long id) {
+        return standards.findById(id).map(CatalogService::toView);
     }
 
     @Override
-    public Optional<ControlPoint> findControlPoint(Long id) {
-        return controlPoints.findById(id);
+    public List<ControlPointView> controlPointsOf(String standardCode) {
+        return controlPoints.findByStandardCode(standardCode).stream().map(CatalogService::toView).toList();
+    }
+
+    @Override
+    public Optional<ControlPointView> findControlPoint(Long id) {
+        return controlPoints.findWithChapterById(id).map(CatalogService::toView);
+    }
+
+    @Override
+    public Map<Long, ControlPointView> findControlPoints(Collection<Long> ids) {
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, ControlPointView> byId = new LinkedHashMap<>();
+        for (ControlPoint cp : controlPoints.findWithChapterByIdIn(ids)) {
+            byId.put(cp.getId(), toView(cp));
+        }
+        return byId;
+    }
+
+    private static StandardView toView(AuditStandard s) {
+        return new StandardView(s.getId(), s.getCode(), s.getVersion(), s.getName(), s.getScoringRule());
+    }
+
+    private static ControlPointView toView(ControlPoint cp) {
+        StandardChapter ch = cp.getChapter();
+        return new ControlPointView(cp.getId(), cp.getRef(), cp.getTitle(), cp.getDescription(), cp.getGuidance(),
+                cp.getLevel(), cp.getApplicableScopes(), ch.getCode(), ch.getTitle(),
+                ch.getStandard().getId(), ch.getStandard().getCode());
     }
 
     private ControlPointDto toControlPointDto(ControlPoint cp) {

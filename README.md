@@ -61,6 +61,11 @@ Cambia `ADMIN_PASSWORD` y `JWT_SECRET` en `.env` antes de cualquier uso real.
 
 El contenedor solo publica el puerto en `127.0.0.1` (no en la red).
 
+Las tablas están **agrupadas por módulo**, cada una en el esquema de PostgreSQL de su módulo
+(`identity`, `catalog`, `fieldbook`, `storage`, `audit`, `findings`, `documents`, `ai`); en `public`
+solo queda el historial de Flyway. En `psql`, cualifica el nombre (`SELECT * FROM audit.audits;`)
+o ajusta la ruta de búsqueda (`SET search_path TO audit, findings, public;`).
+
 > La contraseña de PostgreSQL solo se fija en la **primera** inicialización del volumen `pgdata`.
 > Si cambias `POSTGRES_PASSWORD` después, ejecuta `docker compose down -v && docker compose up -d`
 > para recrear la base de datos (se pierden los datos locales y se vuelven a aplicar las migraciones).
@@ -275,7 +280,7 @@ agriaudit-docs/
 │       │                         #   identity · catalog · fieldbook · storage · audit · findings
 │       │                         #   documents · dashboard · ai · platform · common
 │       └── resources/
-│           ├── db/migration/     # Flyway: esquema + datos semilla
+│           ├── db/migration/     # Flyway: un esquema de PostgreSQL por módulo + datos semilla
 │           └── templates/docs/   # plantillas Thymeleaf de los PDF
 ├── frontend/
 │   └── src/                      # api · auth · components · audit · pages

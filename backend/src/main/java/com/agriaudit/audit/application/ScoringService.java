@@ -2,10 +2,11 @@ package com.agriaudit.audit.application;
 
 import com.agriaudit.audit.domain.Audit;
 import com.agriaudit.audit.domain.AuditItemResult;
-import com.agriaudit.catalog.domain.ControlPoint;
 import com.agriaudit.audit.domain.ComplianceResult;
 import com.agriaudit.audit.infrastructure.persistence.AuditItemResultRepository;
 import com.agriaudit.catalog.CatalogLookup;
+import com.agriaudit.catalog.ControlPointView;
+import com.agriaudit.catalog.StandardView;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -37,14 +38,16 @@ public class ScoringService {
     }
 
     public ScoreResult score(Audit audit) {
-        String standardCode = audit.getStandard().getCode();
-        List<ControlPoint> cps = catalog.controlPointsOf(standardCode);
+        StandardView standard = catalog.findStandard(audit.getStandardId())
+                .orElseThrow(() -> new IllegalStateException("Estándar inexistente: " + audit.getStandardId()));
+        String standardCode = standard.code();
+        List<ControlPointView> cps = catalog.controlPointsOf(standardCode);
         Map<Long, ComplianceResult> byCp = new LinkedHashMap<>();
         for (AuditItemResult r : results.findByAuditId(audit.getId())) {
-            byCp.put(r.getControlPoint().getId(), r.getCompliance());
+            byCp.put(r.getControlPointId(), r.getCompliance());
         }
 
-        JsonNode rule = parseRule(audit.getStandard().getScoringRule());
+        JsonNode rule = parseRule(standard.scoringRule());
         String type = rule.path("type").asText("MAJOR_MINOR");
         boolean reportOnly = rule.path("reportOnly").asBoolean(false);
         Double majorMin = rule.has("majorMustMinPct") ? rule.get("majorMustMinPct").asDouble() : null;
@@ -58,18 +61,18 @@ public class ScoringService {
         Map<String, GroupAcc> pillarAcc = new LinkedHashMap<>();
 
         int assessed = 0;
-        for (ControlPoint cp : cps) {
-            ComplianceResult c = byCp.getOrDefault(cp.getId(), ComplianceResult.NOT_ASSESSED);
+        for (ControlPointView cp : cps) {
+            ComplianceResult c = byCp.getOrDefault(cp.id(), ComplianceResult.NOT_ASSESSED);
             if (c != ComplianceResult.NOT_ASSESSED) {
                 assessed++;
             }
-            int[] lc = levelCounts.computeIfAbsent(cp.getLevel().name(), k -> new int[4]);
+            int[] lc = levelCounts.computeIfAbsent(cp.level().name(), k -> new int[4]);
             bump(lc, c);
 
-            String chKey = cp.getChapter().getCode();
-            chapterAcc.computeIfAbsent(chKey, k -> new GroupAcc(chKey, cp.getChapter().getTitle())).bump(c);
+            String chKey = cp.chapterCode();
+            chapterAcc.computeIfAbsent(chKey, k -> new GroupAcc(chKey, cp.chapterTitle())).bump(c);
 
-            String pillar = extractPillar(cp.getApplicableScopes());
+            String pillar = extractPillar(cp.applicableScopes());
             if (pillar != null) {
                 pillarAcc.computeIfAbsent(pillar, k -> new GroupAcc(pillar, pillarTitle(pillar))).bump(c);
             }
@@ -126,7 +129,7 @@ public class ScoringService {
 
         return new ScoreResult(
                 standardCode,
-                audit.getStandard().getName(),
+                standard.name(),
                 type,
                 reportOnly || "REPORT_ONLY".equals(overall),
                 overall,

@@ -1,4 +1,4 @@
-package com.agriaudit.catalog.domain;
+package com.agriaudit.catalog;
 
 /**
  * Nivel/obligatoriedad de un punto de control. El significado exacto depende del

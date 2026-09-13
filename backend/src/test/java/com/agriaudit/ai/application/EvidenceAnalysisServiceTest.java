@@ -1,7 +1,7 @@
 package com.agriaudit.ai.application;
 
-import com.agriaudit.catalog.domain.ControlPoint;
-import com.agriaudit.catalog.domain.ControlLevel;
+import com.agriaudit.catalog.ControlPointView;
+import com.agriaudit.catalog.ControlLevel;
 import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.catalog.CatalogLookup;
@@ -110,10 +110,7 @@ class EvidenceAnalysisServiceTest {
         assertThat(a.warnings()).anyMatch(w -> w.contains("no ha detectado texto"));
     }
 
-    private ControlPoint cp(ControlLevel level) {
-        ControlPoint cp = new ControlPoint();
-        cp.setId(50L);
-        cp.setLevel(level);
-        return cp;
+    private ControlPointView cp(ControlLevel level) {
+        return new ControlPointView(50L, "AF 1.1", "Punto", null, null, level, null, "AF", "Capítulo", 1L, "STD");
     }
 }

@@ -3,10 +3,9 @@ package com.agriaudit.audit.domain;
 import jakarta.persistence.*;
 
 import java.time.Instant;
-import com.agriaudit.catalog.domain.ControlPoint;
 
 @Entity
-@Table(name = "audit_item_results")
+@Table(schema = "audit", name = "audit_item_results")
 public class AuditItemResult {
 
     @Id
@@ -16,9 +15,9 @@ public class AuditItemResult {
     @Column(name = "audit_id", nullable = false)
     private Long auditId;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "control_point_id", nullable = false)
-    private ControlPoint controlPoint;
+    /** Punto de control (módulo catalog); referencia por id, sin asociación JPA entre módulos. */
+    @Column(name = "control_point_id", nullable = false)
+    private Long controlPointId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -40,8 +39,8 @@ public class AuditItemResult {
     public void setId(Long id) { this.id = id; }
     public Long getAuditId() { return auditId; }
     public void setAuditId(Long auditId) { this.auditId = auditId; }
-    public ControlPoint getControlPoint() { return controlPoint; }
-    public void setControlPoint(ControlPoint controlPoint) { this.controlPoint = controlPoint; }
+    public Long getControlPointId() { return controlPointId; }
+    public void setControlPointId(Long controlPointId) { this.controlPointId = controlPointId; }
     public ComplianceResult getCompliance() { return compliance; }
     public void setCompliance(ComplianceResult compliance) { this.compliance = compliance; }
     public String getEvidenceNotes() { return evidenceNotes; }

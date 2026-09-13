@@ -6,10 +6,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import com.agriaudit.catalog.domain.ControlPoint;
 
 @Entity
-@Table(name = "findings")
+@Table(schema = "findings", name = "findings")
 public class Finding {
 
     @Id
@@ -19,9 +18,9 @@ public class Finding {
     @Column(name = "audit_id", nullable = false)
     private Long auditId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "control_point_id")
-    private ControlPoint controlPoint;
+    /** Punto de control (módulo catalog), opcional; referencia por id, sin asociación JPA entre módulos. */
+    @Column(name = "control_point_id")
+    private Long controlPointId;
 
     private String reference;
 
@@ -59,8 +58,8 @@ public class Finding {
     public void setId(Long id) { this.id = id; }
     public Long getAuditId() { return auditId; }
     public void setAuditId(Long auditId) { this.auditId = auditId; }
-    public ControlPoint getControlPoint() { return controlPoint; }
-    public void setControlPoint(ControlPoint controlPoint) { this.controlPoint = controlPoint; }
+    public Long getControlPointId() { return controlPointId; }
+    public void setControlPointId(Long controlPointId) { this.controlPointId = controlPointId; }
     public String getReference() { return reference; }
     public void setReference(String reference) { this.reference = reference; }
     public FindingClassification getClassification() { return classification; }

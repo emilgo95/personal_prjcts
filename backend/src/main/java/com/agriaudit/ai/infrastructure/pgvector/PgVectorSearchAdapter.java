@@ -24,7 +24,7 @@ class PgVectorSearchAdapter implements VectorSearchPort {
     static final int DIMENSIONS = 1024;
 
     private static final String UPSERT = """
-            INSERT INTO ai_embeddings (corpus, organization_id, source_type, source_id, chunk_index, content,
+            INSERT INTO ai.ai_embeddings (corpus, organization_id, source_type, source_id, chunk_index, content,
                                        embedding_model, embedding)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?::vector)
             ON CONFLICT (corpus, organization_id, source_type, source_id, chunk_index, embedding_model)
@@ -33,7 +33,7 @@ class PgVectorSearchAdapter implements VectorSearchPort {
 
     private static final String SEARCH_SHARED = """
             SELECT source_type, source_id, chunk_index, content, 1 - (embedding <=> ?::vector) AS score
-            FROM ai_embeddings
+            FROM ai.ai_embeddings
             WHERE corpus = ? AND organization_id IS NULL AND embedding_model = ?
             ORDER BY embedding <=> ?::vector
             LIMIT ?
@@ -41,7 +41,7 @@ class PgVectorSearchAdapter implements VectorSearchPort {
 
     private static final String SEARCH_ORGANIZATION = """
             SELECT source_type, source_id, chunk_index, content, 1 - (embedding <=> ?::vector) AS score
-            FROM ai_embeddings
+            FROM ai.ai_embeddings
             WHERE corpus = ? AND organization_id = ? AND embedding_model = ?
             ORDER BY embedding <=> ?::vector
             LIMIT ?
@@ -79,10 +79,10 @@ class PgVectorSearchAdapter implements VectorSearchPort {
     @Override
     public void deleteSource(CorpusScope scope, String sourceType, String sourceId) {
         if (scope.corpus().isShared()) {
-            jdbc.update("DELETE FROM ai_embeddings WHERE corpus = ? AND organization_id IS NULL "
+            jdbc.update("DELETE FROM ai.ai_embeddings WHERE corpus = ? AND organization_id IS NULL "
                     + "AND source_type = ? AND source_id = ?", scope.corpus().name(), sourceType, sourceId);
         } else {
-            jdbc.update("DELETE FROM ai_embeddings WHERE corpus = ? AND organization_id = ? "
+            jdbc.update("DELETE FROM ai.ai_embeddings WHERE corpus = ? AND organization_id = ? "
                             + "AND source_type = ? AND source_id = ?",
                     scope.corpus().name(), scope.organizationId(), sourceType, sourceId);
         }

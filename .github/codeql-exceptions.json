@@ -1,0 +1,13 @@
+{
+  "_comment": "Hallazgos de CodeQL aceptados tras revisión. Cada excepción se limita a una regla y un fichero, explica por qué no aplica, nombra el test que protege esa premisa y caduca en reviewBy: pasada esa fecha vuelve a bloquear el CI hasta que se revise. Añadir una excepción requiere revisión en el PR.",
+  "exceptions": [
+    {
+      "rule": "java/spring-disabled-csrf-protection",
+      "path": "backend/src/main/java/com/agriaudit/identity/infrastructure/security/SecurityConfig.java",
+      "reason": "API REST stateless: el JWT viaja solo en la cabecera Authorization (Bearer), sin cookies, sesión, form login ni HTTP Basic, y CORS no admite credenciales. Un navegador no añade esa cabecera en una petición entre sitios, así que no existe vector CSRF.",
+      "guard": "backend/src/test/java/com/agriaudit/StatelessAuthenticationIntegrationTest.java",
+      "reviewed": "2026-09-13",
+      "reviewBy": "2027-03-13"
+    }
+  ]
+}

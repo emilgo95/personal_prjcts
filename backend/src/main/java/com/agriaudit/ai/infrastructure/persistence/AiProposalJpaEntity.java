@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity(name = "AiProposal")
-@Table(name = "ai_proposals")
+@Table(schema = "ai", name = "ai_proposals")
 class AiProposalJpaEntity {
 
     @Id
