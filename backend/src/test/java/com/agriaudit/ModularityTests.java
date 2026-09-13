@@ -25,7 +25,7 @@ class ModularityTests {
     private static final Logger log = LoggerFactory.getLogger(ModularityTests.class);
 
     /** Módulos extraídos: nadie puede acceder a sus internals ni formar ciclos con ellos. */
-    static final Set<String> MIGRATED_MODULES = Set.of("catalog", "common", "identity");
+    static final Set<String> MIGRATED_MODULES = Set.of("catalog", "common", "identity", "fieldbook");
 
     static final ApplicationModules modules = ApplicationModules.of(AgriAuditApplication.class);
 

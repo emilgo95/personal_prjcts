@@ -10,7 +10,8 @@ import com.agriaudit.domain.enums.ComplianceResult;
 import com.agriaudit.repo.*;
 import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.web.dto.AuditDtos.*;
-import com.agriaudit.web.dto.FarmDtos.FarmDto;
+import com.agriaudit.fieldbook.FarmDirectory;
+import com.agriaudit.fieldbook.FarmDtos.FarmDto;
 import com.agriaudit.web.dto.ScoreDtos.ScoreResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +31,7 @@ import com.agriaudit.catalog.CatalogLookup;
 public class AuditService {
 
     private final AuditRepository audits;
-    private final FarmRepository farms;
+    private final FarmDirectory farms;
     private final CatalogLookup catalog;
     private final AuditItemResultRepository results;
     private final FindingRepository findings;
@@ -38,7 +39,7 @@ public class AuditService {
     private final AttachmentLookup attachmentLookup;
     private final ReferenceSequenceRepository referenceSequences;
 
-    public AuditService(AuditRepository audits, FarmRepository farms,
+    public AuditService(AuditRepository audits, FarmDirectory farms,
                         CatalogLookup catalog, AuditItemResultRepository results,
                         FindingRepository findings, ScoringService scoringService,
                         AttachmentLookup attachmentLookup, ReferenceSequenceRepository referenceSequences) {
@@ -54,8 +55,10 @@ public class AuditService {
 
     @Transactional(readOnly = true)
     public List<AuditSummaryDto> list() {
-        return audits.findByOrganizationIdOrderByCreatedAtDesc(SecurityUtils.currentOrganizationId())
-                .stream().map(this::toSummary).toList();
+        Long orgId = SecurityUtils.currentOrganizationId();
+        List<Audit> list = audits.findByOrganizationIdOrderByCreatedAtDesc(orgId);
+        Map<Long, FarmDto> farmsById = farms.findFarms(orgId, list.stream().map(Audit::getFarmId).distinct().toList());
+        return list.stream().map(a -> toSummary(a, farmsById.get(a.getFarmId()))).toList();
     }
 
     @Transactional(readOnly = true)
@@ -65,14 +68,13 @@ public class AuditService {
 
     public AuditDetailDto create(AuditRequest request) {
         Long orgId = SecurityUtils.currentOrganizationId();
-        Farm farm = farms.findByIdAndOrganizationId(request.farmId(), orgId)
-                .orElseThrow(() -> new NotFoundException("Explotación no encontrada: " + request.farmId()));
+        FarmDto farm = requireFarm(orgId, request.farmId());
         AuditStandard standard = catalog.findStandard(request.standardCode())
                 .orElseThrow(() -> new NotFoundException("Estándar no encontrado: " + request.standardCode()));
 
         Audit audit = new Audit();
         audit.setOrganizationId(orgId);
-        audit.setFarm(farm);
+        audit.setFarmId(farm.id());
         audit.setStandard(standard);
         audit.setReference(nextReference(orgId));
         audit.setAuditType(parseType(request.auditType()));
@@ -87,12 +89,8 @@ public class AuditService {
         if (!audit.getStandard().getCode().equals(request.standardCode())) {
             throw new BadRequestException("No se puede cambiar el estándar de una auditoría existente");
         }
-        Farm farm = audit.getFarm();
-        if (!farm.getId().equals(request.farmId())) {
-            farm = farms.findByIdAndOrganizationId(request.farmId(), SecurityUtils.currentOrganizationId())
-                    .orElseThrow(() -> new NotFoundException("Explotación no encontrada: " + request.farmId()));
-            audit.setFarm(farm);
-        }
+        FarmDto farm = requireFarm(audit.getOrganizationId(), request.farmId());
+        audit.setFarmId(farm.id());
         audit.setAuditType(parseType(request.auditType()));
         applyRequest(audit, request, farm);
         return toDetail(audits.save(audit));
@@ -199,28 +197,33 @@ public class AuditService {
         }
     }
 
-    private void applyRequest(Audit audit, AuditRequest r, Farm farm) {
+    private FarmDto requireFarm(Long orgId, Long farmId) {
+        return farms.findFarm(orgId, farmId)
+                .orElseThrow(() -> new NotFoundException("Explotación no encontrada: " + farmId));
+    }
+
+    private void applyRequest(Audit audit, AuditRequest r, FarmDto farm) {
         audit.setScopeDescription(r.scopeDescription());
         audit.setPlannedStartDate(r.plannedStartDate());
         audit.setPlannedEndDate(r.plannedEndDate());
         audit.setActualDate(r.actualDate());
         audit.setLeadAuditor(r.leadAuditor());
         audit.setAuditTeam(r.auditTeam());
-        audit.setSiteAddress(r.siteAddress() != null ? r.siteAddress() : farm.getAddress());
-        audit.setProductsInScope(r.productsInScope() != null ? r.productsInScope() : farm.getCrops());
+        audit.setSiteAddress(r.siteAddress() != null ? r.siteAddress() : farm.address());
+        audit.setProductsInScope(r.productsInScope() != null ? r.productsInScope() : farm.crops());
     }
 
     private String nextReference(Long orgId) {
         return String.format("AUD-%d-%04d", LocalDate.now().getYear(), referenceSequences.nextAuditNumber(orgId));
     }
 
-    private AuditSummaryDto toSummary(Audit a) {
+    private AuditSummaryDto toSummary(Audit a, FarmDto farm) {
         int total = catalog.controlPointsOf(a.getStandard().getCode()).size();
         int assessed = (int) results.findByAuditId(a.getId()).stream()
                 .filter(r -> r.getCompliance() != ComplianceResult.NOT_ASSESSED).count();
         int progress = total == 0 ? 0 : Math.round(100f * assessed / total);
         return new AuditSummaryDto(
-                a.getId(), a.getReference(), a.getFarm().getId(), a.getFarm().getLegalName(),
+                a.getId(), a.getReference(), a.getFarmId(), farm == null ? null : farm.legalName(),
                 a.getStandard().getCode(), a.getStandard().getName(), a.getAuditType().name(), a.getStatus().name(),
                 a.getPlannedStartDate(), a.getActualDate(), a.getLeadAuditor(), a.getCreatedAt(),
                 findings.countByAuditId(a.getId()), assessed, total, progress);
@@ -231,11 +234,7 @@ public class AuditService {
         int assessed = (int) results.findByAuditId(a.getId()).stream()
                 .filter(r -> r.getCompliance() != ComplianceResult.NOT_ASSESSED).count();
         int progress = total == 0 ? 0 : Math.round(100f * assessed / total);
-        Farm f = a.getFarm();
-        FarmDto farmDto = new FarmDto(f.getId(), f.getLegalName(), f.getTradeName(), f.getRegistrationNumber(),
-                f.getAddress(), f.getCity(), f.getRegion(), f.getCountry(), f.getLatitude(), f.getLongitude(),
-                f.getTotalHectares(), f.getCrops(), f.getProductionAreas(), f.getContactName(),
-                f.getContactEmail(), f.getContactPhone(), f.getNotes());
+        FarmDto farmDto = requireFarm(a.getOrganizationId(), a.getFarmId());
         return new AuditDetailDto(
                 a.getId(), a.getReference(), a.getStandard().getCode(), a.getStandard().getName(),
                 a.getStandard().getVersion(), a.getAuditType().name(), a.getStatus().name(),

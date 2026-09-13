@@ -21,9 +21,9 @@ public class Audit {
     @Column(name = "organization_id", nullable = false)
     private Long organizationId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "farm_id", nullable = false)
-    private Farm farm;
+    /** Explotación auditada (módulo fieldbook); referencia por id, sin asociación JPA entre módulos. */
+    @Column(name = "farm_id", nullable = false)
+    private Long farmId;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "standard_id", nullable = false)
@@ -79,8 +79,8 @@ public class Audit {
     public void setId(Long id) { this.id = id; }
     public Long getOrganizationId() { return organizationId; }
     public void setOrganizationId(Long organizationId) { this.organizationId = organizationId; }
-    public Farm getFarm() { return farm; }
-    public void setFarm(Farm farm) { this.farm = farm; }
+    public Long getFarmId() { return farmId; }
+    public void setFarmId(Long farmId) { this.farmId = farmId; }
     public AuditStandard getStandard() { return standard; }
     public void setStandard(AuditStandard standard) { this.standard = standard; }
     public String getReference() { return reference; }

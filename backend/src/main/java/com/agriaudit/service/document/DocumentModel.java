@@ -4,7 +4,7 @@ import com.agriaudit.web.dto.AuditDtos.AuditDetailDto;
 import com.agriaudit.web.dto.AuditDtos.AuditItemResultDto;
 import com.agriaudit.catalog.CatalogDtos.ChapterDto;
 import com.agriaudit.catalog.CatalogDtos.StandardDetailDto;
-import com.agriaudit.web.dto.FarmDtos.FarmDto;
+import com.agriaudit.fieldbook.FarmDtos.FarmDto;
 import com.agriaudit.web.dto.FindingDtos.FindingDto;
 import com.agriaudit.web.dto.ScoreDtos.ScoreResult;
 

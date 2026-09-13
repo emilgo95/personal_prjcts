@@ -1,4 +1,4 @@
-package com.agriaudit.domain;
+package com.agriaudit.fieldbook.infrastructure.persistence;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -7,9 +7,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Entity
+@Entity(name = "Farm")
 @Table(name = "farms")
-public class Farm {
+public class FarmJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

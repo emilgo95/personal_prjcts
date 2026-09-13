@@ -1,7 +1,7 @@
 package com.agriaudit.web.dto;
 
 import com.agriaudit.web.dto.AttachmentDtos.AttachmentDto;
-import com.agriaudit.web.dto.FarmDtos.FarmDto;
+import com.agriaudit.fieldbook.FarmDtos.FarmDto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 

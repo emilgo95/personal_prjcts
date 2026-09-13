@@ -1,8 +1,8 @@
-package com.agriaudit.web;
+package com.agriaudit.fieldbook.infrastructure.web;
 
-import com.agriaudit.service.FarmService;
-import com.agriaudit.web.dto.FarmDtos.FarmDto;
-import com.agriaudit.web.dto.FarmDtos.FarmRequest;
+import com.agriaudit.fieldbook.application.FarmService;
+import com.agriaudit.fieldbook.FarmDtos.FarmDto;
+import com.agriaudit.fieldbook.FarmDtos.FarmRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;

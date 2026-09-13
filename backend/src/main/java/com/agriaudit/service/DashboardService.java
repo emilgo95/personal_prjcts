@@ -2,7 +2,7 @@ package com.agriaudit.service;
 
 import com.agriaudit.domain.Finding;
 import com.agriaudit.domain.enums.FindingStatus;
-import com.agriaudit.repo.FarmRepository;
+import com.agriaudit.fieldbook.FarmDirectory;
 import com.agriaudit.repo.FindingRepository;
 import com.agriaudit.repo.GeneratedDocumentRepository;
 import com.agriaudit.identity.SecurityUtils;
@@ -21,11 +21,11 @@ import java.util.Map;
 public class DashboardService {
 
     private final AuditService auditService;
-    private final FarmRepository farms;
+    private final FarmDirectory farms;
     private final FindingRepository findings;
     private final GeneratedDocumentRepository generatedDocuments;
 
-    public DashboardService(AuditService auditService, FarmRepository farms,
+    public DashboardService(AuditService auditService, FarmDirectory farms,
                             FindingRepository findings, GeneratedDocumentRepository generatedDocuments) {
         this.auditService = auditService;
         this.farms = farms;
@@ -55,7 +55,7 @@ public class DashboardService {
         List<AuditSummaryDto> recent = audits.stream().limit(5).toList();
 
         return new DashboardDto(
-                farms.findByOrganizationIdOrderByLegalNameAsc(orgId).size(),
+                farms.countFarms(orgId),
                 audits.size(),
                 byStatus,
                 open,

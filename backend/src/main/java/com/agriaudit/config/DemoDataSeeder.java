@@ -3,6 +3,9 @@ package com.agriaudit.config;
 import com.agriaudit.domain.*;
 import com.agriaudit.domain.enums.*;
 import com.agriaudit.repo.*;
+import com.agriaudit.fieldbook.FarmDirectory;
+import com.agriaudit.fieldbook.FarmDtos.FarmDto;
+import com.agriaudit.fieldbook.FarmDtos.FarmRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,7 +46,7 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final String orgName;
     private final OrganizationDirectory organizations;
     private final UserProvisioning users;
-    private final FarmRepository farms;
+    private final FarmDirectory farms;
     private final AuditRepository audits;
     private final CatalogLookup catalog;
     private final AuditItemResultRepository results;
@@ -52,7 +55,7 @@ public class DemoDataSeeder implements CommandLineRunner {
 
     public DemoDataSeeder(@Value("${agriaudit.demo.seed:true}") boolean enabled,
                           @Value("${agriaudit.admin.org-name}") String orgName,
-                          OrganizationDirectory organizations, UserProvisioning users, FarmRepository farms,
+                          OrganizationDirectory organizations, UserProvisioning users, FarmDirectory farms,
                           AuditRepository audits, CatalogLookup catalog,
                           AuditItemResultRepository results, FindingRepository findings,
                           CorrectiveActionRepository correctiveActions) {
@@ -74,7 +77,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         if (!enabled) {
             return;
         }
-        if (farms.count() > 0) {
+        if (farms.anyFarmExists()) {
             log.info("Datos de demostración ya presentes; se omite el sembrado");
             return;
         }
@@ -88,7 +91,7 @@ public class DemoDataSeeder implements CommandLineRunner {
                 organizations.organizationName(orgId).orElse(orgName));
 
         seedUsers(orgId);
-        List<Farm> demoFarms = seedFarms(orgId);
+        List<FarmDto> demoFarms = seedFarms(orgId);
         seedAudits(orgId, demoFarms);
 
         log.info("Datos de demostración creados: {} explotaciones, {} auditorías",
@@ -100,8 +103,8 @@ public class DemoDataSeeder implements CommandLineRunner {
         users.ensureUser(orgId, "carlos.lector@demo.test", "Carlos Lector", Role.VIEWER, "Demo1234!");
     }
 
-    private List<Farm> seedFarms(Long orgId) {
-        List<Farm> list = new ArrayList<>();
+    private List<FarmDto> seedFarms(Long orgId) {
+        List<FarmDto> list = new ArrayList<>();
         list.add(farm(orgId, "Frutas del Sur S.L.", "Frutas del Sur", "4049928111111",
                 "Ctra. Cartaya km 4", "Cartaya", "Huelva", "España", "37.283000", "-7.148000",
                 "85.00", "Fresa, Frambuesa, Arándano", "Túnel 1-12, Parcela norte",
@@ -125,30 +128,15 @@ public class DemoDataSeeder implements CommandLineRunner {
         return list;
     }
 
-    private Farm farm(Long orgId, String legal, String trade, String reg, String address, String city,
-                      String region, String country, String lat, String lon, String hectares,
-                      String crops, String areas, String contact, String email, String phone) {
-        Farm f = new Farm();
-        f.setOrganizationId(orgId);
-        f.setLegalName(legal);
-        f.setTradeName(trade);
-        f.setRegistrationNumber(reg);
-        f.setAddress(address);
-        f.setCity(city);
-        f.setRegion(region);
-        f.setCountry(country);
-        f.setLatitude(new BigDecimal(lat));
-        f.setLongitude(new BigDecimal(lon));
-        f.setTotalHectares(new BigDecimal(hectares));
-        f.setCrops(crops);
-        f.setProductionAreas(areas);
-        f.setContactName(contact);
-        f.setContactEmail(email);
-        f.setContactPhone(phone);
-        return farms.save(f);
+    private FarmDto farm(Long orgId, String legal, String trade, String reg, String address, String city,
+                         String region, String country, String lat, String lon, String hectares,
+                         String crops, String areas, String contact, String email, String phone) {
+        return farms.registerFarm(orgId, new FarmRequest(legal, trade, reg, address, city, region, country,
+                new BigDecimal(lat), new BigDecimal(lon), new BigDecimal(hectares), crops, areas,
+                contact, email, phone, null));
     }
 
-    private void seedAudits(Long orgId, List<Farm> f) {
+    private void seedAudits(Long orgId, List<FarmDto> f) {
         int seq = 1;
         seq = audit(orgId, seq, f.get(0), "GLOBALGAP_IFA_V6", AuditType.CB_INITIAL, AuditStatus.CLOSED,
                 LocalDate.of(2026, 3, 10), "Ana Auditora", "Ana Auditora, Jordi Pons",
@@ -176,7 +164,7 @@ public class DemoDataSeeder implements CommandLineRunner {
                 "Autoevaluación social de la cooperativa.");
     }
 
-    private int audit(Long orgId, int seq, Farm farm, String standardCode, AuditType type, AuditStatus status,
+    private int audit(Long orgId, int seq, FarmDto farm, String standardCode, AuditType type, AuditStatus status,
                       LocalDate date, String leadAuditor, String team, String scope) {
         AuditStandard standard = catalog.controlPointsOf(standardCode).stream()
                 .findFirst().map(cp -> cp.getChapter().getStandard()).orElse(null);
@@ -186,7 +174,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         }
         Audit a = new Audit();
         a.setOrganizationId(orgId);
-        a.setFarm(farm);
+        a.setFarmId(farm.id());
         a.setStandard(standard);
         a.setReference(String.format("AUD-%d-%04d", date.getYear(), seq));
         a.setAuditType(type);
@@ -197,8 +185,8 @@ public class DemoDataSeeder implements CommandLineRunner {
         a.setPlannedEndDate(date.plusDays(1));
         a.setLeadAuditor(leadAuditor);
         a.setAuditTeam(team);
-        a.setSiteAddress(farm.getAddress() + ", " + farm.getCity());
-        a.setProductsInScope(farm.getCrops());
+        a.setSiteAddress(farm.address() + ", " + farm.city());
+        a.setProductsInScope(farm.crops());
         a = audits.save(a);
 
         seedResultsAndFindings(a, standardCode, status, date, leadAuditor);

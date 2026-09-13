@@ -21,8 +21,14 @@ class ArchitectureTests {
      */
     static final String[] HEXAGONAL_DOMAINS = {
             "com.agriaudit.fieldbook.domain..",
+            "com.agriaudit.fieldbook.port..",
             "com.agriaudit.evidence.domain..",
             "com.agriaudit.ai.domain..",
+    };
+
+    /** Módulos ya extraídos de los paquetes por capas (crece con WS-1). */
+    static final String[] EXTRACTED_MODULES = {
+            "com.agriaudit.common..", "com.agriaudit.catalog..", "com.agriaudit.identity..", "com.agriaudit.fieldbook..",
     };
 
     /** Paquetes por capas heredados, que desaparecen al terminar WS-1. */
@@ -53,7 +59,7 @@ class ArchitectureTests {
 
     @Test
     void extractedModulesDoNotDependOnLegacyLayers() {
-        noClasses().that().resideInAnyPackage("com.agriaudit.catalog..", "com.agriaudit.common..", "com.agriaudit.identity..")
+        noClasses().that().resideInAnyPackage(EXTRACTED_MODULES)
                 .should().dependOnClassesThat().resideInAnyPackage(LEGACY_LAYERS)
                 .check(classes);
     }
