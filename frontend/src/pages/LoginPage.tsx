@@ -4,9 +4,19 @@ import { keyframes } from '@emotion/react';
 import { Alert, Avatar, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
 import SpaIcon from '@mui/icons-material/Spa';
 import LoginIcon from '@mui/icons-material/Login';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 import { useAuth } from '../auth/AuthContext';
 import { extractErrorMessage } from '../api/client';
 import { greetingForDate, sceneForDate } from '../auth/loginScenes';
+
+/** Tres ideas clave bajo la propuesta de valor: breves, paralelas y centradas en el usuario. */
+const KEY_POINTS = [
+  { icon: DescriptionOutlinedIcon, label: 'Informes en un clic' },
+  { icon: TaskAltOutlinedIcon, label: 'No conformidades al día' },
+  { icon: VerifiedOutlinedIcon, label: 'Trazabilidad completa' },
+] as const;
 
 const kenBurns = keyframes`
   from { transform: scale(1.02) translate3d(0, 0, 0); }
@@ -88,22 +98,71 @@ export default function LoginPage() {
         }}
       >
         {/* Propuesta de valor: una sola frase, centrada en el beneficio para el cliente */}
-        <Typography
-          component="p"
-          sx={{
-            display: { xs: 'none', md: 'block' },
-            color: 'common.white',
-            maxWidth: 620,
-            fontSize: { md: '3.4rem', lg: '4.2rem' },
-            fontWeight: 700,
-            lineHeight: 1.05,
-            letterSpacing: '-0.025em',
-            textShadow: '0 2px 24px rgba(0,0,0,0.35)',
-            textWrap: 'balance',
-          }}
-        >
-          Tus auditorías, listas sin papeleo.
-        </Typography>
+        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+          <Typography
+            component="p"
+            sx={{
+              color: 'common.white',
+              maxWidth: 620,
+              fontSize: { md: '3.4rem', lg: '4.2rem' },
+              fontWeight: 700,
+              lineHeight: 1.05,
+              letterSpacing: '-0.025em',
+              textShadow: '0 2px 24px rgba(0,0,0,0.35)',
+              textWrap: 'balance',
+            }}
+          >
+            Tus auditorías, listas sin papeleo.
+          </Typography>
+
+          <Box
+            component="ul"
+            sx={{
+              listStyle: 'none',
+              p: 0,
+              m: 0,
+              mt: 4,
+              display: 'flex',
+              flexDirection: { md: 'column', lg: 'row' },
+              columnGap: 3,
+              rowGap: 1.75,
+            }}
+          >
+            {KEY_POINTS.map(({ icon: Icon, label }) => (
+              <Box component="li" key={label} sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                <Box
+                  aria-hidden
+                  sx={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: '12px',
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: '#cdeea3',
+                    bgcolor: 'rgba(255, 255, 255, 0.14)',
+                    border: '1px solid rgba(255, 255, 255, 0.24)',
+                    backdropFilter: 'blur(8px)',
+                    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.18)',
+                  }}
+                >
+                  <Icon sx={{ fontSize: 20 }} />
+                </Box>
+                <Typography
+                  component="span"
+                  sx={{
+                    color: 'common.white',
+                    fontSize: '0.98rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.005em',
+                    textShadow: '0 1px 10px rgba(0,0,0,0.45)',
+                  }}
+                >
+                  {label}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
 
         <Card
           elevation={0}
