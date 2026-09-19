@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Explotaciones de demostración de varios países. Es el primer eslabón del juego de datos de demo:
+ * Explotaciones de demostración de la Región de Murcia. Es el primer eslabón del juego de datos de demo:
  * publica {@link DemoFarmsSeeded} y {@code audit} y {@code findings} siembran lo suyo en cadena.
  *
  * <p>Idempotente: no hace nada si ya existe alguna explotación. Se desactiva con
@@ -73,26 +73,39 @@ class FarmDemoSeeder implements CommandLineRunner {
 
     private List<FarmDto> seedFarms(Long orgId) {
         List<FarmDto> list = new ArrayList<>();
-        list.add(farm(orgId, "Frutas del Sur S.L.", "Frutas del Sur", "4049928111111",
-                "Ctra. Cartaya km 4", "Cartaya", "Huelva", "España", "37.283000", "-7.148000",
-                "85.00", "Fresa, Frambuesa, Arándano", "Túnel 1-12, Parcela norte",
-                "Lucía Márquez", "lmarquez@frutasdelsur.example", "+34 959 000 111"));
-        list.add(farm(orgId, "Cítricos Valencianos S.C.V.", "Citriva", "4049928222222",
-                "Camí de l'Horta 22", "Carcaixent", "Valencia", "España", "39.121000", "-0.449000",
-                "210.00", "Naranja, Mandarina", "Sectores A-F",
-                "Vicent Aparicio", "vaparicio@citriva.example", "+34 962 000 222"));
-        list.add(farm(orgId, "AgroExport Perú S.A.C.", "AgroExport Perú", "4049928333333",
-                "Fundo San José, Panamericana Sur km 300", "Ica", "Ica", "Perú", "-14.087000", "-75.760000",
-                "540.00", "Uva de mesa, Arándano, Palta", "Fundos San José, El Carmen y La Huaca",
-                "Rosa Quispe", "rquispe@agroexportperu.example", "+51 56 000 333"));
-        list.add(farm(orgId, "Golden Farms Ltd", "Golden Farms", "4049928444444",
-                "R45 Farm Road", "Ceres", "Western Cape", "Sudáfrica", "-33.363000", "19.310000",
-                "320.00", "Manzana, Pera", "Blocks 1-18",
-                "Pieter van Wyk", "pvw@goldenfarms.example", "+27 23 000 444"));
-        list.add(farm(orgId, "Coopérative Agricole Souss", "Coop Souss", "4049928555555",
-                "Route de Taroudant, Aït Melloul", "Agadir", "Souss-Massa", "Marruecos", "30.334000", "-9.497000",
-                "140.00", "Tomate, Pimiento, Calabacín", "Serres A1-A9",
-                "Khadija Amrani", "kamrani@coopsouss.example", "+212 528 000 555"));
+        // Empresas ficticias de la Región de Murcia (perfil real del sector; GGN del rango de pruebas 409999).
+        list.add(farm(orgId, "Hortícolas del Segura, S.L.", "Hortícolas del Segura", "4099990000017",
+                "Ctra. de Fortuna km 4", "Molina de Segura", "Región de Murcia", "España", "38.054000", "-1.207000",
+                "420.00", "Lechuga, Brócoli, Apio", "Molina de Segura, Fortuna y Abanilla",
+                "Lucía Marín", "calidad@horticolasdelsegura.example", "+34 968 000 001"));
+        list.add(farm(orgId, "Campo de Fortuna, S. Coop.", "Campo de Fortuna", "4099990000024",
+                "Camino de los Baños s/n", "Fortuna", "Región de Murcia", "España", "38.181000", "-1.128000",
+                "640.00", "Pimiento, Tomate, Calabacín", "Invernaderos y aire libre, 38 socios",
+                "Antonio Ruiz Peñas", "sgc@campodefortuna.example", "+34 968 000 002"));
+        list.add(farm(orgId, "Frutas Valle del Guadalentín, S.A.", "Frutas del Guadalentín", "4099990000031",
+                "Pol. Ind. Saprelorca, calle 3", "Lorca", "Región de Murcia", "España", "37.679000", "-1.700000",
+                "310.00", "Melocotón, Nectarina, Ciruela", "Central de fruta de hueso, 22 productores",
+                "Marta Soler", "calidad@fvguadalentin.example", "+34 968 000 003"));
+        list.add(farm(orgId, "AgroPacheco, S.A.T. 99001", "AgroPacheco", "4099990000048",
+                "Av. de la Estación 21", "Torre Pacheco", "Región de Murcia", "España", "37.743000", "-0.955000",
+                "890.00", "Melón, Sandía, Lechuga iceberg", "SAT con confección propia, 45 socios",
+                "Juan Conesa", "calidad@agropacheco.example", "+34 968 000 004"));
+        list.add(farm(orgId, "BioCampo Cartagena, S.L.", "BioCampo", "4099990000055",
+                "Finca Los Nietos", "Cartagena", "Región de Murcia", "España", "37.630000", "-0.870000",
+                "150.00", "Tomate rama, Pimiento, Hoja baby", "Producción 100 % ecológica",
+                "Nerea Gil", "bio@biocampocartagena.example", "+34 968 000 005"));
+        list.add(farm(orgId, "Uva del Noroeste, S.L.", "Uva del Noroeste", "4099990000062",
+                "Ctra. de Cañara km 2", "Cehegín", "Región de Murcia", "España", "38.092000", "-1.803000",
+                "240.00", "Uva de mesa sin semilla", "Parrales en malla, 3 fincas",
+                "Pedro Fernández", "calidad@uvadelnoroeste.example", "+34 968 000 006"));
+        list.add(farm(orgId, "Cítricos Vega Media, S. Coop.", "Cítricos Vega Media", "4099990000079",
+                "Calle Mayor 88", "Ceuti", "Región de Murcia", "España", "38.070000", "-1.270000",
+                "1120.00", "Limón, Pomelo, Naranja", "Cooperativa cítricola, 120 socios",
+                "Carmen Molina", "sgc@citricosvegamedia.example", "+34 968 000 007"));
+        list.add(farm(orgId, "Brócoli Ibérico, S.L.", "Brócoli Ibérico", "4099990000093",
+                "Camino Viejo de Cartagena km 9", "Fuente Álamo", "Región de Murcia", "España", "37.722000", "-1.116000",
+                "760.00", "Brócoli, Coliflor, Romanesco", "Productor-exportador de brásicas",
+                "David Hernández", "calidad@brocoliiberico.example", "+34 968 000 008"));
         return list;
     }
 

@@ -3,6 +3,7 @@ package com.agriaudit.documents.application;
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.documents.DocumentLookup;
+import com.agriaudit.audit.AuditDtos.AuditSummaryDto;
 import com.agriaudit.audit.AuditLookup;
 import com.agriaudit.audit.AuditRef;
 import com.agriaudit.documents.domain.DocumentTemplate;
@@ -100,14 +101,15 @@ public class DocumentGenerationService implements DocumentLookup {
         doc.setSha256(sha256(bytes));
         doc.setGeneratedBy(SecurityUtils.currentUsername());
         doc.setParams("{\"documentType\":\"" + type + "\",\"format\":\"" + format + "\"}");
-        return toDto(generatedDocuments.save(doc), audit.reference());
+        return toDto(generatedDocuments.save(doc), audit.reference(), auditService.get(auditId).standardName());
     }
 
     @Transactional(readOnly = true)
     public List<GeneratedDocumentDto> listForAudit(Long auditId) {
         AuditRef audit = auditService.requireAudit(auditId);
+        String standardName = auditService.get(auditId).standardName();
         return generatedDocuments.findByAuditIdOrderByGeneratedAtDesc(auditId).stream()
-                .map(d -> toDto(d, audit.reference())).toList();
+                .map(d -> toDto(d, audit.reference(), standardName)).toList();
     }
 
     @Override
@@ -118,8 +120,15 @@ public class DocumentGenerationService implements DocumentLookup {
 
     @Transactional(readOnly = true)
     public List<GeneratedDocumentDto> listForOrganization() {
+        Map<Long, AuditSummaryDto> auditsById = new java.util.HashMap<>();
+        for (AuditSummaryDto a : auditService.list()) {
+            auditsById.put(a.id(), a);
+        }
         return generatedDocuments.findByOrganizationIdOrderByGeneratedAtDesc(SecurityUtils.currentOrganizationId())
-                .stream().map(d -> toDto(d, null)).toList();
+                .stream().map(d -> {
+                    AuditSummaryDto a = auditsById.get(d.getAuditId());
+                    return toDto(d, a == null ? null : a.reference(), a == null ? null : a.standardName());
+                }).toList();
     }
 
     @Transactional(readOnly = true)
@@ -198,11 +207,11 @@ public class DocumentGenerationService implements DocumentLookup {
         }
     }
 
-    private GeneratedDocumentDto toDto(GeneratedDocument d, String auditReference) {
+    private GeneratedDocumentDto toDto(GeneratedDocument d, String auditReference, String standardName) {
         return new GeneratedDocumentDto(
                 d.getId(), d.getAuditId(), auditReference,
                 d.getDocumentType().name(), LABELS.getOrDefault(d.getDocumentType(), d.getDocumentType().name()),
-                d.getStandardCode(), d.getFormat().name(), d.getFileName(),
+                d.getStandardCode(), standardName, d.getFormat().name(), d.getFileName(),
                 d.getSizeBytes(), d.getSha256(), d.getGeneratedBy(), d.getGeneratedAt());
     }
 

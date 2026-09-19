@@ -1,22 +1,30 @@
 package com.agriaudit.dashboard.application;
 
+import com.agriaudit.audit.AuditDtos.AuditSummaryDto;
+import com.agriaudit.audit.AuditLookup;
+import com.agriaudit.dashboard.application.DashboardDto.DeadlineDto;
+import com.agriaudit.documents.DocumentLookup;
 import com.agriaudit.fieldbook.FarmDirectory;
 import com.agriaudit.findings.FindingLookup;
-import com.agriaudit.documents.DocumentLookup;
 import com.agriaudit.identity.SecurityUtils;
-import com.agriaudit.audit.AuditDtos.AuditSummaryDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import com.agriaudit.audit.AuditLookup;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
 public class DashboardService {
+
+    /** Una NC «vence pronto» si su fecha límite cae en los próximos 7 días. */
+    static final int DUE_SOON_DAYS = 7;
+    static final int DEADLINES_SHOWN = 6;
 
     private final AuditLookup auditService;
     private final FarmDirectory farms;
@@ -33,6 +41,7 @@ public class DashboardService {
 
     public DashboardDto load() {
         Long orgId = SecurityUtils.currentOrganizationId();
+        LocalDate today = LocalDate.now();
         List<AuditSummaryDto> audits = auditService.list();
 
         Map<String, Long> byStatus = new LinkedHashMap<>();
@@ -40,18 +49,28 @@ public class DashboardService {
             byStatus.merge(a.status(), 1L, Long::sum);
         }
 
-        long open = findings.countOpen(orgId);
-        long overdue = findings.countOverdue(orgId, LocalDate.now());
-
-        List<AuditSummaryDto> recent = audits.stream().limit(5).toList();
+        Map<Long, AuditSummaryDto> auditsById = audits.stream()
+                .collect(Collectors.toMap(AuditSummaryDto::id, Function.identity()));
+        List<DeadlineDto> deadlines = findings.nextDeadlines(orgId, DEADLINES_SHOWN).stream()
+                .map(d -> {
+                    AuditSummaryDto audit = auditsById.get(d.auditId());
+                    return new DeadlineDto(d.findingId(), d.auditId(),
+                            audit == null ? null : audit.reference(),
+                            audit == null ? null : audit.farmName(),
+                            d.reference(), d.title(), d.classification(), d.status(), d.dueDate(),
+                            ChronoUnit.DAYS.between(today, d.dueDate()));
+                })
+                .toList();
 
         return new DashboardDto(
                 farms.countFarms(orgId),
                 audits.size(),
                 byStatus,
-                open,
-                overdue,
+                findings.countOpen(orgId),
+                findings.countOverdue(orgId, today),
+                findings.countDueBetween(orgId, today, today.plusDays(DUE_SOON_DAYS)),
                 documents.countGenerated(orgId),
-                recent);
+                deadlines,
+                audits.stream().limit(5).toList());
     }
 }

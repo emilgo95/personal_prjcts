@@ -23,6 +23,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import GavelIcon from '@mui/icons-material/Gavel';
 import GroupIcon from '@mui/icons-material/Group';
 import { useAuth } from '../auth/AuthContext';
+import { label, roleLabels } from '../utils/labels';
 
 const drawerWidth = 248;
 
@@ -57,7 +58,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </Typography>
       </Toolbar>
       <Divider />
-      <List>
+      <List component="div">
         {navItems
           .filter((item) => !item.adminOnly || hasRole('ADMIN'))
           .map((item) => {
@@ -100,7 +101,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               {user?.organizationName}
             </Typography>
             <Typography variant="caption">
-              {user?.fullName || user?.email} · {user?.role}
+              {user?.fullName || user?.email} · {label(roleLabels, user?.role)}
             </Typography>
           </Box>
           <IconButton
@@ -143,7 +144,12 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
+        sx={{
+          flexGrow: 1,
+          minWidth: 0, // sin esto, una tabla ancha estira la página en lugar de desplazarse dentro de su caja
+          p: { xs: 2, md: 3 },
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+        }}
       >
         <Toolbar />
         {children}

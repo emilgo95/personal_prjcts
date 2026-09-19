@@ -1,8 +1,8 @@
 package com.agriaudit.audit.infrastructure.demo;
 
+import com.agriaudit.audit.AuditRef;
 import com.agriaudit.audit.AuditStatus;
 import com.agriaudit.audit.DemoAuditSeeded;
-import com.agriaudit.audit.AuditRef;
 import com.agriaudit.audit.domain.Audit;
 import com.agriaudit.audit.domain.AuditItemResult;
 import com.agriaudit.audit.domain.AuditType;
@@ -31,11 +31,25 @@ import java.util.List;
  * Auditorías de demostración en distintos estados, con resultados de checklist, sobre las explotaciones
  * recién sembradas ({@link DemoFarmsSeeded}). Por cada una publica {@link DemoAuditSeeded} para que
  * {@code findings} siembre sus no conformidades.
+ *
+ * <p>Las fechas son <strong>relativas a hoy</strong>: así, cada vez que se siembra la demo el panel muestra
+ * plazos creíbles (algún vencimiento a punto, alguna no conformidad vencida) sea cual sea el día.
  */
 @Component
 class AuditDemoSeeder {
 
     private static final Logger log = LoggerFactory.getLogger(AuditDemoSeeder.class);
+
+    private static final String IFA = "GLOBALGAP_IFA_V6";
+    private static final String GRASP = "GRASP_V2";
+    private static final String SMETA = "SMETA_6_1";
+
+    private static final String[] COMPLIANT_NOTES = {
+            "Verificado durante la visita; registros disponibles y actualizados.",
+            "Se revisa la documentación y se comprueba en campo; sin desviaciones.",
+            "Evidencia documental completa y coherente con lo observado.",
+            "Responsable entrevistado; conoce el procedimiento y lo aplica.",
+    };
 
     private final AuditRepository audits;
     private final AuditItemResultRepository results;
@@ -50,93 +64,118 @@ class AuditDemoSeeder {
         this.events = events;
     }
 
+    /** Una auditoría de demo: quién, qué norma, en qué estado y a cuántos días de hoy. */
+    private record Plan(int farm, String standard, AuditType type, AuditStatus status, int daysAgo,
+                        double coverage, String lead, String team, String scope) {
+    }
+
     @EventListener
     @Transactional
     public void on(DemoFarmsSeeded event) {
         Long orgId = event.organizationId();
         List<FarmDto> f = event.farms();
-        if (f.size() < 5) {
-            log.warn("Se esperaban 5 explotaciones de demostración y hay {}; se omiten las auditorías", f.size());
+        if (f.size() < 8) {
+            log.warn("Se esperaban 8 explotaciones de demostración y hay {}; se omiten las auditorías", f.size());
             return;
         }
+        LocalDate today = LocalDate.now();
+        int year = today.getYear();
+        // Orden de creación: primero lo cerrado y lo enviado, después lo que está vivo, así el panel
+        // muestra arriba (las más recientes) las auditorías en curso.
+        List<Plan> plans = List.of(
+                new Plan(5, IFA, AuditType.CB_INITIAL, AuditStatus.CLOSED, 170, 1.0, "Ana Auditora",
+                        "Ana Auditora, Marcos Soler",
+                        "Certificación inicial GLOBALG.A.P. de uva de mesa sin semilla en tres fincas de Cehegín."),
+                new Plan(5, GRASP, AuditType.CB_INITIAL, AuditStatus.CLOSED, 169, 1.0, "Ana Auditora",
+                        "Ana Auditora",
+                        "Evaluación social GRASP de la plantilla de campo y del alojamiento de temporeros."),
+                new Plan(7, SMETA, AuditType.CB_INITIAL, AuditStatus.CLOSED, 120, 1.0, "Elena Cárceles",
+                        "Elena Cárceles, Ana Auditora",
+                        "SMETA de 4 pilares para la incorporación de un nuevo cliente de gran distribución."),
+                new Plan(6, IFA, AuditType.RECERTIFICATION, AuditStatus.SUBMITTED, 45, 1.0, "Marcos Soler",
+                        "Marcos Soler, Ana Auditora",
+                        "Recertificación anual de limón, pomelo y naranja. Expediente enviado al organismo de certificación."),
+                new Plan(1, IFA, AuditType.RECERTIFICATION, AuditStatus.CLOSING, 25, 1.0, "Ana Auditora",
+                        "Ana Auditora, Marcos Soler",
+                        "Recertificación anual de pimiento, tomate y calabacín. Pendiente de cierre de no conformidades."),
+                new Plan(7, IFA, AuditType.SURVEILLANCE, AuditStatus.CLOSING, 22, 1.0, "Elena Cárceles",
+                        "Elena Cárceles",
+                        "Auditoría de seguimiento de brócoli, coliflor y romanesco con acciones correctivas en marcha."),
+                new Plan(0, IFA, AuditType.SURVEILLANCE, AuditStatus.IN_PROGRESS, 31, 0.80, "Ana Auditora",
+                        "Ana Auditora",
+                        "Auditoría de seguimiento de lechuga, brócoli y apio en Molina de Segura, Fortuna y Abanilla."),
+                new Plan(3, IFA, AuditType.SURVEILLANCE, AuditStatus.IN_PROGRESS, 14, 0.65, "Marcos Soler",
+                        "Marcos Soler, Elena Cárceles",
+                        "Auditoría de seguimiento de melón, sandía y lechuga iceberg, con confección propia."),
+                new Plan(3, SMETA, AuditType.INTERNAL, AuditStatus.IN_PROGRESS, 9, 0.55, "Ana Auditora",
+                        "Ana Auditora",
+                        "Auditoría ética interna previa a la auditoría SMETA del cliente."),
+                new Plan(4, IFA, AuditType.SELF_ASSESSMENT, AuditStatus.IN_PROGRESS, 3, 0.35, "Ana Auditora",
+                        "Ana Auditora",
+                        "Autoevaluación de una explotación 100 % ecológica antes de la auditoría del organismo."),
+                new Plan(0, GRASP, AuditType.SELF_ASSESSMENT, AuditStatus.DRAFT, -12, 0.0, "Ana Auditora",
+                        "Ana Auditora",
+                        "Autoevaluación social GRASP prevista para el próximo mes."),
+                new Plan(2, IFA, AuditType.CB_INITIAL, AuditStatus.DRAFT, -25, 0.0, "Marcos Soler",
+                        "Marcos Soler",
+                        "Preparación de la certificación inicial de una central de fruta de hueso."));
+
         int seq = 1;
-        seq = audit(orgId, seq, f.get(0), "GLOBALGAP_IFA_V6", AuditType.CB_INITIAL, AuditStatus.CLOSED,
-                LocalDate.of(2026, 3, 10), "Ana Auditora", "Ana Auditora, Jordi Pons",
-                "Certificación inicial de fresa y frambuesa para exportación.");
-        seq = audit(orgId, seq, f.get(0), "GRASP_V2", AuditType.SURVEILLANCE, AuditStatus.SUBMITTED,
-                LocalDate.of(2026, 3, 11), "Ana Auditora", "Ana Auditora",
-                "Evaluación social GRASP asociada a la certificación GLOBALG.A.P.");
-        seq = audit(orgId, seq, f.get(1), "GLOBALGAP_IFA_V6", AuditType.RECERTIFICATION, AuditStatus.CLOSING,
-                LocalDate.of(2026, 6, 15), "Jordi Pons", "Jordi Pons, Ana Auditora",
-                "Recertificación anual de cítricos. Pendiente de cierre de no conformidades.");
-        seq = audit(orgId, seq, f.get(1), "SMETA_6_1", AuditType.INTERNAL, AuditStatus.IN_PROGRESS,
-                LocalDate.of(2026, 7, 20), "Ana Auditora", "Ana Auditora",
-                "Auditoría ética interna previa a la auditoría SMETA de cliente.");
-        seq = audit(orgId, seq, f.get(2), "GLOBALGAP_IFA_V6", AuditType.SURVEILLANCE, AuditStatus.IN_PROGRESS,
-                LocalDate.of(2026, 8, 5), "Marco Díaz", "Marco Díaz, Rosa Quispe",
-                "Auditoría de seguimiento de uva de mesa y arándano.");
-        seq = audit(orgId, seq, f.get(2), "SMETA_6_1", AuditType.CB_INITIAL, AuditStatus.SUBMITTED,
-                LocalDate.of(2026, 7, 1), "Marco Díaz", "Marco Díaz",
-                "SMETA 4 pilares para incorporación a la plataforma Sedex.");
-        seq = audit(orgId, seq, f.get(3), "GLOBALGAP_IFA_V6", AuditType.SELF_ASSESSMENT, AuditStatus.DRAFT,
-                LocalDate.of(2026, 8, 25), "Pieter van Wyk", "Pieter van Wyk",
-                "Autoevaluación previa a la auditoría del organismo de certificación.");
-        audit(orgId, seq, f.get(4), "GRASP_V2", AuditType.SELF_ASSESSMENT, AuditStatus.IN_PROGRESS,
-                LocalDate.of(2026, 8, 18), "Khadija Amrani", "Khadija Amrani",
-                "Autoevaluación social de la cooperativa.");
+        for (Plan p : plans) {
+            audit(orgId, year, seq++, f.get(p.farm()), p, today.minusDays(p.daysAgo()));
+        }
         log.info("Datos de demostración: {} auditorías", audits.countByOrganizationId(orgId));
     }
 
-    private int audit(Long orgId, int seq, FarmDto farm, String standardCode, AuditType type, AuditStatus status,
-                      LocalDate date, String leadAuditor, String team, String scope) {
-        StandardView standard = catalog.findStandard(standardCode).orElse(null);
-        List<ControlPointView> cps = catalog.controlPointsOf(standardCode);
+    private void audit(Long orgId, int year, int seq, FarmDto farm, Plan p, LocalDate date) {
+        StandardView standard = catalog.findStandard(p.standard()).orElse(null);
+        List<ControlPointView> cps = catalog.controlPointsOf(p.standard());
         if (standard == null || cps.isEmpty()) {
-            log.warn("Estándar {} sin puntos de control; se omite la auditoría de demo", standardCode);
-            return seq + 1;
+            log.warn("Estándar {} sin puntos de control; se omite la auditoría de demo", p.standard());
+            return;
         }
         Audit a = new Audit();
         a.setOrganizationId(orgId);
         a.setFarmId(farm.id());
         a.setStandardId(standard.id());
-        a.setReference(String.format("AUD-%d-%04d", date.getYear(), seq));
-        a.setAuditType(type);
-        a.setStatus(status);
-        a.setScopeDescription(scope);
-        a.setActualDate(status == AuditStatus.DRAFT ? null : date);
+        a.setReference(String.format("AUD-%d-%04d", year, seq));
+        a.setAuditType(p.type());
+        a.setStatus(p.status());
+        a.setScopeDescription(p.scope());
+        a.setActualDate(p.status() == AuditStatus.DRAFT ? null : date);
         a.setPlannedStartDate(date);
         a.setPlannedEndDate(date.plusDays(1));
-        a.setLeadAuditor(leadAuditor);
-        a.setAuditTeam(team);
+        a.setLeadAuditor(p.lead());
+        a.setAuditTeam(p.team());
         a.setSiteAddress(farm.address() + ", " + farm.city());
         a.setProductsInScope(farm.crops());
         a = audits.save(a);
 
-        List<Long> nonCompliant = seedResults(a, cps, status, date, leadAuditor);
-        events.publishEvent(new DemoAuditSeeded(new AuditRef(a.getId(), orgId, a.getReference(), standardCode, status,
-                date, leadAuditor), nonCompliant));
-        return seq + 1;
+        List<Long> nonCompliant = seedResults(a, cps, p, date, seq);
+        events.publishEvent(new DemoAuditSeeded(new AuditRef(a.getId(), orgId, a.getReference(), p.standard(),
+                p.status(), date, p.lead()), nonCompliant));
     }
 
-    /** Siembra el checklist y devuelve los puntos de control no conformes, en orden. */
-    private List<Long> seedResults(Audit audit, List<ControlPointView> cps, AuditStatus status, LocalDate date,
-                                   String leadAuditor) {
-        double coverage = switch (status) {
-            case DRAFT -> 0.12;
-            case IN_PROGRESS -> 0.65;
-            default -> 1.0;
-        };
-        int toAssess = (int) Math.round(cps.size() * coverage);
+    /**
+     * Siembra el checklist y devuelve los puntos de control de las no conformidades, en orden. En las
+     * auditorías cerradas o enviadas esos puntos ya están corregidos y verificados, por lo que constan
+     * como conformes y el resultado es «apto»; en las demás siguen como no conformes.
+     */
+    private List<Long> seedResults(Audit audit, List<ControlPointView> cps, Plan p, LocalDate date, int seq) {
+        int toAssess = (int) Math.round(cps.size() * p.coverage());
+        boolean corrected = p.status() == AuditStatus.CLOSED || p.status() == AuditStatus.SUBMITTED;
         Instant assessedAt = date.atStartOfDay().toInstant(ZoneOffset.UTC);
+        int ncOffset = 3 + (seq % 4); // desplaza las no conformidades para que no coincidan entre auditorías
 
         List<Long> nonCompliant = new ArrayList<>();
         for (int i = 0; i < cps.size(); i++) {
             ControlPointView cp = cps.get(i);
+            boolean isFinding = i < toAssess && i % 9 == ncOffset;
             ComplianceResult compliance;
             if (i >= toAssess) {
                 compliance = ComplianceResult.NOT_ASSESSED;
-            } else if (i % 9 == 4) {
-                compliance = ComplianceResult.NON_COMPLIANT;
+            } else if (isFinding) {
+                compliance = corrected ? ComplianceResult.COMPLIANT : ComplianceResult.NON_COMPLIANT;
             } else if (i % 13 == 7) {
                 compliance = ComplianceResult.NOT_APPLICABLE;
             } else {
@@ -149,19 +188,26 @@ class AuditDemoSeeder {
             r.setCompliance(compliance);
             if (compliance != ComplianceResult.NOT_ASSESSED) {
                 r.setAssessedAt(assessedAt);
-                r.setAssessedBy(leadAuditor);
-                r.setEvidenceNotes(switch (compliance) {
-                    case COMPLIANT -> "Verificado durante la inspección; registros disponibles y actualizados.";
-                    case NON_COMPLIANT -> "Se observa desviación respecto al criterio; ver no conformidad asociada.";
-                    case NOT_APPLICABLE -> "No aplica al alcance de esta explotación.";
-                    default -> null;
-                });
+                r.setAssessedBy(p.lead());
+                r.setEvidenceNotes(notesFor(compliance, isFinding, corrected, i));
             }
             results.save(r);
-            if (compliance == ComplianceResult.NON_COMPLIANT) {
+            if (isFinding) {
                 nonCompliant.add(cp.id());
             }
         }
         return nonCompliant;
+    }
+
+    private static String notesFor(ComplianceResult compliance, boolean isFinding, boolean corrected, int index) {
+        if (isFinding && corrected) {
+            return "Desviación detectada en la auditoría; corregida y verificada por el auditor (ver no conformidad).";
+        }
+        return switch (compliance) {
+            case COMPLIANT -> COMPLIANT_NOTES[index % COMPLIANT_NOTES.length];
+            case NON_COMPLIANT -> "No se evidencia el cumplimiento del criterio; ver la no conformidad asociada.";
+            case NOT_APPLICABLE -> "No aplica al alcance de esta explotación.";
+            default -> null;
+        };
     }
 }

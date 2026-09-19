@@ -1,9 +1,12 @@
 package com.agriaudit.findings.application;
 
 import com.agriaudit.audit.FindingsCounter;
+import com.agriaudit.findings.domain.FindingStatus;
 import com.agriaudit.findings.infrastructure.persistence.FindingRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * Implementación de {@link FindingsCounter} que declara {@code audit}. Bean propio, sin depender de
@@ -22,5 +25,11 @@ class AuditFindingsCounter implements FindingsCounter {
     @Transactional(readOnly = true)
     public long countByAudit(Long auditId) {
         return findings.countByAuditId(auditId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countOpenByAudit(Long auditId) {
+        return findings.countByAuditIdAndStatusNotIn(auditId, List.of(FindingStatus.CLOSED, FindingStatus.VERIFIED));
     }
 }

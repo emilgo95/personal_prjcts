@@ -8,4 +8,7 @@ package com.agriaudit.audit;
 public interface FindingsCounter {
 
     long countByAudit(Long auditId);
+
+    /** NC de la auditoría que no están cerradas ni verificadas. */
+    long countOpenByAudit(Long auditId);
 }

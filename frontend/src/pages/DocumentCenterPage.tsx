@@ -1,13 +1,15 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
-import { Box, Button, Chip } from '@mui/material';
+import { Box, Button, Chip, Link } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import DownloadIcon from '@mui/icons-material/Download';
 import { DocumentApi, downloadBlob } from '../api/endpoints';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
 import { useToast } from '../utils/toast';
+import { formatDateTime } from '../utils/dates';
 import { extractErrorMessage } from '../api/client';
+import { standardShort } from '../utils/labels';
 import type { GeneratedDocument } from '../api/types';
 
 export default function DocumentCenterPage() {
@@ -23,19 +25,26 @@ export default function DocumentCenterPage() {
   });
 
   const columns: GridColDef<GeneratedDocument>[] = [
-    { field: 'documentTypeLabel', headerName: 'Documento', flex: 1, minWidth: 220 },
+    { field: 'documentTypeLabel', headerName: 'Documento', flex: 1, minWidth: 200 },
     {
       field: 'auditReference',
       headerName: 'Auditoría',
       width: 150,
       renderCell: (p) =>
         p.row.auditId ? (
-          <RouterLink to={`/audits/${p.row.auditId}`}>{p.value as string}</RouterLink>
+          <Link component={RouterLink} to={`/audits/${p.row.auditId}`} underline="hover">
+            {(p.value as string) ?? `Auditoría ${p.row.auditId}`}
+          </Link>
         ) : (
           (p.value as string)
         ),
     },
-    { field: 'standardCode', headerName: 'Estándar', width: 170 },
+    {
+      field: 'standardName',
+      headerName: 'Estándar',
+      width: 190,
+      valueGetter: (value, row) => standardShort(row.standardCode, value as string | null),
+    },
     {
       field: 'format',
       headerName: 'Formato',
@@ -45,10 +54,10 @@ export default function DocumentCenterPage() {
     {
       field: 'generatedAt',
       headerName: 'Generado',
-      width: 180,
-      valueGetter: (value) => new Date(value as string).toLocaleString('es-ES'),
+      width: 160,
+      valueGetter: (value) => formatDateTime(value as string),
     },
-    { field: 'generatedBy', headerName: 'Autor', width: 170 },
+    { field: 'generatedBy', headerName: 'Autor', width: 180 },
     {
       field: 'actions',
       headerName: '',

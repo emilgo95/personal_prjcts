@@ -69,7 +69,8 @@ public final class AuditDtos {
             int totalControlPoints,
             int assessedCount,
             int progressPct,
-            long findingsCount) {
+            long findingsCount,
+            List<String> allowedTransitions) {
     }
 
     public record AuditItemResultDto(

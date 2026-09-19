@@ -1,6 +1,7 @@
 package com.agriaudit.audit.application;
 
 import com.agriaudit.common.BadRequestException;
+import com.agriaudit.common.ConflictException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.storage.AttachmentEntityType;
 import com.agriaudit.storage.AttachmentStore;
@@ -103,6 +104,11 @@ public class AuditService implements AuditLookup {
         return toDetail(audits.save(audit));
     }
 
+    /**
+     * Cambia el estado siguiendo el flujo previsto (borrador, en curso, cierre, enviada, cerrada), con la
+     * posibilidad de reabrir un paso atrás. Pasar a cierre exige haber evaluado todos los puntos de control
+     * y cerrar la auditoría exige que no queden no conformidades sin cerrar ni verificar.
+     */
     public AuditDetailDto transition(Long id, String status) {
         Audit audit = requireAuditEntity(id);
         AuditStatus target;
@@ -111,8 +117,61 @@ public class AuditService implements AuditLookup {
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Estado no válido: " + status);
         }
+        AuditStatus current = audit.getStatus();
+        if (current == target) {
+            throw new BadRequestException("La auditoría ya está en estado «" + stateLabel(target) + "».");
+        }
+        if (!allowedTransitions(current).contains(target)) {
+            throw new ConflictException("No se puede pasar de «" + stateLabel(current) + "» a «"
+                    + stateLabel(target) + "». Estados permitidos: " + allowedLabels(current) + ".");
+        }
+        if (target == AuditStatus.CLOSING) {
+            int total = catalog.controlPointsOf(standardOf(audit).code()).size();
+            long assessed = results.findByAuditId(audit.getId()).stream()
+                    .filter(r -> r.getCompliance() != ComplianceResult.NOT_ASSESSED).count();
+            if (assessed < total) {
+                throw new ConflictException("No se puede pasar a cierre: faltan " + (total - assessed)
+                        + " puntos de control por evaluar.");
+            }
+        }
+        if (target == AuditStatus.CLOSED) {
+            long open = findings.countOpenByAudit(audit.getId());
+            if (open > 0) {
+                throw new ConflictException("No se puede cerrar la auditoría: quedan " + open
+                        + (open == 1 ? " no conformidad" : " no conformidades") + " sin cerrar ni verificar.");
+            }
+        }
         audit.setStatus(target);
         return toDetail(audits.save(audit));
+    }
+
+    /** Estados a los que puede pasar una auditoría desde {@code from}. */
+    static List<AuditStatus> allowedTransitions(AuditStatus from) {
+        return switch (from) {
+            case DRAFT -> List.of(AuditStatus.IN_PROGRESS);
+            case IN_PROGRESS -> List.of(AuditStatus.CLOSING);
+            case CLOSING -> List.of(AuditStatus.SUBMITTED, AuditStatus.IN_PROGRESS);
+            case SUBMITTED -> List.of(AuditStatus.CLOSED, AuditStatus.CLOSING);
+            case CLOSED -> List.of();
+        };
+    }
+
+    private static String stateLabel(AuditStatus s) {
+        return switch (s) {
+            case DRAFT -> "Borrador";
+            case IN_PROGRESS -> "En curso";
+            case CLOSING -> "Cierre";
+            case SUBMITTED -> "Enviada";
+            case CLOSED -> "Cerrada";
+        };
+    }
+
+    private static String allowedLabels(AuditStatus from) {
+        List<AuditStatus> allowed = allowedTransitions(from);
+        if (allowed.isEmpty()) {
+            return "ninguno, la auditoría está cerrada";
+        }
+        return allowed.stream().map(AuditService::stateLabel).collect(java.util.stream.Collectors.joining(", "));
     }
 
     // ---- resultados del checklist ----
@@ -274,6 +333,7 @@ public class AuditService implements AuditLookup {
                 a.getScopeDescription(), a.getPlannedStartDate(), a.getPlannedEndDate(), a.getActualDate(),
                 a.getLeadAuditor(), a.getAuditTeam(), a.getSiteAddress(), a.getProductsInScope(),
                 a.getCreatedAt(), a.getUpdatedAt(), farmDto, total, assessed, progress,
-                findings.countByAudit(a.getId()));
+                findings.countByAudit(a.getId()),
+                allowedTransitions(a.getStatus()).stream().map(AuditStatus::name).toList());
     }
 }

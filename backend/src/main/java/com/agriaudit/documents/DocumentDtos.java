@@ -22,6 +22,7 @@ public final class DocumentDtos {
             String documentType,
             String documentTypeLabel,
             String standardCode,
+            String standardName,
             String format,
             String fileName,
             Long sizeBytes,

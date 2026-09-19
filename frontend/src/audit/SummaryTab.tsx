@@ -8,32 +8,42 @@ import {
   Chip,
   Grid,
   LinearProgress,
-  MenuItem,
   Stack,
+  Step,
+  StepLabel,
+  Stepper,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TextField,
   Typography,
 } from '@mui/material';
 import { AuditApi } from '../api/endpoints';
 import type { AuditDetail } from '../api/types';
 import QueryBoundary from '../components/QueryBoundary';
+import { useAuth } from '../auth/AuthContext';
 import { useToast } from '../utils/toast';
+import { formatDate } from '../utils/dates';
 import { extractErrorMessage } from '../api/client';
 import {
   auditStatusLabels,
+  formatPct,
   label,
   levelLabels,
   overallResultColors,
   overallResultLabels,
 } from '../utils/labels';
 
+const statusFlow = ['DRAFT', 'IN_PROGRESS', 'CLOSING', 'SUBMITTED', 'CLOSED'];
+
 export default function SummaryTab({ auditId, audit }: { auditId: number; audit: AuditDetail }) {
   const queryClient = useQueryClient();
   const { notify } = useToast();
+  const { hasRole } = useAuth();
+  const canEdit = hasRole('ADMIN', 'AUDITOR');
+  const currentStep = statusFlow.indexOf(audit.status);
   const score = useQuery({ queryKey: ['audit', auditId, 'score'], queryFn: () => AuditApi.score(auditId) });
 
   const transition = useMutation({
@@ -41,6 +51,8 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
     onSuccess: () => {
       notify('Estado actualizado', 'success');
       queryClient.invalidateQueries({ queryKey: ['audit', auditId] });
+      queryClient.invalidateQueries({ queryKey: ['audits'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
     onError: (e) => notify(extractErrorMessage(e), 'error'),
   });
@@ -49,14 +61,59 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
     <Stack spacing={2}>
       <Card>
         <CardContent>
+          <Typography variant="overline" color="text.secondary">
+            Estado de la auditoría
+          </Typography>
+          <Stepper activeStep={currentStep} alternativeLabel sx={{ mt: 1, mb: 2 }}>
+            {statusFlow.map((s) => (
+              <Step key={s} completed={statusFlow.indexOf(s) < currentStep || audit.status === 'CLOSED'}>
+                <StepLabel>{label(auditStatusLabels, s)}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+          {canEdit && audit.allowedTransitions.length > 0 && (
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent="center">
+              {audit.allowedTransitions.map((next) => {
+                const forward = statusFlow.indexOf(next) > currentStep;
+                return (
+                  <Button
+                    key={next}
+                    variant={forward ? 'contained' : 'outlined'}
+                    disabled={transition.isPending}
+                    onClick={() => transition.mutate(next)}
+                  >
+                    {forward
+                      ? `Pasar a «${label(auditStatusLabels, next)}»`
+                      : `Reabrir como «${label(auditStatusLabels, next)}»`}
+                  </Button>
+                );
+              })}
+            </Stack>
+          )}
+          {audit.status === 'IN_PROGRESS' && audit.assessedCount < audit.totalControlPoints && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              Para pasar a cierre hay que evaluar todos los puntos de control: faltan{' '}
+              {audit.totalControlPoints - audit.assessedCount}.
+            </Alert>
+          )}
+          {audit.status === 'CLOSED' && (
+            <Alert severity="success" sx={{ mt: 2 }}>
+              Auditoría cerrada: todas las no conformidades están cerradas o verificadas.
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={5}>
               <Typography variant="overline" color="text.secondary">
                 Explotación
               </Typography>
               <Typography>{audit.farm.legalName}</Typography>
               <Typography variant="body2" color="text.secondary">
-                {audit.farm.registrationNumber} · {audit.farm.city} {audit.farm.country}
+                {audit.farm.registrationNumber} · {audit.farm.city}, {audit.farm.country}
               </Typography>
             </Grid>
             <Grid item xs={12} md={3}>
@@ -64,24 +121,22 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
                 Auditor responsable
               </Typography>
               <Typography>{audit.leadAuditor || '—'}</Typography>
+              {audit.auditTeam && (
+                <Typography variant="body2" color="text.secondary">
+                  {audit.auditTeam}
+                </Typography>
+              )}
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={4}>
               <Typography variant="overline" color="text.secondary">
-                Cambiar estado
+                Fecha de auditoría
               </Typography>
-              <TextField
-                select
-                size="small"
-                fullWidth
-                value={audit.status}
-                onChange={(e) => transition.mutate(e.target.value)}
-              >
-                {Object.entries(auditStatusLabels).map(([k, v]) => (
-                  <MenuItem key={k} value={k}>
-                    {v}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <Typography>{formatDate(audit.actualDate ?? audit.plannedStartDate)}</Typography>
+              {!audit.actualDate && audit.plannedStartDate && (
+                <Typography variant="body2" color="text.secondary">
+                  Prevista
+                </Typography>
+              )}
             </Grid>
             {audit.scopeDescription && (
               <Grid item xs={12}>
@@ -111,7 +166,11 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
                   <Typography variant="body2" gutterBottom>
                     Progreso de la evaluación: {score.data.progressPct}%
                   </Typography>
-                  <LinearProgress variant="determinate" value={score.data.progressPct} />
+                  <LinearProgress
+                    variant="determinate"
+                    value={score.data.progressPct}
+                    aria-label="Progreso de la evaluación"
+                  />
                 </Box>
                 <Stack component="ul" sx={{ mt: 1, pl: 2 }} spacing={0.5}>
                   {score.data.notes.map((n, i) => (
@@ -129,6 +188,7 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
                   <Typography variant="h6" gutterBottom>
                     Cumplimiento por nivel
                   </Typography>
+                  <TableContainer>
                   <Table size="small">
                     <TableHead>
                       <TableRow>
@@ -149,12 +209,13 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
                           <TableCell align="right">{l.notApplicable}</TableCell>
                           <TableCell align="right">{l.notAssessed}</TableCell>
                           <TableCell align="right">
-                            {l.compliancePct != null ? `${l.compliancePct.toFixed(1)}%` : '—'}
+                            {l.compliancePct != null ? formatPct(l.compliancePct) : '—'}
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
+                  </TableContainer>
                 </CardContent>
               </Card>
             )}
@@ -164,6 +225,7 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
                 <Typography variant="h6" gutterBottom>
                   Cumplimiento por capítulo
                 </Typography>
+                <TableContainer>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -183,11 +245,12 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
                         <TableCell align="right">{g.nonCompliant}</TableCell>
                         <TableCell align="right">{g.notApplicable}</TableCell>
                         <TableCell align="right">{g.notAssessed}</TableCell>
-                        <TableCell align="right">{g.compliancePct.toFixed(1)}%</TableCell>
+                        <TableCell align="right">{formatPct(g.compliancePct)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+                </TableContainer>
               </CardContent>
             </Card>
 

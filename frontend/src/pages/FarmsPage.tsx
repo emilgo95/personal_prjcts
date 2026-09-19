@@ -33,7 +33,13 @@ export default function FarmsPage() {
     { field: 'registrationNumber', headerName: 'GGN / Nº registro', width: 160 },
     { field: 'city', headerName: 'Localidad', width: 150 },
     { field: 'country', headerName: 'País', width: 130 },
-    { field: 'totalHectares', headerName: 'Hectáreas', width: 110, type: 'number' },
+    {
+      field: 'totalHectares',
+      headerName: 'Hectáreas',
+      width: 110,
+      type: 'number',
+      valueFormatter: (value: number | null) => (value == null ? '' : value.toLocaleString('es-ES')),
+    },
     { field: 'crops', headerName: 'Cultivos', flex: 1, minWidth: 180 },
     {
       field: 'actions',

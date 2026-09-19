@@ -16,4 +16,18 @@ public interface FindingLookup {
 
     /** NC no cerradas ni verificadas cuya fecha límite es anterior a {@code today}. */
     long countOverdue(Long organizationId, LocalDate today);
+
+    /** NC no cerradas ni verificadas con fecha límite entre {@code from} y {@code to}, ambas incluidas. */
+    long countDueBetween(Long organizationId, LocalDate from, LocalDate to);
+
+    /**
+     * Plazos de las NC no cerradas ni verificadas con fecha límite, de la más urgente (vencida) a la menos,
+     * hasta {@code limit}.
+     */
+    List<FindingDeadline> nextDeadlines(Long organizationId, int limit);
+
+    /** Una NC abierta con su fecha límite, para el panel de vencimientos. */
+    record FindingDeadline(Long findingId, Long auditId, String reference, String title, String classification,
+                           String status, LocalDate dueDate) {
+    }
 }

@@ -20,6 +20,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import { DocumentApi, downloadBlob } from '../api/endpoints';
 import QueryBoundary from '../components/QueryBoundary';
 import { useToast } from '../utils/toast';
+import { formatDateTime } from '../utils/dates';
 import { extractErrorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 
@@ -138,7 +139,7 @@ export default function DocumentsTab({ auditId }: { auditId: number }) {
                       <Chip size="small" label={d.format} />
                     </TableCell>
                     <TableCell>
-                      {new Date(d.generatedAt).toLocaleString('es-ES')} · {d.generatedBy}
+                      {formatDateTime(d.generatedAt)} · {d.generatedBy}
                     </TableCell>
                     <TableCell>{d.sizeBytes ? `${Math.round(d.sizeBytes / 1024)} KB` : '—'}</TableCell>
                     <TableCell align="right">

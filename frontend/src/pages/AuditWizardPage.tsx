@@ -10,9 +10,6 @@ import {
   Grid,
   MenuItem,
   Stack,
-  Step,
-  StepLabel,
-  Stepper,
   TextField,
   Typography,
 } from '@mui/material';
@@ -21,14 +18,14 @@ import type { AuditRequest } from '../api/types';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
 import { useToast } from '../utils/toast';
+import { useAuth } from '../auth/AuthContext';
 import { extractErrorMessage } from '../api/client';
 import { auditTypeLabels } from '../utils/labels';
-
-const steps = ['Datos de la auditoría', 'Checklist', 'Hallazgos y CAPA', 'Documentos'];
 
 export default function AuditWizardPage() {
   const navigate = useNavigate();
   const { notify } = useToast();
+  const { user } = useAuth();
 
   const farms = useQuery({ queryKey: ['farms'], queryFn: FarmApi.list });
   const standards = useQuery({ queryKey: ['standards'], queryFn: CatalogApi.standards });
@@ -41,7 +38,7 @@ export default function AuditWizardPage() {
     plannedStartDate: '',
     plannedEndDate: '',
     actualDate: '',
-    leadAuditor: '',
+    leadAuditor: user?.fullName ?? '',
     auditTeam: '',
     siteAddress: '',
     productsInScope: '',
@@ -78,18 +75,11 @@ export default function AuditWizardPage() {
 
   return (
     <Box>
-      <PageHeader title="Nueva auditoría" />
-      <Stepper activeStep={0} sx={{ mb: 3 }}>
-        {steps.map((s) => (
-          <Step key={s}>
-            <StepLabel>{s}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
+      <PageHeader title="Nueva auditoría" subtitle="Indica qué se audita y frente a qué estándar" />
 
       <Alert severity="info" sx={{ mb: 2 }}>
-        Tras crear la auditoría podrás rellenar el checklist, registrar no conformidades y generar los documentos
-        desde la ficha de la auditoría.
+        Al crearla se abrirá la ficha de la auditoría, donde podrás rellenar el checklist, registrar no
+        conformidades con sus acciones correctivas y generar los documentos.
       </Alert>
 
       <QueryBoundary isLoading={farms.isLoading || standards.isLoading} error={farms.error || standards.error}>
@@ -157,7 +147,8 @@ export default function AuditWizardPage() {
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <TextField
-                    label="Fecha de auditoría"
+                    label="Fecha de realización"
+                    helperText="Solo si la auditoría ya se ha hecho"
                     type="date"
                     fullWidth
                     InputLabelProps={{ shrink: true }}

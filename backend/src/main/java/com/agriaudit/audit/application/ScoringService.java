@@ -19,11 +19,14 @@ import com.agriaudit.audit.ScoreDtos.ScoreResult;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
 @Transactional(readOnly = true)
 public class ScoringService {
+
+    private static final Locale ES = Locale.forLanguageTag("es-ES");
 
     private final CatalogLookup catalog;
     private final AuditItemResultRepository results;
@@ -113,9 +116,9 @@ public class ScoringService {
                         && (minorMin == null || minorPct >= minorMin);
                 overall = pass ? "PASS" : "FAIL";
             }
-            notes.add(String.format("Major Musts cumplidos: %.1f%% (mínimo %s%%).", majorPct,
+            notes.add(String.format(ES, "Obligaciones mayores cumplidas: %.1f %% (mínimo %s %%).", majorPct,
                     majorMin == null ? "-" : majorMin.intValue()));
-            notes.add(String.format("Minor Musts cumplidos: %.1f%% (mínimo %s%%).", minorPct,
+            notes.add(String.format(ES, "Obligaciones menores cumplidas: %.1f %% (mínimo %s %%).", minorPct,
                     minorMin == null ? "-" : minorMin.intValue()));
             if (majorApplicable + minorApplicable == 0) {
                 notes.add("No hay puntos obligatorios aplicables en este alcance.");

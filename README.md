@@ -115,13 +115,26 @@ con URL fija.
 Al arrancar con la base de datos vacía se carga automáticamente un juego de datos ficticio y coherente
 (`AGRIAUDIT_DEMO_SEED=true`, desactívalo poniéndolo a `false`):
 
-- **5 explotaciones** en España, Perú, Sudáfrica y Marruecos (frutos rojos, cítricos, uva de mesa, pomáceas, hortícolas).
-- **2 usuarios adicionales**: `ana.auditora@demo.test` (AUDITOR) y `carlos.lector@demo.test` (VIEWER), contraseña `Demo1234!`.
-- **8 auditorías** contra los 3 estándares, en todos los estados (borrador, en curso, cierre, enviada, cerrada) y tipos.
-- Resultados de checklist, no conformidades (`NC-001`…) con clasificación y plazos, y acciones correctivas en distintos estados.
+La historia de la demo: una **central hortofrutícola de la Región de Murcia** («Central Hortofrutícola del Segura»)
+que gestiona la certificación de sus productores.
+
+- **8 explotaciones** ficticias de Murcia (Molina de Segura, Fortuna, Lorca, Torre Pacheco, Cartagena, Cehegín, Ceuti,
+  Fuente Álamo) con hortícolas, cítricos, fruta de hueso y uva de mesa.
+- **2 usuarios adicionales**: `ana.auditora@demo.test` (AUDITOR, el que se usa en las demos) y
+  `carlos.lector@demo.test` (VIEWER), contraseña `Demo1234!`.
+- **12 auditorías** contra los 3 estándares, en todos los estados (borrador, en curso, cierre, enviada, cerrada) y tipos.
+- Resultados de checklist con notas de evidencia, y **no conformidades** con textos realistas por capítulo
+  (trazabilidad, fitosanitarios, agua de riego, formación…), clasificación y acciones correctivas en distintos estados.
+- **Fechas relativas a hoy**: cada vez que se siembra, el panel muestra alguna no conformidad vencida, varias que vencen
+  en los próximos 7 días y el resto con margen.
+- Alguna no conformidad lleva una **foto de evidencia** de ejemplo (ficticia) para probar el análisis con OCR.
 - **Documentos ya generados** (PDF/DOCX/XLSX) para las auditorías cerradas/enviadas/en cierre — el *Centro de documentos* no aparece vacío.
 
-Es idempotente: si ya hay explotaciones, no vuelve a sembrar. Para regenerarlo: `docker compose down -v && docker compose up -d`.
+Es idempotente: si ya hay explotaciones, no vuelve a sembrar. Para regenerarlo con fechas nuevas:
+`docker compose down -v && docker compose up -d`.
+
+**Flujo de estados de una auditoría:** borrador → en curso → cierre → enviada → cerrada (con reapertura un paso atrás).
+No se pasa a cierre con puntos de control sin evaluar ni se cierra con no conformidades sin cerrar o verificar.
 
 ---
 

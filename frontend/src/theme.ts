@@ -8,6 +8,9 @@ export const theme = createTheme(
       mode: 'light',
       primary: { main: '#0f6b5f', dark: '#0f2e2b', light: '#3d9488' },
       secondary: { main: '#8a6100' },
+      // Tonos más oscuros que los de MUI para que el texto blanco de los chips llegue a contraste 4,5:1 (WCAG AA).
+      warning: { main: '#b45f06' },
+      info: { main: '#0277bd' },
       background: { default: '#f4f6f5' },
     },
     shape: { borderRadius: 8 },

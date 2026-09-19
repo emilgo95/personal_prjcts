@@ -126,6 +126,28 @@ public class FindingService implements FindingLookup {
                 .count();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public long countDueBetween(Long organizationId, LocalDate from, LocalDate to) {
+        return organizationFindings(organizationId).stream()
+                .filter(FindingService::isOpen)
+                .filter(f -> f.getDueDate() != null && !f.getDueDate().isBefore(from) && !f.getDueDate().isAfter(to))
+                .count();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FindingDeadline> nextDeadlines(Long organizationId, int limit) {
+        return organizationFindings(organizationId).stream()
+                .filter(FindingService::isOpen)
+                .filter(f -> f.getDueDate() != null)
+                .sorted(java.util.Comparator.comparing(Finding::getDueDate).thenComparing(Finding::getId))
+                .limit(limit)
+                .map(f -> new FindingDeadline(f.getId(), f.getAuditId(), f.getReference(), f.getTitle(),
+                        f.getClassification().name(), f.getStatus().name(), f.getDueDate()))
+                .toList();
+    }
+
     // ---- helpers ----
 
     /** NC de una auditoría de la organización del usuario; 404 si la auditoría o la NC no lo son. */

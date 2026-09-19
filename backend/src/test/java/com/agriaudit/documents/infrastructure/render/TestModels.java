@@ -39,7 +39,7 @@ public final class TestModels {
                 "SELF_ASSESSMENT", "IN_PROGRESS", "Frutas y hortalizas, invernadero",
                 LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 2), LocalDate.of(2026, 9, 1),
                 "Ana Auditora", "Ana Auditora, Luis Técnico", "Camino de la Vega 1, Almería",
-                "Tomate", Instant.now(), Instant.now(), farm, 3, 2, 67, 1L);
+                "Tomate", Instant.now(), Instant.now(), farm, 3, 2, 67, 1L, List.of("CLOSING"));
 
         ControlPointDto cp1 = new ControlPointDto(101L, "AF 2.1", "Trazabilidad del producto certificado",
                 "El sistema permite trazar el producto.", "MAJOR_MUST", "Identificación de lotes.",

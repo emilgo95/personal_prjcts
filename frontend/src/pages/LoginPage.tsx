@@ -26,7 +26,7 @@ const kenBurns = keyframes`
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('admin@demo.test');
+  const [email, setEmail] = useState('ana.auditora@demo.test');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

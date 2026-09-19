@@ -7,7 +7,7 @@ import { AuditApi } from '../api/endpoints';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
 import { useAuth } from '../auth/AuthContext';
-import { auditStatusLabels, auditTypeLabels, label } from '../utils/labels';
+import { auditStatusColors, auditStatusLabels, auditTypeLabels, label, standardShort } from '../utils/labels';
 
 export default function AuditsPage() {
   const navigate = useNavigate();
@@ -17,7 +17,13 @@ export default function AuditsPage() {
   const columns: GridColDef[] = [
     { field: 'reference', headerName: 'Referencia', width: 140 },
     { field: 'farmName', headerName: 'Explotación', flex: 1, minWidth: 180 },
-    { field: 'standardName', headerName: 'Estándar', flex: 1, minWidth: 180 },
+    {
+      field: 'standardName',
+      headerName: 'Estándar',
+      flex: 1,
+      minWidth: 170,
+      valueGetter: (value, row) => standardShort(row.standardCode, value as string),
+    },
     {
       field: 'auditType',
       headerName: 'Tipo',
@@ -28,7 +34,13 @@ export default function AuditsPage() {
       field: 'status',
       headerName: 'Estado',
       width: 130,
-      renderCell: (params) => <Chip size="small" label={label(auditStatusLabels, params.value as string)} />,
+      renderCell: (params) => (
+        <Chip
+          size="small"
+          color={auditStatusColors[params.value as string] ?? 'default'}
+          label={label(auditStatusLabels, params.value as string)}
+        />
+      ),
     },
     {
       field: 'progressPct',
@@ -36,7 +48,7 @@ export default function AuditsPage() {
       width: 150,
       renderCell: (params) => (
         <Box sx={{ width: '100%' }}>
-          <LinearProgress variant="determinate" value={params.value as number} />
+          <LinearProgress variant="determinate" value={params.value as number} aria-label="Progreso de evaluación" />
           <span style={{ fontSize: 11 }}>{params.value as number}%</span>
         </Box>
       ),
@@ -65,7 +77,7 @@ export default function AuditsPage() {
           disableRowSelectionOnClick
           onRowClick={(p) => navigate(`/audits/${p.id}`)}
           pageSizeOptions={[10, 25, 50]}
-          initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+          initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
           sx={{ bgcolor: 'background.paper', cursor: 'pointer' }}
         />
       </QueryBoundary>

@@ -1,6 +1,7 @@
 package com.agriaudit.findings.infrastructure.persistence;
 
 import com.agriaudit.findings.domain.Finding;
+import com.agriaudit.findings.domain.FindingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;
@@ -11,6 +12,7 @@ public interface FindingRepository extends JpaRepository<Finding, Long> {
     List<Finding> findByAuditIdOrderByClassificationAscIdAsc(Long auditId);
     Optional<Finding> findByIdAndAuditId(Long id, Long auditId);
     long countByAuditId(Long auditId);
+    long countByAuditIdAndStatusNotIn(Long auditId, Collection<FindingStatus> statuses);
 
     List<Finding> findByAuditIdIn(Collection<Long> auditIds);
 }

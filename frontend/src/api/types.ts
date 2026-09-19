@@ -138,6 +138,7 @@ export interface AuditDetail {
   assessedCount: number;
   progressPct: number;
   findingsCount: number;
+  allowedTransitions: string[];
 }
 
 export interface AuditRequest {
@@ -301,6 +302,7 @@ export interface GeneratedDocument {
   documentType: string;
   documentTypeLabel: string;
   standardCode: string | null;
+  standardName: string | null;
   format: string;
   fileName: string;
   sizeBytes: number | null;
@@ -334,12 +336,27 @@ export interface EvidenceAnalysis {
   warnings: string[];
 }
 
+export interface Deadline {
+  findingId: number;
+  auditId: number;
+  auditReference: string | null;
+  farmName: string | null;
+  findingReference: string | null;
+  title: string | null;
+  classification: string;
+  status: string;
+  dueDate: string;
+  daysLeft: number;
+}
+
 export interface Dashboard {
   farmsCount: number;
   auditsTotal: number;
   auditsByStatus: Record<string, number>;
   openFindings: number;
   overdueFindings: number;
+  dueSoonFindings: number;
   documentsGenerated: number;
+  upcomingDeadlines: Deadline[];
   recentAudits: AuditSummary[];
 }

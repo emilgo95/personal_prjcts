@@ -28,6 +28,21 @@ export const classificationLabels: Record<string, string> = {
   OBSERVATION: 'Observación',
 };
 
+export const classificationColors: Record<string, 'error' | 'warning' | 'info' | 'default'> = {
+  CRITICAL: 'error',
+  MAJOR: 'warning',
+  MINOR: 'info',
+  OBSERVATION: 'default',
+};
+
+export const findingStatusColors: Record<string, 'default' | 'info' | 'primary' | 'success'> = {
+  OPEN: 'default',
+  IN_PROGRESS: 'info',
+  RESOLVED: 'primary',
+  VERIFIED: 'success',
+  CLOSED: 'success',
+};
+
 export const findingStatusLabels: Record<string, string> = {
   OPEN: 'Abierta',
   IN_PROGRESS: 'En curso',
@@ -60,6 +75,20 @@ export const auditStatusLabels: Record<string, string> = {
   CLOSED: 'Cerrada',
 };
 
+export const auditStatusColors: Record<string, 'default' | 'info' | 'warning' | 'primary' | 'success'> = {
+  DRAFT: 'default',
+  IN_PROGRESS: 'info',
+  CLOSING: 'warning',
+  SUBMITTED: 'primary',
+  CLOSED: 'success',
+};
+
+export const roleLabels: Record<string, string> = {
+  ADMIN: 'Administrador',
+  AUDITOR: 'Auditor',
+  VIEWER: 'Lectura',
+};
+
 export const overallResultLabels: Record<string, string> = {
   PASS: 'APTO',
   FAIL: 'NO APTO',
@@ -73,6 +102,23 @@ export const overallResultColors: Record<string, 'success' | 'error' | 'warning'
   PENDING: 'warning',
   REPORT_ONLY: 'info',
 };
+
+const standardShortLabels: Record<string, string> = {
+  GLOBALGAP_IFA_V6: 'GLOBALG.A.P. IFA v6',
+  GRASP_V2: 'GRASP v2',
+  SMETA_6_1: 'SMETA 6.1',
+};
+
+/** Nombre corto de un estándar para tablas y listas; si no lo conocemos, el nombre completo o el código. */
+export function standardShort(code: string | null | undefined, fallback?: string | null): string {
+  if (code && standardShortLabels[code]) return standardShortLabels[code];
+  return fallback ?? code ?? '—';
+}
+
+/** Porcentaje con coma decimal y espacio fino antes del símbolo (no parte línea): `90,0 %`. */
+export function formatPct(value: number): string {
+  return `${value.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+}
 
 export function label(map: Record<string, string>, key: string | null | undefined): string {
   if (!key) return '—';

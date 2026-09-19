@@ -30,6 +30,7 @@ import java.util.List;
 public class DemoDocumentSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDocumentSeeder.class);
+    private static final String DEMO_AUDITOR_EMAIL = "ana.auditora@demo.test";
 
     private final boolean enabled;
     private final String adminEmail;
@@ -56,10 +57,13 @@ public class DemoDocumentSeeder implements CommandLineRunner {
         if (!enabled) {
             return;
         }
-        AppUserPrincipal principal;
-        try {
-            principal = (AppUserPrincipal) userDetailsService.loadUserByUsername(adminEmail);
-        } catch (Exception e) {
+        // Los documentos de demo constan como generados por la auditora de demostración; si ese usuario
+        // no existe (p. ej. sin usuarios de demo), por el administrador.
+        AppUserPrincipal principal = loadPrincipal(DEMO_AUDITOR_EMAIL);
+        if (principal == null) {
+            principal = loadPrincipal(adminEmail);
+        }
+        if (principal == null) {
             return;
         }
 
@@ -81,6 +85,14 @@ public class DemoDocumentSeeder implements CommandLineRunner {
             }
         } finally {
             SecurityContextHolder.clearContext();
+        }
+    }
+
+    private AppUserPrincipal loadPrincipal(String email) {
+        try {
+            return (AppUserPrincipal) userDetailsService.loadUserByUsername(email);
+        } catch (Exception e) {
+            return null;
         }
     }
 

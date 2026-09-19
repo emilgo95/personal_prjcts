@@ -5,7 +5,7 @@ import { Box, Chip, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { AuditApi } from '../api/endpoints';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
-import { auditStatusLabels, auditTypeLabels, label } from '../utils/labels';
+import { auditStatusColors, auditStatusLabels, auditTypeLabels, label } from '../utils/labels';
 import SummaryTab from '../audit/SummaryTab';
 import ChecklistTab from '../audit/ChecklistTab';
 import FindingsTab from '../audit/FindingsTab';
@@ -32,7 +32,7 @@ export default function AuditDetailPage() {
               action={
                 <Stack direction="row" spacing={1}>
                   <Chip label={label(auditTypeLabels, data.auditType)} variant="outlined" />
-                  <Chip color="primary" label={label(auditStatusLabels, data.status)} />
+                  <Chip color={auditStatusColors[data.status] ?? 'default'} label={label(auditStatusLabels, data.status)} />
                 </Stack>
               }
             />
@@ -41,7 +41,14 @@ export default function AuditDetailPage() {
               no conformidades
             </Typography>
 
-            <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
+            <Tabs
+              value={tab}
+              onChange={(_, v) => setTab(v)}
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
+              sx={{ mb: 2 }}
+            >
               <Tab label="Resumen" />
               <Tab label="Checklist" />
               <Tab label="Hallazgos y CAPA" />

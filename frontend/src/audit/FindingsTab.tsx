@@ -24,11 +24,15 @@ import { AttachmentApi, AuditApi, FindingApi } from '../api/endpoints';
 import type { CorrectiveAction, CorrectiveActionRequest, Finding, FindingRequest } from '../api/types';
 import QueryBoundary from '../components/QueryBoundary';
 import AttachmentPanel from '../components/AttachmentPanel';
+import DeadlineChip from '../components/DeadlineChip';
+import { formatDate } from '../utils/dates';
 import { useToast } from '../utils/toast';
 import { extractErrorMessage } from '../api/client';
 import {
   caStatusLabels,
+  classificationColors,
   classificationLabels,
+  findingStatusColors,
   findingStatusLabels,
   label,
 } from '../utils/labels';
@@ -326,21 +330,41 @@ function FindingCard({
             onSubmit={(body) => update.mutate(body)}
           />
         ) : (
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-            <Box>
-              <Typography fontWeight={700}>
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'flex-start', md: 'flex-start' }}
+            spacing={1}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="overline" color="text.secondary" lineHeight={1.5}>
                 {finding.reference} · {finding.controlPointRef ?? finding.area ?? 'General'}
               </Typography>
-              <Typography variant="body2">
-                {finding.title}
-                {finding.title && finding.description ? ' — ' : ''}
-                {finding.description}
-              </Typography>
+              {finding.title && <Typography fontWeight={700}>{finding.title}</Typography>}
+              {finding.description && (
+                <Typography variant="body2" color="text.secondary">
+                  {finding.description}
+                </Typography>
+              )}
             </Box>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip size="small" label={label(classificationLabels, finding.classification)} color="warning" />
-              <Chip size="small" label={label(findingStatusLabels, finding.status)} />
-              {finding.dueDate && <Chip size="small" variant="outlined" label={`Límite: ${finding.dueDate}`} />}
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ flexShrink: 0 }}>
+              <Chip
+                size="small"
+                label={label(classificationLabels, finding.classification)}
+                color={classificationColors[finding.classification] ?? 'default'}
+              />
+              <Chip
+                size="small"
+                label={label(findingStatusLabels, finding.status)}
+                color={findingStatusColors[finding.status] ?? 'default'}
+                variant="outlined"
+              />
+              {finding.dueDate && (
+                <DeadlineChip
+                  dueDate={finding.dueDate}
+                  closed={finding.status === 'CLOSED' || finding.status === 'VERIFIED'}
+                />
+              )}
               {canEdit && (
                 <>
                   <IconButton size="small" onClick={() => setEditing(true)}>
@@ -516,8 +540,8 @@ function CorrectiveActionRow({
             </Typography>
           )}
           <Typography variant="caption" color="text.secondary">
-            {action.responsiblePerson || 'Sin responsable'} · objetivo {action.targetDate || '—'}
-            {action.completedDate ? ` · cerrada ${action.completedDate}` : ''} ·{' '}
+            {action.responsiblePerson || 'Sin responsable'} · objetivo {formatDate(action.targetDate)}
+            {action.completedDate ? ` · completada ${formatDate(action.completedDate)}` : ''} ·{' '}
             {label(caStatusLabels, action.status)}
           </Typography>
         </Box>

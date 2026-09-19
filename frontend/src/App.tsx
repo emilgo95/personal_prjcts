@@ -23,7 +23,7 @@ function FullscreenLoader() {
 }
 
 export default function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, hasRole } = useAuth();
 
   if (loading) return <FullscreenLoader />;
 
@@ -49,7 +49,7 @@ export default function App() {
         <Route path="/documents" element={<DocumentCenterPage />} />
         <Route path="/standards" element={<StandardsPage />} />
         <Route path="/regulations" element={<RegulationsPage />} />
-        <Route path="/users" element={<UsersPage />} />
+        <Route path="/users" element={hasRole('ADMIN') ? <UsersPage /> : <Navigate to="/" replace />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
