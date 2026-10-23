@@ -17,10 +17,15 @@ updates:
         exclude-patterns: ["org.springframework.*"]
         update-types: [minor, patch]
     ignore:
-      # La generación de Spring Boot (y Modulith, que va ligado) se sube a mano tras probarla.
-      - dependency-name: org.springframework.boot:spring-boot-starter-parent
-        update-types: [version-update:semver-major]
+      # Spring Boot sí puede proponer saltos de generación (la PR hay que acompañarla de Modulith, springdoc y
+      # Testcontainers: ver la rama experimental `experimento/spring-boot-4.1`). Lo que va ligado a esa generación
+      # no se propone por separado.
       - dependency-name: org.springframework.modulith:*
+        update-types: [version-update:semver-major]
+      - dependency-name: org.springdoc:*
+        update-types: [version-update:semver-major]
+      # Apache POI 6 es un salto mayor que conviene probar a mano con los informes Excel.
+      - dependency-name: org.apache.poi:*
         update-types: [version-update:semver-major]
 
   - package-ecosystem: maven
@@ -45,6 +50,18 @@ updates:
       dependencias-menores:
         patterns: ["*"]
         update-types: [minor, patch]
+    ignore:
+      # Base de la interfaz y herramientas de compilación: los saltos mayores se suben a mano, tras probarlos.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      - dependency-name: vite
+        update-types: [version-update:semver-major]
+      - dependency-name: "@mui/*"
+        update-types: [version-update:semver-major]
+      - dependency-name: "react*"
+        update-types: [version-update:semver-major]
+      - dependency-name: "@tanstack/*"
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directory: /e2e
@@ -69,3 +86,13 @@ updates:
     schedule: { interval: weekly, day: monday, timezone: Europe/Madrid }
     commit-message: { prefix: "chore(deps)" }
     labels: [dependencies, docker]
+    ignore:
+      # Java: solo versiones LTS. Hoy 21 y 25; se descartan las intermedias (22-24) y las posteriores (26+) hasta
+      # que haya otra LTS. La imagen de compilación `maven:3.9-eclipse-temurin-N` no se puede filtrar por la N, así
+      # que se sube a mano junto con la migración a Java 25.
+      - dependency-name: eclipse-temurin
+        versions: [">= 22, < 25", ">= 26"]
+      - dependency-name: maven
+      # Node: los saltos de versión mayor se hacen a mano y solo a versiones LTS (pares).
+      - dependency-name: node
+        update-types: [version-update:semver-major]
