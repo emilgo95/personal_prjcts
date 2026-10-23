@@ -9,7 +9,7 @@ import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.catalog.ControlLevel;
 import com.agriaudit.catalog.ControlPointView;
 import com.agriaudit.catalog.StandardView;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +38,7 @@ class ScoringServiceTest {
     void setUp() {
         catalog = mock(CatalogLookup.class);
         results = mock(AuditItemResultRepository.class);
-        scoringService = new ScoringService(catalog, results, new ObjectMapper());
+        scoringService = new ScoringService(catalog, results, JsonMapper.builder().build());
         when(catalog.findStandard(GLOBALGAP.id())).thenReturn(Optional.of(GLOBALGAP));
         when(catalog.findStandard(SMETA.id())).thenReturn(Optional.of(SMETA));
     }

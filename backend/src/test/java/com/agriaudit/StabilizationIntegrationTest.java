@@ -1,12 +1,13 @@
 package com.agriaudit;
 
 import com.agriaudit.support.TestPostgres;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -33,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Errores corregidos en la tanda de estabilización: administración de usuarios, inicio de sesión de cuentas
  * desactivadas, auditorías congeladas, coherencia de no conformidades, mensajes de error y validaciones.
  */
+@AutoConfigureTestRestTemplate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers(disabledWithoutDocker = true)
 class StabilizationIntegrationTest {

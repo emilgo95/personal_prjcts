@@ -5,7 +5,7 @@ import com.agriaudit.audit.domain.Audit;
 import com.agriaudit.audit.infrastructure.persistence.AuditItemResultRepository;
 import com.agriaudit.catalog.CatalogLookup;
 import com.agriaudit.catalog.StandardView;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -27,7 +27,7 @@ class ScoringRuleTest {
         when(results.findByAuditId(any())).thenReturn(List.of());
         Audit audit = new Audit();
         audit.setStandardId(1L);
-        return new ScoringService(catalog, results, new ObjectMapper()).score(audit);
+        return new ScoringService(catalog, results, JsonMapper.builder().build()).score(audit);
     }
 
     @Test
