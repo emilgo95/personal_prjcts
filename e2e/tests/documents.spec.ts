@@ -9,7 +9,7 @@ test.describe('Generación de documentos de auditoría', () => {
   test('genera un documento desde la ficha de una auditoría y lo descarga', async ({ page }) => {
     // Abrir la primera auditoría del listado.
     await page.getByRole('link', { name: 'Auditorías', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Auditorías' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Auditorías', exact: true })).toBeVisible();
     await page.getByRole('row').nth(1).click();
 
     await expect(page.getByRole('tab', { name: 'Documentos' })).toBeVisible();
