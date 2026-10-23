@@ -62,6 +62,9 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: "@tanstack/*"
         update-types: [version-update:semver-major]
+      # Los tipos de Node siguen al Node LTS del proyecto (24): no se suben a versiones no LTS.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directory: /e2e
@@ -71,6 +74,10 @@ updates:
     groups:
       e2e:
         patterns: ["*"]
+    ignore:
+      # Los tipos de Node siguen al Node LTS del proyecto (24): no se suben a versiones no LTS.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
@@ -80,6 +87,24 @@ updates:
     groups:
       acciones:
         patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /ocr
+    schedule: { interval: weekly, day: monday, timezone: Europe/Madrid }
+    commit-message: { prefix: "chore(deps)" }
+    labels: [dependencies, python]
+    groups:
+      ocr:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      # Motor de OCR y librerías binarias ligadas entre sí: sus saltos mayores se prueban a mano con el servicio.
+      - dependency-name: numpy
+        update-types: [version-update:semver-major]
+      - dependency-name: opencv-python-headless
+        update-types: [version-update:semver-major]
+      - dependency-name: rapidocr-onnxruntime
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: docker
     directories: [/backend, /frontend, /ocr]
