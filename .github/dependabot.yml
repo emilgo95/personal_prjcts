@@ -1,0 +1,71 @@
+# Actualizaciones automáticas de dependencias (Dependabot). Las de seguridad llegan siempre; las de versión,
+# agrupadas y una vez por semana para no saturar de PR. Todo pasa por la CI (`ci-ok`) antes de fusionar.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /backend
+    schedule: { interval: weekly, day: monday, timezone: Europe/Madrid }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: "chore(deps)" }
+    labels: [dependencies, backend]
+    groups:
+      spring:
+        patterns: ["org.springframework.*"]
+        update-types: [minor, patch]
+      dependencias-menores:
+        patterns: ["*"]
+        exclude-patterns: ["org.springframework.*"]
+        update-types: [minor, patch]
+    ignore:
+      # La generación de Spring Boot (y Modulith, que va ligado) se sube a mano tras probarla.
+      - dependency-name: org.springframework.boot:spring-boot-starter-parent
+        update-types: [version-update:semver-major]
+      - dependency-name: org.springframework.modulith:*
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: maven
+    directory: /api-tests
+    schedule: { interval: weekly, day: monday, timezone: Europe/Madrid }
+    commit-message: { prefix: "chore(deps)" }
+    labels: [dependencies, tests]
+    groups:
+      pruebas-api:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule: { interval: weekly, day: monday, timezone: Europe/Madrid }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: "chore(deps)" }
+    labels: [dependencies, frontend]
+    groups:
+      react-mui:
+        patterns: ["react*", "@mui/*", "@emotion/*", "@tanstack/*"]
+        update-types: [minor, patch]
+      dependencias-menores:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule: { interval: weekly, day: monday, timezone: Europe/Madrid }
+    commit-message: { prefix: "chore(deps)" }
+    labels: [dependencies, tests]
+    groups:
+      e2e:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday, timezone: Europe/Madrid }
+    commit-message: { prefix: "chore(ci)" }
+    labels: [dependencies, ci]
+    groups:
+      acciones:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directories: [/backend, /frontend, /ocr]
+    schedule: { interval: weekly, day: monday, timezone: Europe/Madrid }
+    commit-message: { prefix: "chore(deps)" }
+    labels: [dependencies, docker]
