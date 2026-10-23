@@ -1,6 +1,7 @@
 package com.agriaudit.identity.application;
 
 import com.agriaudit.common.BadRequestException;
+import com.agriaudit.common.ConflictException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.identity.domain.AppUser;
 import com.agriaudit.identity.domain.Organization;
@@ -58,15 +59,37 @@ public class UserService {
         AppUser user = users.findById(id)
                 .filter(u -> u.getOrganization().getId().equals(SecurityUtils.currentOrganizationId()))
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado: " + id));
+        Role newRole = parseRole(request.role());
+        boolean newActive = request.active() != null ? request.active() : user.isActive();
+        guardAdministrators(user, newRole, newActive);
         user.setFullName(request.fullName());
-        user.setRole(parseRole(request.role()));
-        if (request.active() != null) {
-            user.setActive(request.active());
-        }
+        user.setRole(newRole);
+        user.setActive(newActive);
         if (request.password() != null && !request.password().isBlank()) {
             user.setPasswordHash(passwordEncoder.encode(request.password()));
         }
         return toDto(users.save(user));
+    }
+
+    /**
+     * Impide dejar la organización sin administrador: nadie puede quitarse a sí mismo el rol de administrador ni
+     * desactivar su propia cuenta, y siempre debe quedar al menos un administrador activo.
+     */
+    private void guardAdministrators(AppUser user, Role newRole, boolean newActive) {
+        boolean isActiveAdmin = user.getRole() == Role.ADMIN && user.isActive();
+        boolean staysActiveAdmin = newRole == Role.ADMIN && newActive;
+        if (!isActiveAdmin || staysActiveAdmin) {
+            return;
+        }
+        if (user.getId().equals(SecurityUtils.currentUserId())) {
+            throw new ConflictException(
+                    "No puedes quitarte el rol de administrador ni desactivar tu propia cuenta. Pídeselo a otro administrador.");
+        }
+        long activeAdmins = users.countByOrganizationIdAndRoleAndActive(
+                user.getOrganization().getId(), Role.ADMIN, true);
+        if (activeAdmins <= 1) {
+            throw new ConflictException("La organización debe conservar al menos un administrador activo.");
+        }
     }
 
     private Role parseRole(String value) {

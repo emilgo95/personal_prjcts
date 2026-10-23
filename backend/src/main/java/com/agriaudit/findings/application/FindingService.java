@@ -1,6 +1,7 @@
 package com.agriaudit.findings.application;
 
 import com.agriaudit.common.BadRequestException;
+import com.agriaudit.common.ConflictException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.audit.AuditLookup;
 import com.agriaudit.audit.AuditRef;
@@ -53,31 +54,33 @@ public class FindingService implements FindingLookup {
     }
 
     public FindingDto create(Long auditId, FindingRequest request) {
-        AuditRef audit = audits.requireAudit(auditId);
+        AuditRef audit = requireEditableAudit(auditId);
         Finding finding = new Finding();
         finding.setAuditId(audit.id());
         applyControlPoint(finding, request.controlPointId(), audit);
         applyRequest(finding, request);
+        validateManualStatus(finding, null, List.of());
         finding.setReference(nextReference(auditId));
         return toDto(findings.save(finding));
     }
 
     public FindingDto update(Long auditId, Long findingId, FindingRequest request) {
-        audits.requireAudit(auditId);
+        AuditRef audit = requireEditableAudit(auditId);
         Finding finding = requireFinding(auditId, findingId);
-        AuditRef audit = audits.requireAudit(auditId);
+        FindingStatus previous = finding.getStatus();
         applyControlPoint(finding, request.controlPointId(), audit);
         applyRequest(finding, request);
+        validateManualStatus(finding, previous, correctiveActions.findByFindingIdOrderByIdAsc(finding.getId()));
         return toDto(findings.save(finding));
     }
 
     public void delete(Long auditId, Long findingId) {
-        audits.requireAudit(auditId);
+        requireEditableAudit(auditId);
         findings.delete(requireFinding(auditId, findingId));
     }
 
     public CorrectiveActionDto addCorrectiveAction(Long auditId, Long findingId, CorrectiveActionRequest request) {
-        audits.requireAudit(auditId);
+        requireEditableAudit(auditId);
         Finding finding = requireFinding(auditId, findingId);
         CorrectiveAction ca = new CorrectiveAction();
         ca.setFindingId(finding.getId());
@@ -89,7 +92,7 @@ public class FindingService implements FindingLookup {
 
     public CorrectiveActionDto updateCorrectiveAction(Long auditId, Long findingId, Long caId,
                                                      CorrectiveActionRequest request) {
-        audits.requireAudit(auditId);
+        requireEditableAudit(auditId);
         Finding finding = requireFinding(auditId, findingId);
         CorrectiveAction ca = correctiveActions.findById(caId)
                 .filter(x -> x.getFindingId().equals(finding.getId()))
@@ -101,7 +104,8 @@ public class FindingService implements FindingLookup {
     }
 
     public void deleteCorrectiveAction(Long auditId, Long findingId, Long caId) {
-        Finding finding = requireOwnedFinding(auditId, findingId);
+        requireEditableAudit(auditId);
+        Finding finding = requireFinding(auditId, findingId);
         CorrectiveAction ca = correctiveActions.findById(caId)
                 .filter(x -> x.getFindingId().equals(finding.getId()))
                 .orElseThrow(() -> new NotFoundException("Acción correctiva no encontrada: " + caId));
@@ -149,6 +153,42 @@ public class FindingService implements FindingLookup {
     }
 
     // ---- helpers ----
+
+    /** Como {@link #requireOwnedFinding}, y además 409 si la auditoría está enviada o cerrada. */
+    Finding requireEditableFinding(Long auditId, Long findingId) {
+        requireEditableAudit(auditId);
+        return requireFinding(auditId, findingId);
+    }
+
+    /** Auditoría de la organización del usuario para modificarla: 404 si no es suya, 409 si está congelada. */
+    private AuditRef requireEditableAudit(Long auditId) {
+        AuditRef audit = audits.requireAudit(auditId);
+        if (audit.status().isLocked()) {
+            throw new ConflictException(audit.status().lockedMessage());
+        }
+        return audit;
+    }
+
+    /**
+     * Una no conformidad solo puede pasar a «cerrada» o «verificada» a mano si todas sus acciones correctivas
+     * están verificadas y, salvo las observaciones, si tiene al menos una que evidencie la corrección.
+     */
+    private void validateManualStatus(Finding finding, FindingStatus previous, List<CorrectiveAction> actions) {
+        FindingStatus target = finding.getStatus();
+        if (target == previous || (target != FindingStatus.CLOSED && target != FindingStatus.VERIFIED)) {
+            return;
+        }
+        String verb = target == FindingStatus.CLOSED ? "cerrada" : "verificada";
+        if (actions.stream().anyMatch(a -> a.getStatus() != CorrectiveActionStatus.VERIFIED)) {
+            throw new ConflictException("No se puede dar la no conformidad por " + verb
+                    + ": tiene acciones correctivas sin verificar.");
+        }
+        if (actions.isEmpty() && finding.getClassification() != FindingClassification.OBSERVATION) {
+            throw new ConflictException("No se puede dar la no conformidad por " + verb
+                    + ": no tiene ninguna acción correctiva verificada que evidencie la corrección. "
+                    + "Solo las observaciones pueden cerrarse sin acción.");
+        }
+    }
 
     /** NC de una auditoría de la organización del usuario; 404 si la auditoría o la NC no lo son. */
     Finding requireOwnedFinding(Long auditId, Long findingId) {
@@ -220,21 +260,36 @@ public class FindingService implements FindingLookup {
         }
     }
 
+    /**
+     * Mantiene el estado de la NC coherente con sus acciones correctivas: se cierra cuando todas están verificadas,
+     * pasa a «en curso» cuando alguna avanza y se reabre si una acción verificada deja de estarlo o desaparece.
+     */
     private void syncFindingStatus(Finding finding) {
         List<CorrectiveAction> actions = correctiveActions.findByFindingIdOrderByIdAsc(finding.getId());
+        FindingStatus current = finding.getStatus();
+        FindingStatus next = current;
         if (actions.isEmpty()) {
-            return;
+            if (finding.getClassification() != FindingClassification.OBSERVATION && current != FindingStatus.OPEN) {
+                next = FindingStatus.OPEN;
+            }
+        } else {
+            boolean allVerified = actions.stream().allMatch(a -> a.getStatus() == CorrectiveActionStatus.VERIFIED);
+            boolean anyProgress = actions.stream().anyMatch(a ->
+                    a.getStatus() == CorrectiveActionStatus.IN_PROGRESS
+                            || a.getStatus() == CorrectiveActionStatus.COMPLETED
+                            || a.getStatus() == CorrectiveActionStatus.VERIFIED);
+            if (allVerified) {
+                next = FindingStatus.CLOSED;
+            } else if (current == FindingStatus.CLOSED || current == FindingStatus.VERIFIED) {
+                next = anyProgress ? FindingStatus.IN_PROGRESS : FindingStatus.OPEN;
+            } else if (current == FindingStatus.OPEN && anyProgress) {
+                next = FindingStatus.IN_PROGRESS;
+            }
         }
-        boolean allVerified = actions.stream().allMatch(a -> a.getStatus() == CorrectiveActionStatus.VERIFIED);
-        boolean anyProgress = actions.stream().anyMatch(a ->
-                a.getStatus() == CorrectiveActionStatus.IN_PROGRESS
-                        || a.getStatus() == CorrectiveActionStatus.COMPLETED);
-        if (allVerified) {
-            finding.setStatus(FindingStatus.CLOSED);
-        } else if (anyProgress && finding.getStatus() == FindingStatus.OPEN) {
-            finding.setStatus(FindingStatus.IN_PROGRESS);
+        if (next != current) {
+            finding.setStatus(next);
+            findings.save(finding);
         }
-        findings.save(finding);
     }
 
     private String nextReference(Long auditId) {

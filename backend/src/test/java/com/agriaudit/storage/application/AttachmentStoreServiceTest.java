@@ -31,7 +31,7 @@ class AttachmentStoreServiceTest {
     void setUp() {
         repository = mock(AttachmentRepository.class);
         blobs = mock(BlobStore.class);
-        service = new AttachmentStoreService(repository, blobs);
+        service = new AttachmentStoreService(repository, blobs, new org.springframework.beans.factory.support.DefaultListableBeanFactory().getBeanProvider(com.agriaudit.storage.AttachmentDeletionGuard.class));
         when(blobs.store(any(), anyString(), eq("attachments"))).thenReturn("attachments/2026/k");
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -67,6 +67,8 @@ class AttachmentStoreServiceTest {
     void borraMetadatosYContenido() {
         Attachment a = new Attachment();
         a.setStorageKey("attachments/2026/k");
+        a.setEntityType("AUDIT");
+        a.setEntityId(7L);
         when(repository.findByIdAndOrganizationId(5L, 1L)).thenReturn(Optional.of(a));
 
         service.delete(1L, 5L);

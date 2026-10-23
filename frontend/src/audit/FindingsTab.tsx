@@ -62,11 +62,19 @@ const emptyCa: CorrectiveActionRequest = {
 
 type ControlOption = { controlPointId: number; ref: string; title: string };
 
-export default function FindingsTab({ auditId }: { auditId: number; standardCode: string }) {
+export default function FindingsTab({
+  auditId,
+  locked = false,
+}: {
+  auditId: number;
+  standardCode: string;
+  /** Auditoría enviada o cerrada: las no conformidades son de solo lectura. */
+  locked?: boolean;
+}) {
   const queryClient = useQueryClient();
   const { notify } = useToast();
   const { hasRole } = useAuth();
-  const canEdit = hasRole('ADMIN', 'AUDITOR');
+  const canEdit = hasRole('ADMIN', 'AUDITOR') && !locked;
 
   const findings = useQuery({ queryKey: ['audit', auditId, 'findings'], queryFn: () => FindingApi.list(auditId) });
   const controls = useQuery({ queryKey: ['audit', auditId, 'results'], queryFn: () => AuditApi.results(auditId) });

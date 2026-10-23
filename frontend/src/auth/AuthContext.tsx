@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AuthApi } from '../api/endpoints';
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from '../api/client';
@@ -37,7 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     AuthApi.me()
       .then(setUser)
-      .catch(() => logout())
+      .catch((e) => {
+        // Solo una sesión rechazada por el servidor cierra la sesión; un corte de red no borra los tokens.
+        if (axios.isAxiosError(e) && e.response?.status === 401) logout();
+      })
       .finally(() => setLoading(false));
   }, [logout]);
 

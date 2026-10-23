@@ -2,6 +2,7 @@ package com.agriaudit.findings;
 
 import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -13,14 +14,14 @@ public final class FindingDtos {
     }
 
     public record CorrectiveActionRequest(
-            String rootCause,
-            String correction,
-            String preventiveAction,
-            String responsiblePerson,
+            @Size(max = 10000) String rootCause,
+            @Size(max = 10000) String correction,
+            @Size(max = 10000) String preventiveAction,
+            @Size(max = 200) String responsiblePerson,
             LocalDate targetDate,
             LocalDate completedDate,
-            String verificationNotes,
-            String verifiedBy,
+            @Size(max = 10000) String verificationNotes,
+            @Size(max = 200) String verifiedBy,
             String status) {
     }
 
@@ -43,9 +44,9 @@ public final class FindingDtos {
     public record FindingRequest(
             Long controlPointId,
             @NotBlank String classification,
-            String title,
-            String description,
-            String area,
+            @Size(max = 400) String title,
+            @Size(max = 10000) String description,
+            @Size(max = 150) String area,
             LocalDate dueDate,
             String status) {
     }

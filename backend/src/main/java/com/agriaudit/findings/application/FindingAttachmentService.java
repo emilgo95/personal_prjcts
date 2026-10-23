@@ -31,7 +31,7 @@ public class FindingAttachmentService {
     }
 
     public AttachmentDto uploadForFinding(Long auditId, Long findingId, MultipartFile file) {
-        Long id = findingService.requireOwnedFinding(auditId, findingId).getId();
+        Long id = findingService.requireEditableFinding(auditId, findingId).getId();
         if (file == null) {
             throw new BadRequestException("El fichero está vacío");
         }

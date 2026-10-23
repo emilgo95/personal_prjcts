@@ -94,6 +94,7 @@ public class AuditService implements AuditLookup {
 
     public AuditDetailDto update(Long id, AuditRequest request) {
         Audit audit = requireAuditEntity(id);
+        requireEditable(audit);
         if (!standardOf(audit).code().equals(request.standardCode())) {
             throw new BadRequestException("No se puede cambiar el estándar de una auditoría existente");
         }
@@ -138,7 +139,8 @@ public class AuditService implements AuditLookup {
             long open = findings.countOpenByAudit(audit.getId());
             if (open > 0) {
                 throw new ConflictException("No se puede cerrar la auditoría: quedan " + open
-                        + (open == 1 ? " no conformidad" : " no conformidades") + " sin cerrar ni verificar.");
+                        + (open == 1 ? " no conformidad" : " no conformidades")
+                        + " sin cerrar ni verificar. Reábrela (pasar a «Cierre») para resolverlas.");
             }
         }
         audit.setStatus(target);
@@ -204,6 +206,7 @@ public class AuditService implements AuditLookup {
 
     public List<AuditItemResultDto> updateResults(Long id, ResultsUpdateRequest request) {
         Audit audit = requireAuditEntity(id);
+        requireEditable(audit);
         Map<Long, AuditItemResult> existing = new HashMap<>();
         for (AuditItemResult r : results.findByAuditId(audit.getId())) {
             existing.put(r.getControlPointId(), r);
@@ -268,6 +271,20 @@ public class AuditService implements AuditLookup {
                 .orElseThrow(() -> new NotFoundException("Auditoría no encontrada: " + id));
     }
 
+    /** Entidad de la auditoría para modificarla: 409 si está enviada o cerrada. */
+    @Transactional(readOnly = true)
+    Audit requireEditableAuditEntity(Long id) {
+        Audit audit = requireAuditEntity(id);
+        requireEditable(audit);
+        return audit;
+    }
+
+    private static void requireEditable(Audit audit) {
+        if (audit.getStatus().isLocked()) {
+            throw new ConflictException(audit.getStatus().lockedMessage());
+        }
+    }
+
     private AuditType parseType(String value) {
         try {
             return AuditType.valueOf(value);
@@ -282,6 +299,10 @@ public class AuditService implements AuditLookup {
     }
 
     private void applyRequest(Audit audit, AuditRequest r, FarmDto farm) {
+        if (r.plannedStartDate() != null && r.plannedEndDate() != null
+                && r.plannedEndDate().isBefore(r.plannedStartDate())) {
+            throw new BadRequestException("La fecha prevista de fin no puede ser anterior a la de inicio");
+        }
         audit.setScopeDescription(r.scopeDescription());
         audit.setPlannedStartDate(r.plannedStartDate());
         audit.setPlannedEndDate(r.plannedEndDate());

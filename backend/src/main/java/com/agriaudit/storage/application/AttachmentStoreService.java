@@ -3,11 +3,13 @@ package com.agriaudit.storage.application;
 import com.agriaudit.common.BadRequestException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
+import com.agriaudit.storage.AttachmentDeletionGuard;
 import com.agriaudit.storage.AttachmentEntityType;
 import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.storage.BlobStore;
 import com.agriaudit.storage.infrastructure.persistence.Attachment;
 import com.agriaudit.storage.infrastructure.persistence.AttachmentRepository;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,10 +30,14 @@ public class AttachmentStoreService implements AttachmentStore {
 
     private final AttachmentRepository attachments;
     private final BlobStore blobs;
+    private final ObjectProvider<AttachmentDeletionGuard> deletionGuards;
 
-    public AttachmentStoreService(AttachmentRepository attachments, BlobStore blobs) {
+    public AttachmentStoreService(AttachmentRepository attachments, BlobStore blobs,
+                                  ObjectProvider<AttachmentDeletionGuard> deletionGuards) {
         this.attachments = attachments;
         this.blobs = blobs;
+        // Se resuelven al borrar, no al arrancar: los guardianes dependen de módulos que a su vez usan este servicio.
+        this.deletionGuards = deletionGuards;
     }
 
     @Override
@@ -88,6 +94,8 @@ public class AttachmentStoreService implements AttachmentStore {
     /** Borra metadatos y contenido de un adjunto de la organización. */
     public void delete(Long organizationId, Long attachmentId) {
         Attachment a = require(organizationId, attachmentId);
+        AttachmentEntityType type = AttachmentEntityType.valueOf(a.getEntityType());
+        deletionGuards.orderedStream().forEach(g -> g.checkCanDelete(type, a.getEntityId()));
         blobs.delete(a.getStorageKey());
         attachments.delete(a);
     }

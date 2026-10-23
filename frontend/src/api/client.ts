@@ -18,20 +18,33 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
-let refreshing: Promise<string | null> | null = null;
+/** Llamadas de autenticación cuyo 401 significa «credenciales o sesión no válidas», no «token caducado». */
+const NO_REFRESH_URLS = ['/auth/login', '/auth/refresh'];
 
-async function tryRefresh(): Promise<string | null> {
+type RefreshResult =
+  | { token: string }
+  | { token: null; sessionInvalid: boolean };
+
+let refreshing: Promise<RefreshResult> | null = null;
+
+async function tryRefresh(): Promise<RefreshResult> {
   const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-  if (!refreshToken) return null;
+  if (!refreshToken) return { token: null, sessionInvalid: true };
   try {
     const { data } = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
     localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
     localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
-    return data.accessToken as string;
-  } catch {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    return null;
+    return { token: data.accessToken as string };
+  } catch (e) {
+    // Solo una respuesta del servidor que rechaza el token invalida la sesión. Un corte de red o un
+    // error 5xx son transitorios: se conservan los tokens para reintentar sin pedir la contraseña.
+    const status = axios.isAxiosError(e) ? e.response?.status : undefined;
+    const sessionInvalid = status === 400 || status === 401 || status === 403;
+    if (sessionInvalid) {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+    }
+    return { token: null, sessionInvalid };
   }
 }
 
@@ -40,20 +53,22 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config as (InternalAxiosRequestConfig & { _retried?: boolean }) | undefined;
     const status = error.response?.status;
-    const isAuthCall = original?.url?.includes('/auth/');
-    if (status === 401 && original && !original._retried && !isAuthCall) {
+    const skipRefresh = NO_REFRESH_URLS.some((u) => original?.url?.includes(u));
+    if (status === 401 && original && !original._retried && !skipRefresh) {
       original._retried = true;
       if (!refreshing) {
         refreshing = tryRefresh().finally(() => {
           refreshing = null;
         });
       }
-      const newToken = await refreshing;
-      if (newToken) {
-        original.headers.Authorization = `Bearer ${newToken}`;
+      const result = await refreshing;
+      if (!('sessionInvalid' in result)) {
+        original.headers.Authorization = `Bearer ${result.token}`;
         return api(original);
       }
-      window.dispatchEvent(new CustomEvent('agriaudit:logout'));
+      if (result.sessionInvalid) {
+        window.dispatchEvent(new CustomEvent('agriaudit:logout'));
+      }
     }
     return Promise.reject(error);
   },

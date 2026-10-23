@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Box, Chip, Stack, Tab, Tabs, Typography } from '@mui/material';
+import { Alert, Box, Chip, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { AuditApi } from '../api/endpoints';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
@@ -15,11 +15,20 @@ export default function AuditDetailPage() {
   const { id } = useParams();
   const auditId = Number(id);
   const [tab, setTab] = useState(0);
+  // Las pestañas ya visitadas siguen montadas (solo ocultas): así el checklist no pierde los cambios sin
+  // guardar al cambiar de pestaña, y las que nadie abre no cargan datos.
+  const [visited, setVisited] = useState<Set<number>>(() => new Set([0]));
+  const selectTab = (value: number) => {
+    setTab(value);
+    setVisited((v) => (v.has(value) ? v : new Set(v).add(value)));
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['audit', auditId],
     queryFn: () => AuditApi.get(auditId),
   });
+
+  const locked = data?.status === 'SUBMITTED' || data?.status === 'CLOSED';
 
   return (
     <Box>
@@ -43,7 +52,7 @@ export default function AuditDetailPage() {
 
             <Tabs
               value={tab}
-              onChange={(_, v) => setTab(v)}
+              onChange={(_, v) => selectTab(v)}
               variant="scrollable"
               scrollButtons="auto"
               allowScrollButtonsMobile
@@ -55,10 +64,27 @@ export default function AuditDetailPage() {
               <Tab label="Documentos" />
             </Tabs>
 
-            {tab === 0 && <SummaryTab auditId={auditId} audit={data} />}
-            {tab === 1 && <ChecklistTab auditId={auditId} standardCode={data.standardCode} />}
-            {tab === 2 && <FindingsTab auditId={auditId} standardCode={data.standardCode} />}
-            {tab === 3 && <DocumentsTab auditId={auditId} />}
+            {locked && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {data.status === 'CLOSED'
+                  ? 'La auditoría está cerrada: solo se puede consultar y generar documentos.'
+                  : 'La auditoría está enviada y no admite cambios. Para modificarla, reábrela desde el resumen.'}
+              </Alert>
+            )}
+
+            {[
+              <SummaryTab key="summary" auditId={auditId} audit={data} />,
+              <ChecklistTab key="checklist" auditId={auditId} standardCode={data.standardCode} locked={locked} />,
+              <FindingsTab key="findings" auditId={auditId} standardCode={data.standardCode} locked={locked} />,
+              <DocumentsTab key="documents" auditId={auditId} />,
+            ].map(
+              (content, i) =>
+                visited.has(i) && (
+                  <Box key={content.key} sx={{ display: tab === i ? 'block' : 'none' }}>
+                    {content}
+                  </Box>
+                ),
+            )}
           </>
         )}
       </QueryBoundary>

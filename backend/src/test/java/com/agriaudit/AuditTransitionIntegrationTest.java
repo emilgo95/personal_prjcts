@@ -128,11 +128,13 @@ class AuditTransitionIntegrationTest {
         assertThat(blocked.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(blocked.getBody().toString()).contains("no conformidad");
 
-        // ...pero sí cuando queda cerrada.
-        assertThat(rest.exchange("/api/audits/" + auditId + "/findings/" + findingId, HttpMethod.PUT,
-                new HttpEntity<>(Map.of("controlPointId", firstControlPoint, "classification", "MAJOR",
-                        "title", "NC de prueba", "status", "CLOSED"), auth()), JsonNode.class).getStatusCode())
-                .isEqualTo(HttpStatus.OK);
+        // ...hay que reabrirla, verificar la acción correctiva (la NC se cierra sola) y volver a enviarla.
+        assertThat(transition(auditId, "CLOSING").getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(rest.postForEntity("/api/audits/" + auditId + "/findings/" + findingId + "/corrective-actions",
+                new HttpEntity<>(Map.of("rootCause", "Causa", "correction", "Corrección", "preventiveAction", "Prevención",
+                        "responsiblePerson", "Calidad", "status", "VERIFIED"), auth()), JsonNode.class)
+                .getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(transition(auditId, "SUBMITTED").getStatusCode()).isEqualTo(HttpStatus.OK);
         ResponseEntity<JsonNode> closed = transition(auditId, "CLOSED");
         assertThat(closed.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(closed.getBody().get("allowedTransitions")).isEmpty();

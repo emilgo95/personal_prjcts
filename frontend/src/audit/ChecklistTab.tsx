@@ -25,6 +25,7 @@ import AttachmentPanel from '../components/AttachmentPanel';
 import { useToast } from '../utils/toast';
 import { extractErrorMessage } from '../api/client';
 import { complianceLabels, levelLabels, label } from '../utils/labels';
+import { loadChecklistDraft, saveChecklistDraft, type ChecklistDraft } from '../utils/checklistDraft';
 import { useAuth } from '../auth/AuthContext';
 
 type Draft = Record<number, { compliance: ComplianceValue; evidenceNotes: string; auditorComment: string }>;
@@ -37,11 +38,19 @@ const COLORS: Record<ComplianceValue, 'success' | 'error' | 'standard' | 'warnin
   NOT_ASSESSED: 'warning',
 };
 
-export default function ChecklistTab({ auditId }: { auditId: number; standardCode: string }) {
+export default function ChecklistTab({
+  auditId,
+  locked = false,
+}: {
+  auditId: number;
+  standardCode: string;
+  /** Auditoría enviada o cerrada: el checklist es de solo lectura. */
+  locked?: boolean;
+}) {
   const queryClient = useQueryClient();
   const { notify } = useToast();
   const { hasRole } = useAuth();
-  const readOnly = !hasRole('ADMIN', 'AUDITOR');
+  const readOnly = !hasRole('ADMIN', 'AUDITOR') || locked;
 
   const results = useQuery({
     queryKey: ['audit', auditId, 'results'],
@@ -51,9 +60,28 @@ export default function ChecklistTab({ auditId }: { auditId: number; standardCod
   const [draft, setDraft] = useState<Draft>({});
   // snapshot del servidor por punto de control, para saber qué se ha editado en local
   const serverSnapshot = useRef<Draft>({});
+  // El borrador guardado en la sesión solo se recupera en la primera carga de los resultados.
+  const firstLoad = useRef(true);
+  const [restored, setRestored] = useState(false);
 
   useEffect(() => {
     if (!results.data) return;
+    const stored: ChecklistDraft = firstLoad.current && !readOnly ? loadChecklistDraft(auditId) : {};
+    if (firstLoad.current) {
+      firstLoad.current = false;
+      const recovered = results.data.filter((r) => {
+        const s = stored[r.controlPointId];
+        return (
+          s &&
+          (s.compliance !== r.compliance ||
+            s.evidenceNotes !== (r.evidenceNotes ?? '') ||
+            s.auditorComment !== (r.auditorComment ?? ''))
+        );
+      }).length;
+      if (recovered > 0) {
+        notify(`Se han recuperado ${recovered} cambios del checklist que no se habían guardado`, 'warning');
+      }
+    }
     setDraft((current) => {
       const next: Draft = {};
       const snapshot: Draft = {};
@@ -72,11 +100,13 @@ export default function ChecklistTab({ auditId }: { auditId: number; standardCod
           (local.compliance !== prevServer.compliance ||
             local.evidenceNotes !== prevServer.evidenceNotes ||
             local.auditorComment !== prevServer.auditorComment);
-        next[r.controlPointId] = editedLocally ? local : fromServer;
+        next[r.controlPointId] = stored[r.controlPointId] ?? (editedLocally ? local : fromServer);
       }
       serverSnapshot.current = snapshot;
       return next;
     });
+    setRestored(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results.data]);
 
   const grouped = useMemo(() => {
@@ -109,6 +139,24 @@ export default function ChecklistTab({ auditId }: { auditId: number; standardCod
     }
     return changes;
   }, [draft, results.data]);
+
+  // Conserva los cambios sin guardar en la sesión y avisa antes de cerrar o recargar la pestaña del navegador.
+  useEffect(() => {
+    if (!restored || readOnly) return;
+    const pending: ChecklistDraft = {};
+    for (const c of dirty) pending[c.controlPointId] = draft[c.controlPointId];
+    saveChecklistDraft(auditId, pending);
+  }, [restored, readOnly, dirty, draft, auditId]);
+
+  useEffect(() => {
+    if (dirty.length === 0) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty.length]);
 
   const save = useMutation({
     mutationFn: (changes: ResultUpdate[]) => AuditApi.updateResults(auditId, changes),

@@ -1,5 +1,6 @@
 package com.agriaudit.fieldbook.application;
 
+import com.agriaudit.common.ConflictException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.fieldbook.FarmDirectory;
 import com.agriaudit.fieldbook.FarmDtos.FarmDto;
@@ -45,6 +46,7 @@ public class FarmService implements FarmDirectory {
 
     public FarmDto update(Long id, FarmRequest request) {
         Farm farm = require(id);
+        requireUniqueRegistration(farm.organizationId(), request.registrationNumber(), farm.id());
         farm.updateProfile(toProfile(request));
         return toDto(farms.save(farm));
     }
@@ -83,10 +85,26 @@ public class FarmService implements FarmDirectory {
 
     @Override
     public FarmDto registerFarm(Long organizationId, FarmRequest request) {
+        requireUniqueRegistration(organizationId, request.registrationNumber(), null);
         return toDto(farms.save(Farm.register(organizationId, toProfile(request))));
     }
 
     // ---- helpers ----
+
+    /** El GGN o nº de registro identifica a una explotación: no puede repetirse en la misma organización. */
+    private void requireUniqueRegistration(Long organizationId, String registrationNumber, Long excludeFarmId) {
+        if (registrationNumber == null || registrationNumber.isBlank()) {
+            return;
+        }
+        String wanted = registrationNumber.trim();
+        boolean duplicated = farms.findByOrganization(organizationId).stream()
+                .filter(f -> excludeFarmId == null || !f.id().equals(excludeFarmId))
+                .map(f -> f.profile().registrationNumber())
+                .anyMatch(n -> n != null && n.trim().equalsIgnoreCase(wanted));
+        if (duplicated) {
+            throw new ConflictException("Ya existe otra explotación con el número de registro «" + wanted + "».");
+        }
+    }
 
     private Farm require(Long id) {
         return farms.findById(id, SecurityUtils.currentOrganizationId())

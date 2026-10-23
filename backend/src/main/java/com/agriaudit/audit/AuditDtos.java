@@ -2,8 +2,10 @@ package com.agriaudit.audit;
 
 import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import com.agriaudit.fieldbook.FarmDtos.FarmDto;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -18,14 +20,14 @@ public final class AuditDtos {
             @NotNull Long farmId,
             @NotBlank String standardCode,
             @NotBlank String auditType,
-            String scopeDescription,
+            @Size(max = 5000) String scopeDescription,
             LocalDate plannedStartDate,
             LocalDate plannedEndDate,
             LocalDate actualDate,
-            String leadAuditor,
-            String auditTeam,
-            String siteAddress,
-            String productsInScope) {
+            @Size(max = 200) String leadAuditor,
+            @Size(max = 400) String auditTeam,
+            @Size(max = 300) String siteAddress,
+            @Size(max = 5000) String productsInScope) {
     }
 
     public record AuditSummaryDto(
@@ -95,11 +97,11 @@ public final class AuditDtos {
     public record ResultUpdate(
             @NotNull Long controlPointId,
             @NotBlank String compliance,
-            String evidenceNotes,
-            String auditorComment) {
+            @Size(max = 10000) String evidenceNotes,
+            @Size(max = 10000) String auditorComment) {
     }
 
-    public record ResultsUpdateRequest(@NotNull List<ResultUpdate> results) {
+    public record ResultsUpdateRequest(@NotNull List<@Valid ResultUpdate> results) {
     }
 
     public record TransitionRequest(@NotBlank String status) {

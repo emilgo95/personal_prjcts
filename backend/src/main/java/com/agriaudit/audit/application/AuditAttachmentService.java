@@ -43,7 +43,7 @@ public class AuditAttachmentService {
     }
 
     public AttachmentDto uploadForAudit(Long auditId, MultipartFile file) {
-        Audit audit = auditService.requireAuditEntity(auditId);
+        Audit audit = auditService.requireEditableAuditEntity(auditId);
         return store(file, AttachmentEntityType.AUDIT, audit.getId());
     }
 
@@ -82,7 +82,7 @@ public class AuditAttachmentService {
     }
 
     private AuditItemResult getOrCreateResult(Long auditId, Long controlPointId) {
-        Audit audit = auditService.requireAuditEntity(auditId);
+        Audit audit = auditService.requireEditableAuditEntity(auditId);
         return results.findByAuditIdAndControlPointId(auditId, controlPointId).orElseGet(() -> {
             ControlPointView cp = catalog.findControlPoint(controlPointId)
                     .orElseThrow(() -> new NotFoundException("Punto de control no encontrado: " + controlPointId));
