@@ -6,7 +6,7 @@ aplicación **tal y como se despliega con `docker compose`** (frontend en
 
 ## Requisitos
 
-- Node 20+
+- Node 24 (LTS)
 - La pila levantada: desde la raíz del repo `make up` (o `docker compose up -d`).
 
 ## Puesta en marcha

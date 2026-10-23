@@ -77,7 +77,7 @@ o ajusta la ruta de búsqueda (`SET search_path TO audit, findings, public;`).
 Para enseñar la app o revisar un PR con la aplicación viva, sin montar nada en local:
 
 1. En GitHub: **`Code` → pestaña `Codespaces` → `Create codespace on main`**. El
-   contenedor de desarrollo (`.devcontainer/`) trae Docker, Java 21 y Node 20, y
+   contenedor de desarrollo (`.devcontainer/`) trae Docker, Java 21 y Node 24, y
    crea el `.env` a partir de `.env.example`.
 2. En la terminal del Codespace:
 
@@ -221,7 +221,7 @@ mvn spring-boot:run
 
 ### Frontend
 
-Requisitos: Node 20+.
+Requisitos: Node 24 (LTS).
 
 ```bash
 cd frontend
