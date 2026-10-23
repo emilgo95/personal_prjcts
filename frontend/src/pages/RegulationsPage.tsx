@@ -47,8 +47,8 @@ export default function RegulationsPage() {
         {filtered.map((r) => (
           <Accordion key={r.code}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ flexGrow: 1 }}>
-                <Typography fontWeight={600}>{r.title}</Typography>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexGrow: 1 }}>
+                <Typography sx={{ fontWeight: 600 }}>{r.title}</Typography>
               </Stack>
               <Stack direction="row" spacing={1}>
                 {r.jurisdiction && <Chip size="small" label={r.jurisdiction} />}
@@ -56,9 +56,9 @@ export default function RegulationsPage() {
               </Stack>
             </AccordionSummary>
             <AccordionDetails>
-              {r.summary && <Typography variant="body2" paragraph>{r.summary}</Typography>}
+              {r.summary && <Typography variant="body2" sx={{ mb: 2 }}>{r.summary}</Typography>}
               {r.keyObligations && (
-                <Typography variant="body2" paragraph>
+                <Typography variant="body2" sx={{ mb: 2 }}>
                   <b>Obligaciones clave:</b> {r.keyObligations}
                 </Typography>
               )}

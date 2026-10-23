@@ -74,7 +74,7 @@ export default function UsersPage() {
           </Typography>
           <form onSubmit={onSubmit}>
             <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <TextField
                   fullWidth
                   required
@@ -84,7 +84,7 @@ export default function UsersPage() {
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 />
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid size={{ xs: 12, md: 3 }}>
                 <TextField
                   fullWidth
                   label="Nombre"
@@ -92,7 +92,7 @@ export default function UsersPage() {
                   onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
                 />
               </Grid>
-              <Grid item xs={6} md={2}>
+              <Grid size={{ xs: 6, md: 2 }}>
                 <TextField
                   select
                   fullWidth
@@ -107,7 +107,7 @@ export default function UsersPage() {
                   ))}
                 </TextField>
               </Grid>
-              <Grid item xs={6} md={3}>
+              <Grid size={{ xs: 6, md: 3 }}>
                 <TextField
                   fullWidth
                   required
@@ -160,7 +160,7 @@ export default function UsersPage() {
                       </TextField>
                     </TableCell>
                     <TableCell align="right">
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                      <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
                         <Chip
                           size="small"
                           label={u.active ? 'Activo' : 'Desactivado'}

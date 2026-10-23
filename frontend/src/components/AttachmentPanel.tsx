@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, Button, CircularProgress, IconButton, Link, Stack, Typography } from '@mui/material';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { AttachmentApi } from '../api/endpoints';
@@ -154,8 +154,8 @@ export default function AttachmentPanel({
         bgcolor: 'action.hover',
       }}
     >
-      <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-        <Typography variant="subtitle2" fontWeight={700}>
+      <Stack direction="row" spacing={1.5} useFlexGap sx={{ alignItems: "center", flexWrap: "wrap" }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
           Evidencias
           <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
             ({attachments.length})
@@ -191,7 +191,7 @@ export default function AttachmentPanel({
       </Stack>
 
       {images.length > 0 && (
-        <Stack direction="row" spacing={1} mt={0.5} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={1} useFlexGap sx={{ mt: 0.5, flexWrap: "wrap" }}>
           {images.map((a) => (
             <Box key={a.id} sx={{ position: 'relative' }}>
               <ImageThumb id={a.id} name={a.fileName} />
@@ -239,9 +239,9 @@ export default function AttachmentPanel({
       )}
 
       {files.length > 0 && (
-        <Stack spacing={0.25} mt={0.5}>
+        <Stack spacing={0.25} sx={{ mt: 0.5 }}>
           {files.map((a) => (
-            <Stack key={a.id} direction="row" spacing={0.5} alignItems="center">
+            <Stack key={a.id} direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
               <PictureAsPdfIcon sx={{ fontSize: 16, color: 'error.main' }} />
               <Link component="button" type="button" variant="body2" onClick={() => openFile(a)}>
                 {a.fileName}

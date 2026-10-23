@@ -178,12 +178,12 @@ export default function LoginPage() {
           }}
         >
           <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
               <Avatar sx={{ bgcolor: 'primary.main', width: 52, height: 52 }}>
                 <SpaIcon />
               </Avatar>
               <Box>
-                <Typography component="h1" variant="h5" color="primary.dark" fontWeight={800}>
+                <Typography component="h1" variant="h5" color="primary.dark" sx={{ fontWeight: 800 }}>
                   AgriAudit Docs
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -192,10 +192,10 @@ export default function LoginPage() {
               </Box>
             </Stack>
 
-            <Typography variant="body1" fontWeight={600} mt={3}>
+            <Typography variant="body1" sx={{ fontWeight: 600, mt: 3 }}>
               {greeting}
             </Typography>
-            <Typography variant="body2" color="text.secondary" mb={2.5}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
               Inicia sesión para continuar con tus auditorías.
             </Typography>
 

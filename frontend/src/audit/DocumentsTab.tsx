@@ -71,7 +71,7 @@ export default function DocumentsTab({ auditId }: { auditId: number }) {
               Generar documento
             </Typography>
             <QueryBoundary isLoading={options.isLoading} error={options.error}>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>
                 <TextField
                   select
                   label="Tipo de documento"

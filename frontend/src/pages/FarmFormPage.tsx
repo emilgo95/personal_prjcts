@@ -87,57 +87,57 @@ export default function FarmFormPage() {
             <form onSubmit={onSubmit}>
               <Box component="fieldset" disabled={readOnly} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}>
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField label="Razón social" required fullWidth value={form.legalName} onChange={set('legalName')} />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField label="Nombre comercial" fullWidth value={form.tradeName ?? ''} onChange={set('tradeName')} />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField label="GGN / Nº de registro" fullWidth value={form.registrationNumber ?? ''} onChange={set('registrationNumber')} />
                 </Grid>
-                <Grid item xs={12} md={8}>
+                <Grid size={{ xs: 12, md: 8 }}>
                   <TextField label="Dirección" fullWidth value={form.address ?? ''} onChange={set('address')} />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField label="Localidad" fullWidth value={form.city ?? ''} onChange={set('city')} />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField label="Región / Provincia" fullWidth value={form.region ?? ''} onChange={set('region')} />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField label="País" fullWidth value={form.country ?? ''} onChange={set('country')} />
                 </Grid>
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <TextField label="Latitud" type="number" fullWidth value={form.latitude ?? ''} onChange={set('latitude')} />
                 </Grid>
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <TextField label="Longitud" type="number" fullWidth value={form.longitude ?? ''} onChange={set('longitude')} />
                 </Grid>
-                <Grid item xs={12} md={3}>
+                <Grid size={{ xs: 12, md: 3 }}>
                   <TextField label="Hectáreas totales" type="number" fullWidth value={form.totalHectares ?? ''} onChange={set('totalHectares')} />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField label="Cultivos (separados por comas)" fullWidth value={form.crops ?? ''} onChange={set('crops')} />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField label="Áreas de producción" fullWidth value={form.productionAreas ?? ''} onChange={set('productionAreas')} />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField label="Persona de contacto" fullWidth value={form.contactName ?? ''} onChange={set('contactName')} />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField label="Email de contacto" fullWidth value={form.contactEmail ?? ''} onChange={set('contactEmail')} />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField label="Teléfono de contacto" fullWidth value={form.contactPhone ?? ''} onChange={set('contactPhone')} />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField label="Notas" fullWidth multiline minRows={2} value={form.notes ?? ''} onChange={set('notes')} />
                 </Grid>
               </Grid>
               </Box>
-              <Stack direction="row" spacing={1} mt={3}>
+              <Stack direction="row" spacing={1} sx={{ mt: 3 }}>
                 {!readOnly && (
                   <Button type="submit" variant="contained" disabled={save.isPending}>
                     Guardar

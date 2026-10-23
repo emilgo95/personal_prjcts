@@ -51,7 +51,7 @@ function StatCard({
 }) {
   const inner = (
     <CardContent>
-      <Stack direction="row" spacing={1.5} alignItems="center" mb={1}>
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 1 }}>
         <Box
           sx={{
             width: 40,
@@ -66,7 +66,7 @@ function StatCard({
         >
           {icon}
         </Box>
-        <Typography variant="h4" fontWeight={800} lineHeight={1} color={highlight ? `${tone}.dark` : 'text.primary'}>
+        <Typography variant="h4" color={highlight ? `${tone}.dark` : 'text.primary'} sx={{ fontWeight: 800, lineHeight: 1 }}>
           {value}
         </Typography>
       </Stack>
@@ -116,9 +116,9 @@ function StatusBar({ byStatus, total }: { byStatus: Record<string, number>; tota
           <Box key={s} sx={{ width: `${(100 * byStatus[s]) / total}%`, bgcolor: statusColor(s) }} />
         ))}
       </Box>
-      <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+      <Stack direction="row" spacing={2} useFlexGap sx={{ flexWrap: "wrap" }}>
         {parts.map((s) => (
-          <Stack key={s} direction="row" spacing={0.75} alignItems="center">
+          <Stack key={s} direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
             <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: statusColor(s) }} />
             <Typography variant="body2">
               {label(auditStatusLabels, s)}: <strong>{byStatus[s]}</strong>
@@ -141,13 +141,13 @@ export default function DashboardPage() {
           <Stack spacing={3}>
             <Box>
               <Grid container spacing={2}>
-                <Grid item xs={6} md={4} lg={2}>
+                <Grid size={{ xs: 6, md: 4, lg: 2 }}>
                   <StatCard value={data.farmsCount} title="Explotaciones" icon={<AgricultureIcon />} to="/farms" />
                 </Grid>
-                <Grid item xs={6} md={4} lg={2}>
+                <Grid size={{ xs: 6, md: 4, lg: 2 }}>
                   <StatCard value={data.auditsTotal} title="Auditorías" icon={<FactCheckIcon />} to="/audits" />
                 </Grid>
-                <Grid item xs={6} md={4} lg={2}>
+                <Grid size={{ xs: 6, md: 4, lg: 2 }}>
                   <StatCard
                     value={data.openFindings}
                     title="No conformidades abiertas"
@@ -155,7 +155,7 @@ export default function DashboardPage() {
                     tone="info"
                   />
                 </Grid>
-                <Grid item xs={6} md={4} lg={2}>
+                <Grid size={{ xs: 6, md: 4, lg: 2 }}>
                   <StatCard
                     value={data.overdueFindings}
                     title="No conformidades vencidas"
@@ -164,7 +164,7 @@ export default function DashboardPage() {
                     highlight={data.overdueFindings > 0}
                   />
                 </Grid>
-                <Grid item xs={6} md={4} lg={2}>
+                <Grid size={{ xs: 6, md: 4, lg: 2 }}>
                   <StatCard
                     value={data.dueSoonFindings}
                     title="Vencen en 7 días"
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                     highlight={data.dueSoonFindings > 0}
                   />
                 </Grid>
-                <Grid item xs={6} md={4} lg={2}>
+                <Grid size={{ xs: 6, md: 4, lg: 2 }}>
                   <StatCard
                     value={data.documentsGenerated}
                     title="Documentos generados"
@@ -201,15 +201,15 @@ export default function DashboardPage() {
 
             <Box>
               <Grid container spacing={3}>
-                <Grid item xs={12} lg={6}>
+                <Grid size={{ xs: 12, lg: 6 }}>
                   <Card sx={{ height: '100%' }}>
                     <CardContent>
                       <Typography variant="h6">Próximos vencimientos</Typography>
-                      <Typography variant="body2" color="text.secondary" mb={1}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         No conformidades abiertas, de la más urgente a la menos
                       </Typography>
                       {data.upcomingDeadlines.length === 0 ? (
-                        <Stack direction="row" spacing={1} alignItems="center" py={2} color="success.dark">
+                        <Stack direction="row" spacing={1} color="success.dark" sx={{ alignItems: "center", py: 2 }}>
                           <TaskAltIcon />
                           <Typography variant="body2">No hay no conformidades abiertas con plazo pendiente.</Typography>
                         </Stack>
@@ -222,9 +222,9 @@ export default function DashboardPage() {
                               to={`/audits/${d.auditId}`}
                               sx={{ textDecoration: 'none', color: 'inherit', py: 1.25, '&:hover': { bgcolor: 'action.hover' } }}
                             >
-                              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                              <Stack direction="row" spacing={2} sx={{ justifyContent: "space-between", alignItems: "center" }}>
                                 <Box sx={{ minWidth: 0 }}>
-                                  <Typography fontWeight={600} noWrap>
+                                  <Typography noWrap sx={{ fontWeight: 600 }}>
                                     {d.findingReference} · {d.title || 'Sin título'}
                                   </Typography>
                                   <Typography variant="body2" color="text.secondary" noWrap>
@@ -241,7 +241,7 @@ export default function DashboardPage() {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} lg={6}>
+                <Grid size={{ xs: 12, lg: 6 }}>
                   <Card sx={{ height: '100%' }}>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
@@ -255,16 +255,16 @@ export default function DashboardPage() {
                             to={`/audits/${a.id}`}
                             sx={{ textDecoration: 'none', color: 'inherit', py: 1.25, '&:hover': { bgcolor: 'action.hover' } }}
                           >
-                            <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                            <Stack direction="row" spacing={2} sx={{ justifyContent: "space-between", alignItems: "center" }}>
                               <Box sx={{ minWidth: 0 }}>
-                                <Typography fontWeight={600} noWrap>
+                                <Typography noWrap sx={{ fontWeight: 600 }}>
                                   {a.reference} · {a.farmName}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" noWrap>
                                   {standardShort(a.standardCode, a.standardName)} · {label(auditTypeLabels, a.auditType)}
                                 </Typography>
                               </Box>
-                              <Stack alignItems="flex-end" spacing={0.5} sx={{ minWidth: 110 }}>
+                              <Stack spacing={0.5} sx={{ alignItems: "flex-end", minWidth: 110 }}>
                                 <Chip
                                   size="small"
                                   color={auditStatusColors[a.status] ?? 'default'}
@@ -285,7 +285,7 @@ export default function DashboardPage() {
                           </Box>
                         ))}
                         {data.recentAudits.length === 0 && (
-                          <Typography variant="body2" color="text.secondary" py={1}>
+                          <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
                             Sin auditorías todavía.
                           </Typography>
                         )}

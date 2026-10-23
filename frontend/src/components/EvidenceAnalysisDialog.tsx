@@ -89,7 +89,7 @@ export default function EvidenceAnalysisDialog({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
           <AutoAwesomeIcon color="primary" />
           <span>Reconocimiento de la evidencia «{fileName}»</span>
         </Stack>
@@ -102,7 +102,7 @@ export default function EvidenceAnalysisDialog({
         {loading && (
           <Box sx={{ display: 'grid', placeItems: 'center', py: 5 }}>
             <CircularProgress />
-            <Typography variant="body2" color="text.secondary" mt={2}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
               Analizando el documento…
             </Typography>
           </Box>
@@ -116,7 +116,7 @@ export default function EvidenceAnalysisDialog({
 
         {result && (
           <Stack spacing={2}>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
               <Chip size="small" label={`Motor: ${result.engine}`} />
               <Chip size="small" label={`${result.pages} pág.`} />
               <Chip
@@ -142,7 +142,7 @@ export default function EvidenceAnalysisDialog({
                 minRows={4}
                 maxRows={10}
                 fullWidth
-                InputProps={{ readOnly: true, sx: { fontFamily: 'monospace', fontSize: 12 } }}
+                slotProps={{ input: { readOnly: true, sx: { fontFamily: 'monospace', fontSize: 12 } } }}
               />
             </Box>
 
@@ -173,7 +173,7 @@ export default function EvidenceAnalysisDialog({
                   <Typography variant="subtitle2" gutterBottom>
                     Resultado de cumplimiento sugerido
                   </Typography>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                     <Chip
                       color={
                         result.suggestedCompliance === 'COMPLIANT'

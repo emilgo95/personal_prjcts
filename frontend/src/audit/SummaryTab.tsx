@@ -72,7 +72,7 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
             ))}
           </Stepper>
           {canEdit && audit.allowedTransitions.length > 0 && (
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent="center">
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap", justifyContent: "center" }}>
               {audit.allowedTransitions.map((next) => {
                 const forward = statusFlow.indexOf(next) > currentStep;
                 return (
@@ -107,7 +107,7 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
       <Card>
         <CardContent>
           <Grid container spacing={2}>
-            <Grid item xs={12} md={5}>
+            <Grid size={{ xs: 12, md: 5 }}>
               <Typography variant="overline" color="text.secondary">
                 Explotación
               </Typography>
@@ -116,7 +116,7 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
                 {audit.farm.registrationNumber} · {audit.farm.city}, {audit.farm.country}
               </Typography>
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <Typography variant="overline" color="text.secondary">
                 Auditor responsable
               </Typography>
@@ -127,7 +127,7 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
                 </Typography>
               )}
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Typography variant="overline" color="text.secondary">
                 Fecha de auditoría
               </Typography>
@@ -139,7 +139,7 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
               )}
             </Grid>
             {audit.scopeDescription && (
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Typography variant="overline" color="text.secondary">
                   Alcance
                 </Typography>
@@ -155,7 +155,7 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
           <>
             <Card>
               <CardContent>
-                <Stack direction="row" spacing={2} alignItems="center" mb={1}>
+                <Stack direction="row" spacing={2} sx={{ alignItems: "center", mb: 1 }}>
                   <Typography variant="h6">Resultado</Typography>
                   <Chip
                     color={overallResultColors[score.data.overallResult] ?? 'default'}

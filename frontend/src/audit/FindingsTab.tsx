@@ -18,7 +18,7 @@ import {
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { AttachmentApi, AuditApi, FindingApi } from '../api/endpoints';
 import type { CorrectiveAction, CorrectiveActionRequest, Finding, FindingRequest } from '../api/types';
@@ -168,7 +168,7 @@ function FindingForm({
   return (
     <>
       <Grid container spacing={2}>
-        <Grid item xs={12} md={5}>
+        <Grid size={{ xs: 12, md: 5 }}>
           <TextField
             select
             fullWidth
@@ -189,7 +189,7 @@ function FindingForm({
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={6} md={3}>
+        <Grid size={{ xs: 6, md: 3 }}>
           <TextField
             select
             fullWidth
@@ -204,7 +204,7 @@ function FindingForm({
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={6} md={4}>
+        <Grid size={{ xs: 6, md: 4 }}>
           <TextField
             select
             fullWidth
@@ -219,7 +219,7 @@ function FindingForm({
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <TextField
             fullWidth
             label="Título"
@@ -227,7 +227,7 @@ function FindingForm({
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
           />
         </Grid>
-        <Grid item xs={6} md={4}>
+        <Grid size={{ xs: 6, md: 4 }}>
           <TextField
             fullWidth
             label="Área"
@@ -235,17 +235,17 @@ function FindingForm({
             onChange={(e) => setForm((f) => ({ ...f, area: e.target.value }))}
           />
         </Grid>
-        <Grid item xs={6} md={4}>
+        <Grid size={{ xs: 6, md: 4 }}>
           <TextField
             fullWidth
             type="date"
             label="Fecha límite"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             value={form.dueDate ?? ''}
             onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth
             multiline
@@ -256,7 +256,7 @@ function FindingForm({
           />
         </Grid>
       </Grid>
-      <Stack direction="row" spacing={1} mt={2}>
+      <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
         <Button
           variant="contained"
           disabled={submitting}
@@ -338,24 +338,19 @@ function FindingCard({
             onSubmit={(body) => update.mutate(body)}
           />
         ) : (
-          <Stack
-            direction={{ xs: 'column', md: 'row' }}
-            justifyContent="space-between"
-            alignItems={{ xs: 'flex-start', md: 'flex-start' }}
-            spacing={1}
-          >
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ justifyContent: "space-between", alignItems: { xs: 'flex-start', md: 'flex-start' } }}>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="overline" color="text.secondary" lineHeight={1.5}>
+              <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.5 }}>
                 {finding.reference} · {finding.controlPointRef ?? finding.area ?? 'General'}
               </Typography>
-              {finding.title && <Typography fontWeight={700}>{finding.title}</Typography>}
+              {finding.title && <Typography sx={{ fontWeight: 700 }}>{finding.title}</Typography>}
               {finding.description && (
                 <Typography variant="body2" color="text.secondary">
                   {finding.description}
                 </Typography>
               )}
             </Box>
-            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ flexShrink: 0 }}>
+            <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: "center", flexWrap: "wrap", flexShrink: 0 }}>
               <Chip
                 size="small"
                 label={label(classificationLabels, finding.classification)}
@@ -454,7 +449,7 @@ function FindingCard({
               </Button>
             )}
             {canEdit && addingCa && (
-              <Box mt={2}>
+              <Box sx={{ mt: 2 }}>
                 <CorrectiveActionForm
                   value={emptyCa}
                   submitting={addAction.isPending}
@@ -531,7 +526,7 @@ function CorrectiveActionRow({
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start" }}>
         <Box>
           <Typography variant="body2">
             <b>Causa raíz:</b> {action.rootCause || '—'}
@@ -595,13 +590,13 @@ function CorrectiveActionForm({
   return (
     <Box>
       <Grid container spacing={1}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <TextField size="small" fullWidth label="Causa raíz" value={ca.rootCause ?? ''} onChange={set('rootCause')} />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <TextField size="small" fullWidth label="Corrección" value={ca.correction ?? ''} onChange={set('correction')} />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <TextField
             size="small"
             fullWidth
@@ -610,7 +605,7 @@ function CorrectiveActionForm({
             onChange={set('preventiveAction')}
           />
         </Grid>
-        <Grid item xs={6} md={3}>
+        <Grid size={{ xs: 6, md: 3 }}>
           <TextField
             size="small"
             fullWidth
@@ -619,7 +614,7 @@ function CorrectiveActionForm({
             onChange={set('responsiblePerson')}
           />
         </Grid>
-        <Grid item xs={6} md={3}>
+        <Grid size={{ xs: 6, md: 3 }}>
           <TextField
             select
             size="small"
@@ -635,29 +630,29 @@ function CorrectiveActionForm({
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={6} md={3}>
+        <Grid size={{ xs: 6, md: 3 }}>
           <TextField
             size="small"
             fullWidth
             type="date"
             label="Fecha objetivo"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             value={ca.targetDate ?? ''}
             onChange={set('targetDate')}
           />
         </Grid>
-        <Grid item xs={6} md={3}>
+        <Grid size={{ xs: 6, md: 3 }}>
           <TextField
             size="small"
             fullWidth
             type="date"
             label="Fecha de cierre"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             value={ca.completedDate ?? ''}
             onChange={set('completedDate')}
           />
         </Grid>
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <TextField
             size="small"
             fullWidth
@@ -666,7 +661,7 @@ function CorrectiveActionForm({
             onChange={set('verificationNotes')}
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <TextField
             size="small"
             fullWidth
@@ -676,7 +671,7 @@ function CorrectiveActionForm({
           />
         </Grid>
       </Grid>
-      <Stack direction="row" spacing={1} mt={1}>
+      <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
         <Button
           size="small"
           variant="contained"

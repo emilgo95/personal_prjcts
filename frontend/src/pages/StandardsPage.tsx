@@ -37,20 +37,20 @@ export default function StandardsPage() {
         subtitle="Catálogo de estándares del sector agrícola y sus puntos de control (resumen divulgativo)"
       />
 
-      <Grid container spacing={2} mb={3}>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
         {(standards.data ?? []).map((s) => (
-          <Grid item xs={12} md={4} key={s.code}>
+          <Grid size={{ xs: 12, md: 4 }} key={s.code}>
             <Card variant={selected === s.code ? 'elevation' : 'outlined'}>
               <CardActionArea onClick={() => setSelected(s.code)}>
                 <CardContent>
-                  <Typography variant="subtitle1" fontWeight={700}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                     {s.name}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     {s.ownerBody} · {s.version}
                   </Typography>
                   <Typography variant="body2">{s.description}</Typography>
-                  <Stack direction="row" spacing={1} mt={1}>
+                  <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                     <Chip size="small" label={`${s.chapterCount} capítulos`} />
                     <Chip size="small" label={`${s.controlPointCount} puntos`} />
                   </Stack>
@@ -65,7 +65,7 @@ export default function StandardsPage() {
         <QueryBoundary isLoading={detail.isLoading} error={detail.error}>
           {detail.data && (
             <Box>
-              <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
                 <Typography variant="h5">{detail.data.name}</Typography>
                 {detail.data.officialUrl && (
                   <Link href={detail.data.officialUrl} target="_blank" rel="noopener">
@@ -76,20 +76,20 @@ export default function StandardsPage() {
               {detail.data.chapters.map((ch) => (
                 <Accordion key={ch.id}>
                   <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography fontWeight={600}>
+                    <Typography sx={{ fontWeight: 600 }}>
                       {ch.code} · {ch.title}
                     </Typography>
                   </AccordionSummary>
                   <AccordionDetails>
                     {ch.description && (
-                      <Typography variant="body2" color="text.secondary" mb={2}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         {ch.description}
                       </Typography>
                     )}
                     <Stack spacing={2}>
                       {ch.controlPoints.map((cp) => (
                         <Box key={cp.id}>
-                          <Typography fontWeight={700}>
+                          <Typography sx={{ fontWeight: 700 }}>
                             {cp.ref} · {cp.title}{' '}
                             <Chip size="small" variant="outlined" label={label(levelLabels, cp.level)} />
                           </Typography>
@@ -105,7 +105,7 @@ export default function StandardsPage() {
                             </Typography>
                           )}
                           {cp.regulations.length > 0 && (
-                            <Stack direction="row" spacing={1} mt={0.5} flexWrap="wrap" useFlexGap>
+                            <Stack direction="row" spacing={1} useFlexGap sx={{ mt: 0.5, flexWrap: "wrap" }}>
                               {cp.regulations.map((r) => (
                                 <Chip
                                   key={r.code}

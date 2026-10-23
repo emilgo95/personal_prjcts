@@ -87,7 +87,7 @@ export default function AuditWizardPage() {
           <CardContent>
             <form onSubmit={onSubmit}>
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     select
                     required
@@ -104,7 +104,7 @@ export default function AuditWizardPage() {
                     {farms.data?.length === 0 && <MenuItem disabled value="">Crea primero una explotación</MenuItem>}
                   </TextField>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     select
                     required
@@ -120,7 +120,7 @@ export default function AuditWizardPage() {
                     ))}
                   </TextField>
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     select
                     fullWidth
@@ -135,40 +135,40 @@ export default function AuditWizardPage() {
                     ))}
                   </TextField>
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     label="Fecha prevista de inicio"
                     type="date"
                     fullWidth
-                    InputLabelProps={{ shrink: true }}
+                    slotProps={{ inputLabel: { shrink: true } }}
                     value={form.plannedStartDate ?? ''}
                     onChange={set('plannedStartDate')}
                   />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     label="Fecha de realización"
                     helperText="Solo si la auditoría ya se ha hecho"
                     type="date"
                     fullWidth
-                    InputLabelProps={{ shrink: true }}
+                    slotProps={{ inputLabel: { shrink: true } }}
                     value={form.actualDate ?? ''}
                     onChange={set('actualDate')}
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField label="Auditor responsable" fullWidth value={form.leadAuditor ?? ''} onChange={set('leadAuditor')} />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <TextField label="Equipo auditor" fullWidth value={form.auditTeam ?? ''} onChange={set('auditTeam')} />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField label="Emplazamiento auditado" fullWidth value={form.siteAddress ?? ''} onChange={set('siteAddress')} />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField label="Productos en alcance" fullWidth value={form.productsInScope ?? ''} onChange={set('productsInScope')} />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     label="Descripción del alcance"
                     fullWidth
@@ -180,7 +180,7 @@ export default function AuditWizardPage() {
                 </Grid>
               </Grid>
 
-              <Stack direction="row" spacing={1} mt={3}>
+              <Stack direction="row" spacing={1} sx={{ mt: 3 }}>
                 <Button type="submit" variant="contained" disabled={create.isPending}>
                   Crear auditoría
                 </Button>

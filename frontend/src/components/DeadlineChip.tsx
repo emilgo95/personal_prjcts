@@ -1,7 +1,7 @@
 import { Chip } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import { deadlineInfo, type DeadlineTone } from '../utils/dates';
 
 const colors: Record<DeadlineTone, 'error' | 'warning' | 'success' | 'default'> = {

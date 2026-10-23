@@ -177,7 +177,7 @@ export default function ChecklistTab({
 
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography variant="body2" color="text.secondary">
           {dirty.length > 0 ? `${dirty.length} cambios sin guardar` : 'Sin cambios pendientes'}
         </Typography>
@@ -201,7 +201,7 @@ export default function ChecklistTab({
           return (
             <Accordion key={code} defaultExpanded={grouped.length <= 3}>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography sx={{ flexGrow: 1 }} fontWeight={600}>
+                <Typography sx={{ fontWeight: 600, flexGrow: 1 }}>
                   {code} · {group.title}
                 </Typography>
                 <Chip size="small" label={`${done}/${group.items.length}`} />
@@ -212,12 +212,12 @@ export default function ChecklistTab({
                     const d = draft[item.controlPointId];
                     return (
                       <Box key={item.controlPointId}>
-                        <Stack direction="row" spacing={1} alignItems="flex-start">
-                          <Typography fontWeight={700} sx={{ minWidth: 64 }}>
+                        <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
+                          <Typography sx={{ fontWeight: 700, minWidth: 64 }}>
                             {item.ref}
                           </Typography>
                           <Box sx={{ flexGrow: 1 }}>
-                            <Typography fontWeight={600}>
+                            <Typography sx={{ fontWeight: 600 }}>
                               {item.title}{' '}
                               <Chip
                                 size="small"
@@ -239,7 +239,7 @@ export default function ChecklistTab({
                           </Box>
                         </Stack>
 
-                        <Stack spacing={1} mt={1} sx={{ pl: { sm: 9 } }}>
+                        <Stack spacing={1} sx={{ mt: 1, pl: { sm: 9 } }}>
                           <ToggleButtonGroup
                             exclusive
                             size="small"

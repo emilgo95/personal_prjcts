@@ -53,7 +53,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const drawer = (
     <div>
       <Toolbar>
-        <Typography variant="h6" color="primary" fontWeight={800}>
+        <Typography variant="h6" color="primary" sx={{ fontWeight: 800 }}>
           AgriAudit Docs
         </Typography>
       </Toolbar>
@@ -97,7 +97,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <MenuIcon />
           </IconButton>
           <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="subtitle1" fontWeight={700} lineHeight={1.1}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
               {user?.organizationName}
             </Typography>
             <Typography variant="caption">
