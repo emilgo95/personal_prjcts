@@ -19,13 +19,13 @@
 
     <properties>
         <java.version>21</java.version>
-        <jjwt.version>0.12.6</jjwt.version>
+        <jjwt.version>0.13.0</jjwt.version>
         <openhtmltopdf.version>1.0.10</openhtmltopdf.version>
         <poi.version>5.3.0</poi.version>
         <springdoc.version>3.1.1</springdoc.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <spring-modulith.version>2.1.2</spring-modulith.version>
-        <anthropic-java.version>2.62.0</anthropic-java.version>
+        <anthropic-java.version>2.73.0</anthropic-java.version>
     </properties>
 
     <dependencyManagement>
@@ -120,7 +120,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.18.1</version>
+            <version>1.23.2</version>
         </dependency>
 
         <!-- Generación de documentos: DOCX y XLSX -->
