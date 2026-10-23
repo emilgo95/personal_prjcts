@@ -20,8 +20,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
-        <karate.version>1.5.1</karate.version>
-        <junit.jupiter.version>5.11.3</junit.jupiter.version>
+        <karate.version>1.5.2</karate.version>
+        <junit.jupiter.version>6.1.3</junit.jupiter.version>
         <!-- No fallar el build si no hay backend al que apuntar (permite `mvn -DskipTests` implícito). -->
         <skipApiTests>false</skipApiTests>
     </properties>
@@ -46,7 +46,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.2</version>
+                <version>3.6.0</version>
                 <configuration>
                     <skipTests>${skipApiTests}</skipTests>
                     <includes>
