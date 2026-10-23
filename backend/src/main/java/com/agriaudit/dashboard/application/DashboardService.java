@@ -12,11 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -42,16 +39,13 @@ public class DashboardService {
     public DashboardDto load() {
         Long orgId = SecurityUtils.currentOrganizationId();
         LocalDate today = LocalDate.now();
-        List<AuditSummaryDto> audits = auditService.list();
+        Map<String, Long> byStatus = auditService.countByStatus();
+        long totalAudits = byStatus.values().stream().mapToLong(Long::longValue).sum();
 
-        Map<String, Long> byStatus = new LinkedHashMap<>();
-        for (AuditSummaryDto a : audits) {
-            byStatus.merge(a.status(), 1L, Long::sum);
-        }
-
-        Map<Long, AuditSummaryDto> auditsById = audits.stream()
-                .collect(Collectors.toMap(AuditSummaryDto::id, Function.identity()));
-        List<DeadlineDto> deadlines = findings.nextDeadlines(orgId, DEADLINES_SHOWN).stream()
+        var upcoming = findings.nextDeadlines(orgId, DEADLINES_SHOWN);
+        Map<Long, AuditSummaryDto> auditsById = auditService.summaries(
+                upcoming.stream().map(d -> d.auditId()).distinct().toList());
+        List<DeadlineDto> deadlines = upcoming.stream()
                 .map(d -> {
                     AuditSummaryDto audit = auditsById.get(d.auditId());
                     return new DeadlineDto(d.findingId(), d.auditId(),
@@ -64,13 +58,13 @@ public class DashboardService {
 
         return new DashboardDto(
                 farms.countFarms(orgId),
-                audits.size(),
+                totalAudits,
                 byStatus,
                 findings.countOpen(orgId),
                 findings.countOverdue(orgId, today),
                 findings.countDueBetween(orgId, today, today.plusDays(DUE_SOON_DAYS)),
                 documents.countGenerated(orgId),
                 deadlines,
-                audits.stream().limit(5).toList());
+                auditService.recent(5));
     }
 }

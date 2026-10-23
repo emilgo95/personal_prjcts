@@ -22,6 +22,7 @@ import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
 import { useToast } from '../utils/toast';
 import { extractErrorMessage } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 
 const roles = [
   { value: 'ADMIN', label: 'Administrador' },
@@ -32,6 +33,7 @@ const roles = [
 export default function UsersPage() {
   const queryClient = useQueryClient();
   const { notify } = useToast();
+  const { user: me } = useAuth();
   const { data, isLoading, error } = useQuery({ queryKey: ['users'], queryFn: UserApi.list });
 
   const [form, setForm] = useState({ email: '', fullName: '', role: 'AUDITOR', password: '' });
@@ -137,7 +139,7 @@ export default function UsersPage() {
               </TableHead>
               <TableBody>
                 {(data ?? []).map((u) => (
-                  <TableRow key={u.id}>
+                  <TableRow key={u.id} sx={u.active ? undefined : { opacity: 0.6 }}>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{u.fullName || '—'}</TableCell>
                     <TableCell>
@@ -145,8 +147,9 @@ export default function UsersPage() {
                         select
                         size="small"
                         value={u.role}
+                        disabled={!u.active || u.id === me?.id}
                         onChange={(e) =>
-                          update.mutate({ id: u.id, role: e.target.value, active: true, fullName: u.fullName ?? undefined })
+                          update.mutate({ id: u.id, role: e.target.value, active: u.active, fullName: u.fullName ?? undefined })
                         }
                       >
                         {roles.map((r) => (
@@ -158,14 +161,21 @@ export default function UsersPage() {
                     </TableCell>
                     <TableCell align="right">
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Chip size="small" label="Activo" color="success" variant="outlined" />
+                        <Chip
+                          size="small"
+                          label={u.active ? 'Activo' : 'Desactivado'}
+                          color={u.active ? 'success' : 'default'}
+                          variant="outlined"
+                        />
                         <Button
                           size="small"
-                          onClick={() =>
-                            update.mutate({ id: u.id, role: u.role, active: false, fullName: u.fullName ?? undefined })
-                          }
+                          disabled={u.id === me?.id}
+                          onClick={() => {
+                            if (u.active && !window.confirm(`¿Desactivar a ${u.email}? Dejará de poder iniciar sesión.`)) return;
+                            update.mutate({ id: u.id, role: u.role, active: !u.active, fullName: u.fullName ?? undefined });
+                          }}
                         >
-                          Desactivar
+                          {u.active ? 'Desactivar' : 'Reactivar'}
                         </Button>
                       </Stack>
                     </TableCell>

@@ -17,6 +17,8 @@ import com.agriaudit.documents.application.DocumentRenderer;
 @Component
 public class XlsxDocumentRenderer implements DocumentRenderer {
 
+    private static final int MAX_CELL_CHARS = 32_767;
+
     @Override
     public boolean supports(String engine) {
         return "XLSX_POI".equals(engine);
@@ -172,7 +174,7 @@ public class XlsxDocumentRenderer implements DocumentRenderer {
         }
         r++;
         for (String note : m.score().notes()) {
-            sheet.createRow(r++).createCell(0).setCellValue("· " + note);
+            sheet.createRow(r++).createCell(0).setCellValue(clip("· " + note));
         }
         for (int c = 0; c < cols.length; c++) {
             sheet.setColumnWidth(c, c == 0 ? 14000 : 4500);
@@ -183,7 +185,7 @@ public class XlsxDocumentRenderer implements DocumentRenderer {
         Sheet sheet = wb.createSheet("Aviso");
         int r = 0;
         for (String line : m.disclaimer().split("(?<=\\.) ")) {
-            sheet.createRow(r++).createCell(0).setCellValue(line);
+            sheet.createRow(r++).createCell(0).setCellValue(clip(line));
         }
         sheet.setColumnWidth(0, 20000);
     }
@@ -212,8 +214,16 @@ public class XlsxDocumentRenderer implements DocumentRenderer {
 
     private void put(Row row, int col, String value, CellStyle style) {
         Cell cell = row.createCell(col);
-        cell.setCellValue(value == null ? "" : value);
+        cell.setCellValue(clip(value));
         cell.setCellStyle(style);
+    }
+
+    /** Excel admite como máximo 32.767 caracteres por celda; el texto más largo se recorta con una marca. */
+    static String clip(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.length() <= MAX_CELL_CHARS ? value : value.substring(0, MAX_CELL_CHARS - 13) + " …[recortado]";
     }
 
     private static String graspAnswer(AuditItemResultDto r) {
@@ -237,7 +247,7 @@ public class XlsxDocumentRenderer implements DocumentRenderer {
     }
 
     private static String safe(String v) {
-        return v == null ? "" : v;
+        return clip(v);
     }
 
     private static String attachmentNames(java.util.List<DocumentModel.EvidenceRef> items) {

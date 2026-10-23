@@ -29,6 +29,24 @@ class AuditFindingsCounter implements FindingsCounter {
 
     @Override
     @Transactional(readOnly = true)
+    public java.util.Map<Long, Long> countByAudits(java.util.Collection<Long> auditIds) {
+        java.util.Map<Long, Long> counts = new java.util.HashMap<>();
+        if (!auditIds.isEmpty()) {
+            for (Object[] row : findings.countByAuditIds(auditIds)) {
+                counts.put((Long) row[0], (Long) row[1]);
+            }
+        }
+        return counts;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Set<Long> controlPointIdsWithFinding(Long auditId) {
+        return new java.util.HashSet<>(findings.findControlPointIdsByAuditId(auditId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public long countOpenByAudit(Long auditId) {
         return findings.countByAuditIdAndStatusNotIn(auditId, List.of(FindingStatus.CLOSED, FindingStatus.VERIFIED));
     }

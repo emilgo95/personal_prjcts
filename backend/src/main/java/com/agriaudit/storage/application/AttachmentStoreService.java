@@ -50,7 +50,7 @@ public class AttachmentStoreService implements AttachmentStore {
             throw new BadRequestException("El fichero supera el tamaño máximo de 25 MB");
         }
         String declared = cmd.declaredContentType() == null ? "" : cmd.declaredContentType().toLowerCase();
-        String original = cmd.fileName() == null ? "evidencia" : cmd.fileName();
+        String original = sanitizeFileName(cmd.fileName());
         String resolved = resolveContentType(declared, original, bytes);
         if (resolved == null) {
             throw new BadRequestException("Tipo de fichero no permitido. Se aceptan imágenes (JPG, PNG, GIF, WEBP, HEIC) y PDF.");
@@ -67,6 +67,17 @@ public class AttachmentStoreService implements AttachmentStore {
         a.setStorageKey(key);
         a.setUploadedBy(cmd.uploadedBy());
         return toDto(attachments.save(a));
+    }
+
+    @Override
+    public void deleteByEntity(AttachmentEntityType type, Long entityId) {
+        if (entityId == null) {
+            return;
+        }
+        for (Attachment a : attachments.findByEntityTypeAndEntityIdOrderByIdAsc(type.name(), entityId)) {
+            blobs.delete(a.getStorageKey());
+            attachments.delete(a);
+        }
     }
 
     @Override
@@ -112,35 +123,28 @@ public class AttachmentStoreService implements AttachmentStore {
     }
 
     /**
-     * Determina un tipo de contenido válido a partir del que declara el cliente, la extensión
-     * del fichero y los "magic bytes". Devuelve {@code null} si no es imagen ni PDF.
+     * Determina el tipo real del fichero por sus «magic bytes»: el tipo declarado por el cliente y la extensión
+     * no se consideran fiables (un texto con extensión {@code .png} no es una imagen). Devuelve {@code null}
+     * si el contenido no es una imagen ni un PDF permitidos.
      */
     private static String resolveContentType(String declared, String fileName, byte[] bytes) {
-        if (ALLOWED_TYPES.contains(declared)) {
-            return declared;
-        }
-        String byExt = fromExtension(fileName);
-        if (byExt != null) {
-            return byExt;
-        }
-        return fromMagic(bytes);
+        String detected = fromMagic(bytes);
+        return detected != null && ALLOWED_TYPES.contains(detected) ? detected : null;
     }
 
-    private static String fromExtension(String fileName) {
-        int dot = fileName.lastIndexOf('.');
-        if (dot < 0) {
-            return null;
+    /** Nombre de fichero sin ruta ni caracteres de control, de longitud acotada y con un valor por defecto. */
+    static String sanitizeFileName(String fileName) {
+        String name = fileName == null ? "" : fileName.replace('\\', '/');
+        name = name.substring(name.lastIndexOf('/') + 1).replaceAll("\\p{Cntrl}", "").trim();
+        if (name.isEmpty() || name.equals(".") || name.equals("..")) {
+            return "evidencia";
         }
-        return switch (fileName.substring(dot + 1).toLowerCase()) {
-            case "jpg", "jpeg" -> "image/jpeg";
-            case "png" -> "image/png";
-            case "gif" -> "image/gif";
-            case "webp" -> "image/webp";
-            case "heic" -> "image/heic";
-            case "heif" -> "image/heif";
-            case "pdf" -> "application/pdf";
-            default -> null;
-        };
+        if (name.length() > 150) {
+            int dot = name.lastIndexOf('.');
+            String ext = dot > 0 && name.length() - dot <= 10 ? name.substring(dot) : "";
+            name = name.substring(0, 150 - ext.length()) + ext;
+        }
+        return name;
     }
 
     private static String fromMagic(byte[] b) {
@@ -157,12 +161,20 @@ public class AttachmentStoreService implements AttachmentStore {
                 && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P') {
             return "image/webp";
         }
-        if (b.length >= 12 && b[4] == 'f' && b[5] == 't' && b[6] == 'y' && b[7] == 'p') {
+        if (b.length >= 12 && b[4] == 'f' && b[5] == 't' && b[6] == 'y' && b[7] == 'p'
+                && isHeifBrand(new String(b, 8, 4, java.nio.charset.StandardCharsets.US_ASCII))) {
             return "image/heic";
         }
         if (b.length >= 4 && b[0] == '%' && b[1] == 'P' && b[2] == 'D' && b[3] == 'F') {
             return "application/pdf";
         }
         return null;
+    }
+
+    private static boolean isHeifBrand(String brand) {
+        return switch (brand) {
+            case "heic", "heix", "hevc", "hevx", "heim", "heis", "mif1", "msf1" -> true;
+            default -> false;
+        };
     }
 }

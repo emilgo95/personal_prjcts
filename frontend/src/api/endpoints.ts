@@ -4,6 +4,7 @@ import type {
   AuditDetail,
   AuditItemResult,
   AuditRequest,
+  AuditPage,
   AuditSummary,
   CorrectiveAction,
   CorrectiveActionRequest,
@@ -46,7 +47,8 @@ export const FarmApi = {
 };
 
 export const AuditApi = {
-  list: () => api.get<AuditSummary[]>('/audits').then((r) => r.data),
+  list: (page = 0, size = 25) =>
+    api.get<AuditPage>('/audits', { params: { page, size } }).then((r) => r.data),
   get: (id: number) => api.get<AuditDetail>(`/audits/${id}`).then((r) => r.data),
   create: (body: AuditRequest) => api.post<AuditDetail>('/audits', body).then((r) => r.data),
   update: (id: number, body: AuditRequest) => api.put<AuditDetail>(`/audits/${id}`, body).then((r) => r.data),

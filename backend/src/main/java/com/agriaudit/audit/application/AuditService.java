@@ -61,12 +61,81 @@ public class AuditService implements AuditLookup {
         this.referenceSequences = referenceSequences;
     }
 
+    @Override
     @Transactional(readOnly = true)
     public List<AuditSummaryDto> list() {
+        return summarize(audits.findByOrganizationIdOrderByCreatedAtDesc(SecurityUtils.currentOrganizationId()));
+    }
+
+    /** Una página de auditorías, de la más reciente a la más antigua. */
+    @Transactional(readOnly = true)
+    public AuditPage page(int page, int size) {
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        var result = audits.findByOrganizationId(SecurityUtils.currentOrganizationId(),
+                org.springframework.data.domain.PageRequest.of(Math.max(page, 0), safeSize,
+                        org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                                "createdAt", "id")));
+        return new AuditPage(summarize(result.getContent()), result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Long> countByStatus() {
+        Map<String, Long> counts = new java.util.LinkedHashMap<>();
+        for (Object[] row : audits.countByStatus(SecurityUtils.currentOrganizationId())) {
+            counts.put(((AuditStatus) row[0]).name(), (Long) row[1]);
+        }
+        return counts;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AuditSummaryDto> recent(int limit) {
+        return page(0, limit).content();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, AuditSummaryDto> summaries(java.util.Collection<Long> auditIds) {
+        if (auditIds.isEmpty()) {
+            return Map.of();
+        }
+        List<Audit> found = audits.findByIdInAndOrganizationId(auditIds, SecurityUtils.currentOrganizationId());
+        Map<Long, AuditSummaryDto> byId = new HashMap<>();
+        summarize(found).forEach(s -> byId.put(s.id(), s));
+        return byId;
+    }
+
+    /** Resúmenes de varias auditorías con un número fijo de consultas (sin una por auditoría). */
+    private List<AuditSummaryDto> summarize(List<Audit> list) {
+        if (list.isEmpty()) {
+            return List.of();
+        }
         Long orgId = SecurityUtils.currentOrganizationId();
-        List<Audit> list = audits.findByOrganizationIdOrderByCreatedAtDesc(orgId);
+        List<Long> ids = list.stream().map(Audit::getId).toList();
         Map<Long, FarmDto> farmsById = farms.findFarms(orgId, list.stream().map(Audit::getFarmId).distinct().toList());
-        return list.stream().map(a -> toSummary(a, farmsById.get(a.getFarmId()))).toList();
+        Map<Long, Long> assessedByAudit = new HashMap<>();
+        for (Object[] row : results.countAssessedByAudit(ids)) {
+            assessedByAudit.put((Long) row[0], (Long) row[1]);
+        }
+        Map<Long, Long> findingsByAudit = findings.countByAudits(ids);
+        Map<Long, StandardView> standards = new HashMap<>();
+        Map<String, Integer> totals = new HashMap<>();
+        List<AuditSummaryDto> out = new ArrayList<>(list.size());
+        for (Audit a : list) {
+            StandardView standard = standards.computeIfAbsent(a.getStandardId(), id -> standardOf(a));
+            int total = totals.computeIfAbsent(standard.code(), c -> catalog.controlPointsOf(c).size());
+            int assessed = assessedByAudit.getOrDefault(a.getId(), 0L).intValue();
+            FarmDto farm = farmsById.get(a.getFarmId());
+            out.add(new AuditSummaryDto(
+                    a.getId(), a.getReference(), a.getFarmId(), farm == null ? null : farm.legalName(),
+                    standard.code(), standard.name(), a.getAuditType().name(), a.getStatus().name(),
+                    a.getPlannedStartDate(), a.getActualDate(), a.getLeadAuditor(), a.getCreatedAt(),
+                    findingsByAudit.getOrDefault(a.getId(), 0L), assessed, total,
+                    total == 0 ? 0 : Math.round(100f * assessed / total)));
+        }
+        return out;
     }
 
     @Transactional(readOnly = true)
@@ -135,6 +204,9 @@ public class AuditService implements AuditLookup {
                         + " puntos de control por evaluar.");
             }
         }
+        if (target == AuditStatus.SUBMITTED) {
+            requireFindingForEveryNonCompliance(audit);
+        }
         if (target == AuditStatus.CLOSED) {
             long open = findings.countOpenByAudit(audit.getId());
             if (open > 0) {
@@ -145,6 +217,20 @@ public class AuditService implements AuditLookup {
         }
         audit.setStatus(target);
         return toDetail(audits.save(audit));
+    }
+
+    /** Un punto evaluado como no conforme debe tener su no conformidad registrada antes de enviar la auditoría. */
+    private void requireFindingForEveryNonCompliance(Audit audit) {
+        java.util.Set<Long> withFinding = findings.controlPointIdsWithFinding(audit.getId());
+        long missing = results.findByAuditId(audit.getId()).stream()
+                .filter(r -> r.getCompliance() == ComplianceResult.NON_COMPLIANT)
+                .filter(r -> !withFinding.contains(r.getControlPointId()))
+                .count();
+        if (missing > 0) {
+            throw new ConflictException("No se puede enviar la auditoría: hay " + missing
+                    + (missing == 1 ? " punto no conforme" : " puntos no conformes")
+                    + " sin no conformidad registrada. Regístrala en «Hallazgos y CAPA».");
+        }
     }
 
     /** Estados a los que puede pasar una auditoría desde {@code from}. */
@@ -326,19 +412,6 @@ public class AuditService implements AuditLookup {
     private AuditRef toRef(Audit a) {
         return new AuditRef(a.getId(), a.getOrganizationId(), a.getReference(), standardOf(a).code(),
                 a.getStatus(), a.getPlannedStartDate(), a.getLeadAuditor());
-    }
-
-    private AuditSummaryDto toSummary(Audit a, FarmDto farm) {
-        StandardView standard = standardOf(a);
-        int total = catalog.controlPointsOf(standard.code()).size();
-        int assessed = (int) results.findByAuditId(a.getId()).stream()
-                .filter(r -> r.getCompliance() != ComplianceResult.NOT_ASSESSED).count();
-        int progress = total == 0 ? 0 : Math.round(100f * assessed / total);
-        return new AuditSummaryDto(
-                a.getId(), a.getReference(), a.getFarmId(), farm == null ? null : farm.legalName(),
-                standard.code(), standard.name(), a.getAuditType().name(), a.getStatus().name(),
-                a.getPlannedStartDate(), a.getActualDate(), a.getLeadAuditor(), a.getCreatedAt(),
-                findings.countByAudit(a.getId()), assessed, total, progress);
     }
 
     private AuditDetailDto toDetail(Audit a) {

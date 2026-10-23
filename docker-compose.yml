@@ -76,6 +76,8 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: /api
+        # Precarga el usuario de demostración en el login; en producción debe ser false.
+        VITE_DEMO_PREFILL: ${VITE_DEMO_PREFILL:-true}
     container_name: agriaudit-frontend
     depends_on:
       - backend

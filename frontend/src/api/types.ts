@@ -5,6 +5,7 @@ export interface UserDto {
   role: 'ADMIN' | 'AUDITOR' | 'VIEWER';
   organizationId: number;
   organizationName: string;
+  active: boolean;
 }
 
 export interface TokenResponse {
@@ -95,6 +96,14 @@ export interface Farm {
 }
 
 export type FarmRequest = Omit<Farm, 'id'>;
+
+export interface AuditPage {
+  content: AuditSummary[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
 
 export interface AuditSummary {
   id: number;

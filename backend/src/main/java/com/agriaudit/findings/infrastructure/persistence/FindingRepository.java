@@ -15,4 +15,11 @@ public interface FindingRepository extends JpaRepository<Finding, Long> {
     long countByAuditIdAndStatusNotIn(Long auditId, Collection<FindingStatus> statuses);
 
     List<Finding> findByAuditIdIn(Collection<Long> auditIds);
+
+    /** Pares [id de auditoría, nº de NC]. */
+    @org.springframework.data.jpa.repository.Query("select f.auditId, count(f) from Finding f where f.auditId in :ids group by f.auditId")
+    List<Object[]> countByAuditIds(@org.springframework.data.repository.query.Param("ids") Collection<Long> auditIds);
+
+    @org.springframework.data.jpa.repository.Query("select distinct f.controlPointId from Finding f where f.auditId = :auditId and f.controlPointId is not null")
+    List<Long> findControlPointIdsByAuditId(@org.springframework.data.repository.query.Param("auditId") Long auditId);
 }

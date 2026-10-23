@@ -102,6 +102,6 @@ public class UserService {
 
     private UserDto toDto(AppUser u) {
         return new UserDto(u.getId(), u.getEmail(), u.getFullName(), u.getRole().name(),
-                u.getOrganization().getId(), u.getOrganization().getName());
+                u.getOrganization().getId(), u.getOrganization().getName(), u.isActive());
     }
 }

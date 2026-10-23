@@ -51,6 +51,10 @@ public class ScoringService {
         }
 
         JsonNode rule = parseRule(standard.scoringRule());
+        boolean invalidRule = rule == null;
+        if (invalidRule) {
+            rule = objectMapper.createObjectNode().put("type", "INVALID");
+        }
         String type = rule.path("type").asText("MAJOR_MINOR");
         boolean reportOnly = rule.path("reportOnly").asBoolean(false);
         Double majorMin = rule.has("majorMustMinPct") ? rule.get("majorMustMinPct").asDouble() : null;
@@ -100,7 +104,14 @@ public class ScoringService {
         List<String> notes = new ArrayList<>();
         String overall;
 
-        if ("MAJOR_MINOR".equals(type)) {
+        if (invalidRule) {
+            // Nunca se da por «apto» lo que no se puede evaluar: una regla ilegible deja el resultado sin concluir.
+            overall = "PENDING";
+            notes.add("La regla de puntuación del estándar no es válida: no se puede calcular el resultado.");
+        } else if ("MAJOR_MINOR".equals(type) && majorMin == null && minorMin == null) {
+            overall = "PENDING";
+            notes.add("La regla de puntuación del estándar no define porcentajes mínimos: no se puede calcular el resultado.");
+        } else if ("MAJOR_MINOR".equals(type)) {
             int[] major = levelCounts.getOrDefault("MAJOR_MUST", new int[4]);
             int[] minor = levelCounts.getOrDefault("MINOR_MUST", new int[4]);
             int majorApplicable = major[0] + major[1] + major[3]; // excluye N.A.
@@ -130,6 +141,9 @@ public class ScoringService {
             overall = "PENDING";
         }
 
+        notes.add("Resultado orientativo: se calcula sobre el catálogo de demostración de la aplicación (" + total
+                + " puntos de control), no sobre el texto íntegro de la norma.");
+
         return new ScoreResult(
                 standardCode,
                 standard.name(),
@@ -147,14 +161,16 @@ public class ScoringService {
                 notes);
     }
 
+    /** Regla de puntuación del estándar; {@code null} si falta o no es un objeto JSON válido. */
     private JsonNode parseRule(String json) {
         try {
             if (json == null || json.isBlank()) {
-                return objectMapper.createObjectNode().put("type", "MAJOR_MINOR");
+                return null;
             }
-            return objectMapper.readTree(json);
+            JsonNode node = objectMapper.readTree(json);
+            return node != null && node.isObject() ? node : null;
         } catch (Exception e) {
-            return objectMapper.createObjectNode().put("type", "MAJOR_MINOR");
+            return null;
         }
     }
 

@@ -56,6 +56,9 @@ class StabilizationIntegrationTest {
     @Autowired
     TestRestTemplate rest;
 
+    @Autowired
+    com.agriaudit.identity.infrastructure.bootstrap.AdminInitializer adminInitializer;
+
     private String token;
 
     @BeforeEach
@@ -359,5 +362,156 @@ class StabilizationIntegrationTest {
         assertThat(call(HttpMethod.POST, "/api/audits", Map.of("farmId", farm, "standardCode", "GLOBALGAP_IFA_V6",
                 "auditType", "INTERNAL", "plannedStartDate", "2026-10-01", "plannedEndDate", "2026-10-01"))
                 .getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    // ---------------------------------------------------------------- B9: ficheros subidos
+
+    private ResponseEntity<JsonNode> uploadBytes(String path, String fileName, String declaredType, byte[] bytes) {
+        LinkedMultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        HttpHeaders fileHeaders = new HttpHeaders();
+        fileHeaders.setContentType(MediaType.parseMediaType(declaredType));
+        parts.add("file", new HttpEntity<>(new ByteArrayResource(bytes) {
+            @Override
+            public String getFilename() {
+                return fileName;
+            }
+        }, fileHeaders));
+        HttpHeaders h = new HttpHeaders();
+        h.setContentType(MediaType.MULTIPART_FORM_DATA);
+        h.setBearerAuth(token);
+        return rest.exchange(path, HttpMethod.POST, new HttpEntity<>(parts, h), JsonNode.class);
+    }
+
+    private long newFinding(long audit, long cp, String classification) {
+        return id(call(HttpMethod.POST, "/api/audits/" + audit + "/findings",
+                Map.of("controlPointId", cp, "classification", classification, "title", "NC " + unique())));
+    }
+
+    @Test
+    void uploadedFilesMustReallyBeImagesOrPdfs() {
+        long audit = newAudit(newFarm());
+        long finding = newFinding(audit, controlPoints(audit).get(0), "MINOR");
+        String path = "/api/audits/" + audit + "/findings/" + finding + "/attachments";
+
+        // Un texto con extensión y tipo declarado de imagen no es una imagen.
+        assertThat(uploadBytes(path, "falso.png", "image/png", "esto es solo texto".getBytes())
+                .getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        // Una ruta en el nombre no llega al almacenamiento.
+        ResponseEntity<JsonNode> ok = uploadBytes(path, "../../etc/foto.png", "image/png", Base64.getDecoder().decode(PNG_1X1));
+        assertThat(ok.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(ok.getBody().get("fileName").asText()).isEqualTo("foto.png");
+    }
+
+    // ---------------------------------------------------------------- B15: adjuntos huérfanos
+
+    @Test
+    void deletingAFindingAlsoDeletesItsAttachments() {
+        long audit = newAudit(newFarm());
+        long finding = newFinding(audit, controlPoints(audit).get(0), "MINOR");
+        long attachment = id(upload("/api/audits/" + audit + "/findings/" + finding + "/attachments"));
+        assertThat(rest.exchange("/api/attachments/" + attachment + "/download", HttpMethod.GET,
+                new HttpEntity<>(null, json(token)), byte[].class).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        assertThat(call(HttpMethod.DELETE, "/api/audits/" + audit + "/findings/" + finding, null)
+                .getStatusCode().is2xxSuccessful()).isTrue();
+
+        assertThat(rest.exchange("/api/attachments/" + attachment + "/download", HttpMethod.GET,
+                new HttpEntity<>(null, json(token)), JsonNode.class).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    // ---------------------------------------------------------------- B16: paginación
+
+    @Test
+    void auditsAreListedByPageAndTheDashboardStillCounts() {
+        long farm = newFarm();
+        for (int i = 0; i < 3; i++) {
+            newAudit(farm);
+        }
+        ResponseEntity<JsonNode> page = call(HttpMethod.GET, "/api/audits?page=0&size=2", null);
+        assertThat(page.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(page.getBody().get("content")).hasSize(2);
+        assertThat(page.getBody().get("totalElements").asLong()).isGreaterThanOrEqualTo(3);
+        assertThat(page.getBody().get("totalPages").asInt()).isGreaterThanOrEqualTo(2);
+        assertThat(page.getBody().get("content").get(0).get("totalControlPoints").asInt()).isPositive();
+
+        // Un tamaño absurdo se acota y un número de página negativo se trata como la primera.
+        assertThat(call(HttpMethod.GET, "/api/audits?page=-3&size=100000", null).getBody().get("size").asInt())
+                .isLessThanOrEqualTo(100);
+
+        JsonNode dashboard = call(HttpMethod.GET, "/api/dashboard", null).getBody();
+        assertThat(dashboard.get("auditsTotal").asLong()).isGreaterThanOrEqualTo(3);
+        assertThat(dashboard.get("recentAudits").size()).isBetween(1, 5);
+    }
+
+    // ---------------------------------------------------------------- B13: no conformidad por punto no conforme
+
+    @Test
+    void aNonCompliantPointNeedsItsFindingBeforeTheAuditIsSubmitted() {
+        long audit = newAudit(newFarm());
+        List<Long> cps = controlPoints(audit);
+        List<Map<String, Object>> all = new ArrayList<>();
+        for (int i = 0; i < cps.size(); i++) {
+            all.add(Map.of("controlPointId", cps.get(i), "compliance", i == 0 ? "NON_COMPLIANT" : "COMPLIANT"));
+        }
+        assertThat(call(HttpMethod.PUT, "/api/audits/" + audit + "/results", Map.of("results", all))
+                .getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(transition(audit, "CLOSING")).isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<JsonNode> blocked = call(HttpMethod.POST, "/api/audits/" + audit + "/transition",
+                Map.of("status", "SUBMITTED"));
+        assertThat(blocked.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(blocked.getBody().get("message").asText()).contains("no conformidad");
+
+        newFinding(audit, cps.get(0), "MINOR");
+        assertThat(transition(audit, "SUBMITTED")).isEqualTo(HttpStatus.OK);
+    }
+
+    // ---------------------------------------------------------------- B20: mensaje al borrar con datos asociados
+
+    @Test
+    void deletingAFarmWithAuditsExplainsTheRealCause() {
+        long farm = newFarm();
+        newAudit(farm);
+
+        ResponseEntity<JsonNode> r = call(HttpMethod.DELETE, "/api/farms/" + farm, null);
+
+        assertThat(r.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(r.getBody().get("message").asText()).contains("datos asociados").doesNotContain("vuelva a intentarlo");
+    }
+
+    // ---------------------------------------------------------------- B11: estado activo visible
+
+    @Test
+    void theUserListExposesWhoIsActive() {
+        String email = "inactivo." + unique() + "@demo.test";
+        long uid = id(call(HttpMethod.POST, "/api/users",
+                Map.of("email", email, "fullName", "Inactivo", "role", "VIEWER", "password", "Abcd1234!")));
+        call(HttpMethod.PUT, "/api/users/" + uid, Map.of("fullName", "Inactivo", "role", "VIEWER", "active", false));
+
+        boolean found = false;
+        for (JsonNode u : call(HttpMethod.GET, "/api/users", null).getBody()) {
+            if (u.get("id").asLong() == uid) {
+                found = true;
+                assertThat(u.get("active").asBoolean()).isFalse();
+            }
+        }
+        assertThat(found).isTrue();
+    }
+
+    // ---------------------------------------------------------------- B7: el administrador conserva su contraseña
+
+    @Test
+    void theAdministratorKeepsTheirPasswordAcrossRestarts() {
+        long myId = call(HttpMethod.GET, "/api/auth/me", null).getBody().get("id").asLong();
+        assertThat(call(HttpMethod.PUT, "/api/users/" + myId,
+                Map.of("fullName", "Administrador", "role", "ADMIN", "active", true, "password", "NuevaClave123!"))
+                .getStatusCode()).isEqualTo(HttpStatus.OK);
+        try {
+            adminInitializer.run();
+            assertThat(login("admin@demo.test", "NuevaClave123!")).isNotBlank();
+        } finally {
+            call(HttpMethod.PUT, "/api/users/" + myId,
+                    Map.of("fullName", "Administrador", "role", "ADMIN", "active", true, "password", "Admin123!"));
+        }
     }
 }

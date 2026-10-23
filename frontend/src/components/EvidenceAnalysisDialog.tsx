@@ -52,6 +52,8 @@ export default function EvidenceAnalysisDialog({
   const [result, setResult] = useState<EvidenceAnalysis | null>(null);
   const [note, setNote] = useState('');
   const [applied, setApplied] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -59,6 +61,7 @@ export default function EvidenceAnalysisDialog({
     setError(null);
     setResult(null);
     setApplied([]);
+    setActionError(null);
     AnalysisApi.analyzeEvidence(auditId, attachmentId, controlPointId)
       .then((r) => {
         setResult(r);
@@ -68,7 +71,20 @@ export default function EvidenceAnalysisDialog({
       .finally(() => setLoading(false));
   }, [open, auditId, attachmentId, controlPointId]);
 
-  const mark = (key: string) => setApplied((a) => [...a, key]);
+  // Cada acción se ejecuta una sola vez a la vez y su fallo se muestra, no se pierde en silencio.
+  const run = async (key: string, action: () => void | Promise<unknown>) => {
+    if (busy) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      await action();
+      setApplied((a) => (a.includes(key) ? a : [...a, key]));
+    } catch (e) {
+      setActionError(extractErrorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -92,6 +108,11 @@ export default function EvidenceAnalysisDialog({
           </Box>
         )}
         {error && <Alert severity="error">{error}</Alert>}
+        {actionError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError(null)}>
+            {actionError}
+          </Alert>
+        )}
 
         {result && (
           <Stack spacing={2}>
@@ -137,11 +158,8 @@ export default function EvidenceAnalysisDialog({
                   size="small"
                   variant="contained"
                   sx={{ mt: 1 }}
-                  disabled={!note.trim() || applied.includes('note')}
-                  onClick={async () => {
-                    await onApplyNote(note);
-                    mark('note');
-                  }}
+                  disabled={!note.trim() || applied.includes('note') || busy}
+                  onClick={() => run('note', () => onApplyNote(note))}
                 >
                   {applied.includes('note') ? 'Nota aplicada ✓' : 'Aplicar esta nota'}
                 </Button>
@@ -169,11 +187,10 @@ export default function EvidenceAnalysisDialog({
                     <Button
                       size="small"
                       variant="contained"
-                      disabled={applied.includes('compliance')}
-                      onClick={async () => {
-                        await onApplyCompliance(result.suggestedCompliance as ComplianceValue);
-                        mark('compliance');
-                      }}
+                      disabled={applied.includes('compliance') || busy}
+                      onClick={() =>
+                        run('compliance', () => onApplyCompliance(result.suggestedCompliance as ComplianceValue))
+                      }
                     >
                       {applied.includes('compliance') ? 'Aplicado ✓' : 'Aplicar cumplimiento'}
                     </Button>
@@ -200,10 +217,8 @@ export default function EvidenceAnalysisDialog({
                         key={i}
                         draft={f}
                         applied={applied.includes('finding-' + i)}
-                        onCreate={async (edited) => {
-                          await onCreateFinding(edited);
-                          mark('finding-' + i);
-                        }}
+                        busy={busy}
+                        onCreate={(edited) => run('finding-' + i, () => onCreateFinding(edited))}
                       />
                     ))}
                   </Stack>
@@ -224,10 +239,12 @@ export default function EvidenceAnalysisDialog({
 function FindingDraft({
   draft,
   applied,
+  busy,
   onCreate,
 }: {
   draft: SuggestedFinding;
   applied: boolean;
+  busy: boolean;
   onCreate: (edited: SuggestedFinding) => Promise<void>;
 }) {
   const [edited, setEdited] = useState<SuggestedFinding>(draft);
@@ -268,7 +285,7 @@ function FindingDraft({
           <Button
             variant="contained"
             size="small"
-            disabled={applied}
+            disabled={applied || busy}
             onClick={() => onCreate(edited)}
           >
             {applied ? 'Creada ✓' : 'Crear no conformidad'}

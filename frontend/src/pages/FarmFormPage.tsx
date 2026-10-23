@@ -8,6 +8,7 @@ import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
 import { useToast } from '../utils/toast';
 import { extractErrorMessage } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 
 const empty: FarmRequest = {
   legalName: '',
@@ -34,12 +35,17 @@ export default function FarmFormPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { notify } = useToast();
+  const { hasRole } = useAuth();
+  const readOnly = editing && !hasRole('ADMIN', 'AUDITOR');
   const [form, setForm] = useState<FarmRequest>(empty);
 
   const query = useQuery({
     queryKey: ['farm', id],
     queryFn: () => FarmApi.get(Number(id)),
     enabled: editing,
+    // Al reabrir la ficha siempre se pide la versión actual del servidor, no la que quedó en caché.
+    staleTime: 0,
+    gcTime: 0,
   });
 
   useEffect(() => {
@@ -55,6 +61,7 @@ export default function FarmFormPage() {
     onSuccess: () => {
       notify('Explotación guardada', 'success');
       queryClient.invalidateQueries({ queryKey: ['farms'] });
+      queryClient.invalidateQueries({ queryKey: ['farm'] });
       navigate('/farms');
     },
     onError: (e) => notify(extractErrorMessage(e), 'error'),
@@ -73,11 +80,12 @@ export default function FarmFormPage() {
 
   return (
     <Box>
-      <PageHeader title={editing ? 'Editar explotación' : 'Nueva explotación'} />
+      <PageHeader title={readOnly ? 'Explotación' : editing ? 'Editar explotación' : 'Nueva explotación'} />
       <QueryBoundary isLoading={editing && query.isLoading} error={query.error}>
         <Card>
           <CardContent>
             <form onSubmit={onSubmit}>
+              <Box component="fieldset" disabled={readOnly} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
                   <TextField label="Razón social" required fullWidth value={form.legalName} onChange={set('legalName')} />
@@ -128,11 +136,14 @@ export default function FarmFormPage() {
                   <TextField label="Notas" fullWidth multiline minRows={2} value={form.notes ?? ''} onChange={set('notes')} />
                 </Grid>
               </Grid>
+              </Box>
               <Stack direction="row" spacing={1} mt={3}>
-                <Button type="submit" variant="contained" disabled={save.isPending}>
-                  Guardar
-                </Button>
-                <Button onClick={() => navigate('/farms')}>Cancelar</Button>
+                {!readOnly && (
+                  <Button type="submit" variant="contained" disabled={save.isPending}>
+                    Guardar
+                  </Button>
+                )}
+                <Button onClick={() => navigate('/farms')}>{readOnly ? 'Volver' : 'Cancelar'}</Button>
               </Stack>
             </form>
           </CardContent>

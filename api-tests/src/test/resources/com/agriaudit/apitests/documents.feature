@@ -7,7 +7,7 @@ Background:
   * path 'audits'
   * method get
   * status 200
-  * def audit = karate.filter(response, function(a){ return a.progressPct > 0 })[0] || response[0]
+  * def audit = karate.filter(response.content, function(a){ return a.progressPct > 0 })[0] || response.content[0]
   * def auditId = audit.id
 
 Scenario: cada auditoría ofrece opciones de documento con sus formatos

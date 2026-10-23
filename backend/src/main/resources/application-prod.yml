@@ -1,0 +1,11 @@
+# Perfil de producción (SPRING_PROFILES_ACTIVE=prod). ProductionSafetyCheck exige JWT_SECRET, ADMIN_PASSWORD
+# propios y AGRIAUDIT_DEMO_SEED=false; sin ellos la aplicación no arranca.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    com.agriaudit: INFO

@@ -41,10 +41,10 @@ export default function App() {
       <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/farms" element={<FarmsPage />} />
-        <Route path="/farms/new" element={<FarmFormPage />} />
+        <Route path="/farms/new" element={hasRole('ADMIN', 'AUDITOR') ? <FarmFormPage /> : <Navigate to="/farms" replace />} />
         <Route path="/farms/:id" element={<FarmFormPage />} />
         <Route path="/audits" element={<AuditsPage />} />
-        <Route path="/audits/new" element={<AuditWizardPage />} />
+        <Route path="/audits/new" element={hasRole('ADMIN', 'AUDITOR') ? <AuditWizardPage /> : <Navigate to="/audits" replace />} />
         <Route path="/audits/:id" element={<AuditDetailPage />} />
         <Route path="/documents" element={<DocumentCenterPage />} />
         <Route path="/standards" element={<StandardsPage />} />

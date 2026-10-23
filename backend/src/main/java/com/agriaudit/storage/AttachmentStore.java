@@ -20,6 +20,9 @@ public interface AttachmentStore {
      */
     AttachmentDto store(NewAttachment attachment);
 
+    /** Borra metadatos y contenido de todos los adjuntos de una entidad (al eliminar la entidad). */
+    void deleteByEntity(AttachmentEntityType type, Long entityId);
+
     List<AttachmentDto> byEntity(AttachmentEntityType type, Long entityId);
 
     Optional<AttachmentDto> find(Long organizationId, Long attachmentId);

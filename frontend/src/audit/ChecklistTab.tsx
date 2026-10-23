@@ -290,8 +290,18 @@ export default function ChecklistTab({
                                 : {
                                     auditId,
                                     controlPointId: item.controlPointId,
+                                    // La nota reconocida se añade a la que ya hubiera, no la sustituye.
                                     onApplyNote: (text) =>
-                                      update(item.controlPointId, { evidenceNotes: text }),
+                                      setDraft((d) => {
+                                        const previous = d[item.controlPointId]?.evidenceNotes?.trim();
+                                        return {
+                                          ...d,
+                                          [item.controlPointId]: {
+                                            ...d[item.controlPointId],
+                                            evidenceNotes: previous ? `${previous}\n\n${text}` : text,
+                                          },
+                                        };
+                                      }),
                                     onApplyCompliance: (v) =>
                                       update(item.controlPointId, { compliance: v }),
                                     onCreateFinding: (draft) =>

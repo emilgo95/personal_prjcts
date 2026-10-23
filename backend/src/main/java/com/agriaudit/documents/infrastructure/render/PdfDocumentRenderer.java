@@ -40,7 +40,7 @@ public class PdfDocumentRenderer implements DocumentRenderer {
         context.setVariable("model", model);
 
         String html = templateEngine.process(templateName, context);
-        String xhtml = toXhtml(html);
+        String xhtml = toXhtml(replaceUnsupportedChars(html));
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfRendererBuilder builder = new PdfRendererBuilder();
@@ -52,6 +52,21 @@ public class PdfDocumentRenderer implements DocumentRenderer {
         } catch (Exception e) {
             throw new RuntimeException("Error generando el PDF a partir de la plantilla " + templateName, e);
         }
+    }
+
+    /**
+     * Las fuentes estándar del PDF cubren Latin-1 y la puntuación habitual; el resto (cirílico, árabe, CJK…) se
+     * sustituye por «?» en lugar de salir como cuadros vacíos o hacer fallar la generación.
+     */
+    static String replaceUnsupportedChars(String text) {
+        StringBuilder out = new StringBuilder(text.length());
+        text.codePoints().forEach(cp -> {
+            boolean supported = cp <= 0xFF || (cp >= 0x2010 && cp <= 0x2027) || cp == 0x20AC || cp == 0x2122
+                    || cp == 0x0152 || cp == 0x0153 || cp == 0x0160 || cp == 0x0161 || cp == 0x017D || cp == 0x017E
+                    || cp == 0x0178 || cp == 0x0192 || cp == 0x02C6 || cp == 0x02DC;
+            out.appendCodePoint(supported ? cp : '?');
+        });
+        return out.toString();
     }
 
     private String toXhtml(String html) {

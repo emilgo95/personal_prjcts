@@ -72,7 +72,9 @@ public class DocumentGenerationService implements DocumentLookup {
 
         DocumentTemplate template = templates
                 .findByStandardCodeAndDocumentTypeAndFormat(audit.standardCode(), type, format)
-                .or(() -> templates.findByStandardCodeIsNullAndDocumentTypeAndFormat(type, format))
+                .filter(DocumentTemplate::isActive)
+                .or(() -> templates.findByStandardCodeIsNullAndDocumentTypeAndFormat(type, format)
+                        .filter(DocumentTemplate::isActive))
                 .orElseThrow(() -> new BadRequestException("No hay plantilla para " + type + " en formato " + format));
 
         DocumentRenderer renderer = renderers.stream()

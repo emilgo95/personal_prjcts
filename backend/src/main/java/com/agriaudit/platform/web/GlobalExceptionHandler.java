@@ -91,8 +91,25 @@ public class GlobalExceptionHandler {
     /** Violación de una restricción de la BD (p. ej. UNIQUE): conflicto, sin exponer el detalle SQL. */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(body(HttpStatus.CONFLICT, "La operación entra en conflicto con datos existentes; vuelva a intentarlo"));
+        String sqlState = sqlState(ex);
+        String message = switch (sqlState == null ? "" : sqlState) {
+            case "23503" -> "No se puede completar la operación porque hay datos asociados (por ejemplo, auditorías)";
+            case "23505" -> "Ya existe un registro con esos datos";
+            default -> "La operación entra en conflicto con datos existentes";
+        };
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body(HttpStatus.CONFLICT, message));
+    }
+
+    private static String sqlState(Throwable ex) {
+        for (Throwable t = ex; t != null; t = t.getCause()) {
+            if (t instanceof java.sql.SQLException sql && sql.getSQLState() != null) {
+                return sql.getSQLState();
+            }
+            if (t.getCause() == t) {
+                break;
+            }
+        }
+        return null;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

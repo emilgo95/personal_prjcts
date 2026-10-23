@@ -76,7 +76,9 @@ public class FindingService implements FindingLookup {
 
     public void delete(Long auditId, Long findingId) {
         requireEditableAudit(auditId);
-        findings.delete(requireFinding(auditId, findingId));
+        Finding finding = requireFinding(auditId, findingId);
+        attachmentLookup.deleteByEntity(AttachmentEntityType.FINDING, finding.getId());
+        findings.delete(finding);
     }
 
     public CorrectiveActionDto addCorrectiveAction(Long auditId, Long findingId, CorrectiveActionRequest request) {

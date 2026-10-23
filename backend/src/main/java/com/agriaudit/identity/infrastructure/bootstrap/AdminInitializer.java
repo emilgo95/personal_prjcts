@@ -15,8 +15,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Crea (o actualiza la contraseña de) la organización y el usuario administrador
- * a partir de las variables de entorno ADMIN_*. Se ejecuta en cada arranque.
+ * Crea la organización y el usuario administrador inicial a partir de las variables de entorno ADMIN_*.
+ * Si el administrador ya existe no se toca: la contraseña elegida por el usuario sobrevive a los reinicios.
  */
 @Component
 @Order(10)
@@ -57,13 +57,8 @@ public class AdminInitializer implements CommandLineRunner {
             return organizations.save(o);
         });
 
-        users.findByEmailIgnoreCase(adminEmail).ifPresentOrElse(existing -> {
-            existing.setPasswordHash(passwordEncoder.encode(adminPassword));
-            existing.setRole(Role.ADMIN);
-            existing.setActive(true);
-            users.save(existing);
-            log.info("Contraseña del administrador '{}' actualizada", adminEmail);
-        }, () -> {
+        users.findByEmailIgnoreCase(adminEmail).ifPresentOrElse(existing ->
+                log.info("Usuario administrador '{}' ya existe; no se modifica", adminEmail), () -> {
             AppUser admin = new AppUser();
             admin.setOrganization(org);
             admin.setEmail(adminEmail);

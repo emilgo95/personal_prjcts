@@ -55,7 +55,7 @@ export default function DocumentCenterPage() {
       field: 'generatedAt',
       headerName: 'Generado',
       width: 160,
-      valueGetter: (value) => formatDateTime(value as string),
+      valueFormatter: (value) => formatDateTime(value as string),
     },
     { field: 'generatedBy', headerName: 'Autor', width: 180 },
     {

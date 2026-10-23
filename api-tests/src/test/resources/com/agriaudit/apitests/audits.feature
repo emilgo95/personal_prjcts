@@ -8,14 +8,15 @@ Scenario: el listado de auditorías devuelve el juego de datos de demostración
   Given path 'audits'
   When method get
   Then status 200
-  And match response == '#[_ > 0]'
-  And match each response contains { id: '#number', reference: '#string', standardCode: '#string', status: '#string' }
+  And match response contains { page: 0, totalElements: '#number', totalPages: '#number' }
+  And match response.content == '#[_ > 0]'
+  And match each response.content contains { id: '#number', reference: '#string', standardCode: '#string', status: '#string' }
 
 Scenario: el detalle de una auditoría incluye explotación y progreso
   Given path 'audits'
   When method get
   Then status 200
-  * def auditId = response[0].id
+  * def auditId = response.content[0].id
   Given path 'audits', auditId
   When method get
   Then status 200
@@ -28,7 +29,7 @@ Scenario: la puntuación de una auditoría se calcula según su estándar
   Given path 'audits'
   When method get
   Then status 200
-  * def auditId = response[0].id
+  * def auditId = response.content[0].id
   Given path 'audits', auditId, 'score'
   When method get
   Then status 200
@@ -38,7 +39,7 @@ Scenario: los resultados del checklist de una auditoría se pueden consultar
   Given path 'audits'
   When method get
   Then status 200
-  * def auditId = response[0].id
+  * def auditId = response.content[0].id
   Given path 'audits', auditId, 'results'
   When method get
   Then status 200
@@ -50,3 +51,12 @@ Scenario: crear una auditoría exige rol y datos válidos
   And request {}
   When method post
   Then status 400
+
+Scenario: el listado de auditorías se pagina en el servidor
+  Given path 'audits'
+  And param page = 0
+  And param size = 1
+  When method get
+  Then status 200
+  And match response.content == '#[1]'
+  And match response.size == 1

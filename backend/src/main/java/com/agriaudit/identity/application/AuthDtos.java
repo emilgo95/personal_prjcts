@@ -22,7 +22,8 @@ public final class AuthDtos {
             String fullName,
             String role,
             Long organizationId,
-            String organizationName) {
+            String organizationName,
+            boolean active) {
     }
 
     public record TokenResponse(

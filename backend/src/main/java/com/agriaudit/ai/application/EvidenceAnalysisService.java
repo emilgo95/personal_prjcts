@@ -105,7 +105,7 @@ public class EvidenceAnalysisService {
             warnings.add("El documento tiene más páginas de las procesadas; solo se ha reconocido el principio.");
         }
 
-        String normalized = stripAccents(text.toLowerCase());
+        String normalized = neutralizeNegatedFindings(stripAccents(text.toLowerCase()));
         int strong = count(normalized, STRONG_NON_COMPLIANT);
         int weak = count(normalized, WEAK_NON_COMPLIANT);
         int c = count(normalized, COMPLIANT);
@@ -172,6 +172,18 @@ public class EvidenceAnalysisService {
         }
         return "Evidencia «" + fileName + "» (texto reconocido por OCR):\n" + collapsed;
     }
+
+    /**
+     * «Sin hallazgos», «no se han detectado incumplimientos»… contienen palabras de incumplimiento pero dicen lo
+     * contrario: se sustituyen por una expresión de conformidad antes de contar indicios.
+     */
+    static String neutralizeNegatedFindings(String normalized) {
+        return NEGATED_FINDINGS.matcher(normalized).replaceAll("sin incidencias");
+    }
+
+    private static final java.util.regex.Pattern NEGATED_FINDINGS = java.util.regex.Pattern.compile(
+            "(?:\\bsin|\\bningun[ao]?s?|\\bno (?:se )?(?:ha(?:n)? )?(?:detect|observ|encontr|identific|aprecia)\\w*)\\s+"
+                    + "(?:nuevos?\\s+)?(?:hallazgos?|incumplimientos?|no conformidad(?:es)?|desviacion(?:es)?|deficiencias?)");
 
     private static int count(String haystack, String[] needles) {
         int total = 0;

@@ -21,6 +21,15 @@ public interface AuditLookup {
 
     List<AuditSummaryDto> list();
 
+    /** Nº de auditorías de la organización por estado. */
+    java.util.Map<String, Long> countByStatus();
+
+    /** Las {@code limit} auditorías más recientes de la organización. */
+    List<AuditSummaryDto> recent(int limit);
+
+    /** Resumen de las auditorías indicadas (solo las de la organización del usuario), por id. */
+    java.util.Map<Long, AuditSummaryDto> summaries(java.util.Collection<Long> auditIds);
+
     /** Checklist completo de la auditoría, con resultado y adjuntos por punto de control. */
     List<AuditItemResultDto> getResults(Long auditId);
 

@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Button, Chip, LinearProgress, Box } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
@@ -12,7 +13,12 @@ import { auditStatusColors, auditStatusLabels, auditTypeLabels, label, standardS
 export default function AuditsPage() {
   const navigate = useNavigate();
   const { hasRole } = useAuth();
-  const { data, isLoading, error } = useQuery({ queryKey: ['audits'], queryFn: AuditApi.list });
+  const [paging, setPaging] = useState({ page: 0, pageSize: 25 });
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['audits', paging.page, paging.pageSize],
+    queryFn: () => AuditApi.list(paging.page, paging.pageSize),
+    placeholderData: keepPreviousData,
+  });
 
   const columns: GridColDef[] = [
     { field: 'reference', headerName: 'Referencia', width: 140 },
@@ -72,12 +78,15 @@ export default function AuditsPage() {
       <QueryBoundary isLoading={isLoading} error={error}>
         <DataGrid
           autoHeight
-          rows={data ?? []}
+          rows={data?.content ?? []}
+          rowCount={data?.totalElements ?? 0}
+          paginationMode="server"
+          paginationModel={paging}
+          onPaginationModelChange={(m) => setPaging({ page: m.page, pageSize: m.pageSize })}
           columns={columns}
           disableRowSelectionOnClick
           onRowClick={(p) => navigate(`/audits/${p.id}`)}
           pageSizeOptions={[10, 25, 50]}
-          initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
           sx={{ bgcolor: 'background.paper', cursor: 'pointer' }}
         />
       </QueryBoundary>

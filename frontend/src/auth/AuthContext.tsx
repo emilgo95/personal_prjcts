@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AuthApi } from '../api/endpoints';
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from '../api/client';
@@ -18,11 +19,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserDto | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const queryClient = useQueryClient();
+
   const logout = useCallback(() => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
+    // Otro usuario del mismo navegador no debe ver datos de la sesión anterior.
+    queryClient.clear();
     setUser(null);
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     const handler = () => logout();

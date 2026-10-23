@@ -30,6 +30,10 @@ public final class AuditDtos {
             @Size(max = 5000) String productsInScope) {
     }
 
+    /** Página de auditorías (más recientes primero). */
+    public record AuditPage(List<AuditSummaryDto> content, int page, int size, long totalElements, int totalPages) {
+    }
+
     public record AuditSummaryDto(
             Long id,
             String reference,

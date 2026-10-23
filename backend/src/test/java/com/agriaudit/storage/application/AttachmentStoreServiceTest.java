@@ -56,6 +56,30 @@ class AttachmentStoreServiceTest {
     }
 
     @Test
+    void noSeFiaDelTipoDeclaradoNiDeLaExtension() {
+        assertThatThrownBy(() -> service.store(upload("falso.png", "image/png", "esto es texto".getBytes())))
+                .isInstanceOf(BadRequestException.class);
+        assertThatThrownBy(() -> service.store(upload("falso.pdf", "application/pdf", "<html>".getBytes())))
+                .isInstanceOf(BadRequestException.class);
+        verifyNoInteractions(blobs);
+    }
+
+    @Test
+    void elTipoSalidoDelContenidoManda() {
+        var dto = service.store(upload("foto.pdf", "application/pdf", PNG));
+
+        assertThat(dto.contentType()).isEqualTo("image/png");
+    }
+
+    @Test
+    void saneaElNombreDelFichero() {
+        assertThat(AttachmentStoreService.sanitizeFileName("..\\..\\etc/passwd.png")).isEqualTo("passwd.png");
+        assertThat(AttachmentStoreService.sanitizeFileName("a" + (char) 0 + "b" + (char) 10 + ".png")).isEqualTo("ab.png");
+        assertThat(AttachmentStoreService.sanitizeFileName(" ")).isEqualTo("evidencia");
+        assertThat(AttachmentStoreService.sanitizeFileName("x".repeat(400) + ".pdf")).hasSize(150).endsWith(".pdf");
+    }
+
+    @Test
     void noSirveContenidoDeOtraOrganizacion() {
         when(repository.findByIdAndOrganizationId(5L, 2L)).thenReturn(Optional.empty());
 
