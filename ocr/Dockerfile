@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # libGL/glib para opencv-python-headless y renderizado de PDF
 RUN apt-get update && apt-get install -y --no-install-recommends \
