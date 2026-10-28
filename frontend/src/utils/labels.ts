@@ -86,6 +86,7 @@ export const auditStatusColors: Record<string, 'default' | 'info' | 'warning' | 
 export const roleLabels: Record<string, string> = {
   ADMIN: 'Administrador',
   AUDITOR: 'Auditor',
+  QUALITY: 'Calidad',
   VIEWER: 'Lectura',
 };
 
@@ -124,3 +125,23 @@ export function label(map: Record<string, string>, key: string | null | undefine
   if (!key) return '—';
   return map[key] ?? key;
 }
+
+export const traceActionLabels: Record<string, string> = {
+  CREATE: 'Alta',
+  UPDATE: 'Modificación',
+  DELETE: 'Baja',
+  TRANSITION: 'Cambio de estado',
+  UPLOAD: 'Subida',
+  GENERATE: 'Generación',
+};
+
+export const traceEntityLabels: Record<string, string> = {
+  AUDIT: 'Auditoría',
+  AUDIT_RESULT: 'Punto del checklist',
+  FINDING: 'No conformidad',
+  CORRECTIVE_ACTION: 'Acción correctiva',
+  ATTACHMENT: 'Adjunto',
+  DOCUMENT: 'Documento',
+  USER: 'Usuario',
+  FARM: 'Explotación',
+};

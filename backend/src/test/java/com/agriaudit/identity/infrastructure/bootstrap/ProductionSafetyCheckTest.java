@@ -13,22 +13,22 @@ class ProductionSafetyCheckTest {
     @Test
     void rechazaSecretosYCuentasDeDemostracion() {
         List<String> problems = problems("dev-only-secret-please-change-this-to-a-long-random-string-4f8a1",
-                "Admin123!", true);
+                "Admin123!", true, "dev-only-trace-hmac-key-change-me-in-production-0123456789abcdef");
 
-        assertThat(problems).hasSize(3);
+        assertThat(problems).hasSize(4);
     }
 
     @Test
     void rechazaUnSecretoCortoOUnaClaveDeAdminDebil() {
-        assertThat(problems("corto", "corta", false)).hasSize(2);
+        assertThat(problems("corto", "corta", false, STRONG_SECRET)).hasSize(2);
     }
 
     @Test
     void aceptaUnaConfiguracionPropia() {
-        assertThat(problems(STRONG_SECRET, "Una-clave-larga-y-propia-9", false)).isEmpty();
+        assertThat(problems(STRONG_SECRET, "Una-clave-larga-y-propia-9", false, STRONG_SECRET)).isEmpty();
     }
 
-    private static List<String> problems(String secret, String password, boolean demo) {
-        return ProductionSafetyCheck.problems(secret, password, demo);
+    private static List<String> problems(String secret, String password, boolean demo, String traceKey) {
+        return ProductionSafetyCheck.problems(secret, password, demo, traceKey);
     }
 }

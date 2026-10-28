@@ -10,10 +10,14 @@ import SummaryTab from '../audit/SummaryTab';
 import ChecklistTab from '../audit/ChecklistTab';
 import FindingsTab from '../audit/FindingsTab';
 import DocumentsTab from '../audit/DocumentsTab';
+import HistoryTab from '../audit/HistoryTab';
+import { useAuth } from '../auth/AuthContext';
 
 export default function AuditDetailPage() {
   const { id } = useParams();
   const auditId = Number(id);
+  const { hasRole } = useAuth();
+  const canSeeHistory = hasRole('ADMIN', 'QUALITY', 'AUDITOR');
   const [tab, setTab] = useState(0);
   // Las pestañas ya visitadas siguen montadas (solo ocultas): así el checklist no pierde los cambios sin
   // guardar al cambiar de pestaña, y las que nadie abre no cargan datos.
@@ -62,6 +66,7 @@ export default function AuditDetailPage() {
               <Tab label="Checklist" />
               <Tab label="Hallazgos y CAPA" />
               <Tab label="Documentos" />
+              {canSeeHistory && <Tab label="Historial" />}
             </Tabs>
 
             {locked && (
@@ -77,6 +82,7 @@ export default function AuditDetailPage() {
               <ChecklistTab key="checklist" auditId={auditId} standardCode={data.standardCode} locked={locked} />,
               <FindingsTab key="findings" auditId={auditId} standardCode={data.standardCode} locked={locked} />,
               <DocumentsTab key="documents" auditId={auditId} />,
+              canSeeHistory ? <HistoryTab key="history" auditId={auditId} /> : <Box key="history" />,
             ].map(
               (content, i) =>
                 visited.has(i) && (

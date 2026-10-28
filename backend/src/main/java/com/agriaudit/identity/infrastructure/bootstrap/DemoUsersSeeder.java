@@ -40,6 +40,7 @@ class DemoUsersSeeder implements CommandLineRunner {
         organizations.findOrganizationIdByName(orgName).or(organizations::anyOrganizationId).ifPresent(orgId -> {
             users.ensureUser(orgId, "ana.auditora@demo.test", "Ana Auditora", Role.AUDITOR, "Demo1234!");
             users.ensureUser(orgId, "carlos.lector@demo.test", "Carlos Lector", Role.VIEWER, "Demo1234!");
+            users.ensureUser(orgId, "lucia.calidad@demo.test", "Lucía Calidad", Role.QUALITY, "Demo1234!");
         });
     }
 }

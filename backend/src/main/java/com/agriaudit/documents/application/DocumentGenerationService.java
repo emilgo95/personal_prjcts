@@ -16,6 +16,11 @@ import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.documents.DocumentDtos.DocumentOptionDto;
 import com.agriaudit.documents.DocumentDtos.GeneratedDocumentDto;
 import com.agriaudit.storage.BlobStore;
+import com.agriaudit.trace.ChangeEntry;
+import com.agriaudit.trace.ChangeRecorder;
+import com.agriaudit.trace.Changes;
+import com.agriaudit.trace.TraceAction;
+import com.agriaudit.trace.TraceEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +53,7 @@ public class DocumentGenerationService implements DocumentLookup {
     private final BlobStore storage;
     private final DocumentModelAssembler assembler;
     private final AuditLookup auditService;
+    private final ChangeRecorder trace;
     private final List<DocumentRenderer> renderers;
 
     public DocumentGenerationService(DocumentTemplateRepository templates,
@@ -55,7 +61,9 @@ public class DocumentGenerationService implements DocumentLookup {
                                      BlobStore storage,
                                      DocumentModelAssembler assembler,
                                      AuditLookup auditService,
-                                     List<DocumentRenderer> renderers) {
+                                     List<DocumentRenderer> renderers,
+                                     ChangeRecorder trace) {
+        this.trace = trace;
         this.templates = templates;
         this.generatedDocuments = generatedDocuments;
         this.storage = storage;
@@ -103,7 +111,13 @@ public class DocumentGenerationService implements DocumentLookup {
         doc.setSha256(sha256(bytes));
         doc.setGeneratedBy(SecurityUtils.currentUsername());
         doc.setParams("{\"documentType\":\"" + type + "\",\"format\":\"" + format + "\"}");
-        return toDto(generatedDocuments.save(doc), audit.reference(), auditService.get(auditId).standardName());
+        GeneratedDocument saved = generatedDocuments.save(doc);
+        trace.record(new ChangeEntry(TraceEntity.DOCUMENT, saved.getId(), fileName, TraceEntity.AUDIT, auditId,
+                auditId, TraceAction.GENERATE, "Generó el documento «" + LABELS.getOrDefault(type, type.name())
+                + "» en " + format + " de la auditoría " + audit.reference(),
+                Changes.create().initial("file", "Fichero", fileName).initial("sha256", "Huella SHA-256",
+                        saved.getSha256()).list()));
+        return toDto(saved, audit.reference(), auditService.get(auditId).standardName());
     }
 
     @Transactional(readOnly = true)

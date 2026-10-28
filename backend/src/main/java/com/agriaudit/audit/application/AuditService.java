@@ -46,11 +46,13 @@ public class AuditService implements AuditLookup {
     private final ScoringService scoringService;
     private final AttachmentStore attachmentLookup;
     private final AuditReferenceSequence referenceSequences;
+    private final AuditTrace trace;
 
     public AuditService(AuditRepository audits, FarmDirectory farms,
                         CatalogLookup catalog, AuditItemResultRepository results,
                         FindingsCounter findings, ScoringService scoringService,
-                        AttachmentStore attachmentLookup, AuditReferenceSequence referenceSequences) {
+                        AttachmentStore attachmentLookup, AuditReferenceSequence referenceSequences,
+                        AuditTrace trace) {
         this.audits = audits;
         this.farms = farms;
         this.catalog = catalog;
@@ -59,6 +61,7 @@ public class AuditService implements AuditLookup {
         this.scoringService = scoringService;
         this.attachmentLookup = attachmentLookup;
         this.referenceSequences = referenceSequences;
+        this.trace = trace;
     }
 
     @Override
@@ -158,7 +161,9 @@ public class AuditService implements AuditLookup {
         audit.setStatus(AuditStatus.DRAFT);
         audit.setCreatedByUserId(SecurityUtils.currentUserId());
         applyRequest(audit, request, farm);
-        return toDetail(audits.save(audit));
+        Audit saved = audits.save(audit);
+        trace.created(saved, farm.legalName(), standard.name());
+        return toDetail(saved);
     }
 
     public AuditDetailDto update(Long id, AuditRequest request) {
@@ -168,10 +173,13 @@ public class AuditService implements AuditLookup {
             throw new BadRequestException("No se puede cambiar el estándar de una auditoría existente");
         }
         FarmDto farm = requireFarm(audit.getOrganizationId(), request.farmId());
+        AuditTrace.AuditSnap before = AuditTrace.snapshot(audit);
         audit.setFarmId(farm.id());
         audit.setAuditType(parseType(request.auditType()));
         applyRequest(audit, request, farm);
-        return toDetail(audits.save(audit));
+        Audit saved = audits.save(audit);
+        trace.updated(before, saved);
+        return toDetail(saved);
     }
 
     /**
@@ -190,6 +198,12 @@ public class AuditService implements AuditLookup {
         AuditStatus current = audit.getStatus();
         if (current == target) {
             throw new BadRequestException("La auditoría ya está en estado «" + stateLabel(target) + "».");
+        }
+        if (SecurityUtils.currentPrincipal().getRole() == com.agriaudit.identity.Role.QUALITY
+                && target != AuditStatus.SUBMITTED && target != AuditStatus.CLOSED
+                && !(current == AuditStatus.SUBMITTED && target == AuditStatus.CLOSING)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "El responsable de calidad solo puede enviar, cerrar o reabrir (desde Enviada) una auditoría");
         }
         if (!allowedTransitions(current).contains(target)) {
             throw new ConflictException("No se puede pasar de «" + stateLabel(current) + "» a «"
@@ -216,7 +230,9 @@ public class AuditService implements AuditLookup {
             }
         }
         audit.setStatus(target);
-        return toDetail(audits.save(audit));
+        Audit saved = audits.save(audit);
+        trace.transitioned(saved, current, target);
+        return toDetail(saved);
     }
 
     /** Un punto evaluado como no conforme debe tener su no conformidad registrada antes de enviar la auditoría. */
@@ -244,7 +260,7 @@ public class AuditService implements AuditLookup {
         };
     }
 
-    private static String stateLabel(AuditStatus s) {
+    static String stateLabel(AuditStatus s) {
         return switch (s) {
             case DRAFT -> "Borrador";
             case IN_PROGRESS -> "En curso";
@@ -317,16 +333,23 @@ public class AuditService implements AuditLookup {
                 r.setControlPointId(cp.id());
                 existing.put(cp.id(), r);
             }
+            AuditTrace.ResultSnap before = r.getId() == null ? null
+                    : new AuditTrace.ResultSnap(r.getCompliance(), r.getEvidenceNotes(), r.getAuditorComment());
             r.setCompliance(compliance);
             r.setEvidenceNotes(u.evidenceNotes());
             r.setAuditorComment(u.auditorComment());
             r.setAssessedAt(Instant.now());
             r.setAssessedBy(user);
             results.save(r);
+            String pointRef = catalog.findControlPoint(u.controlPointId()).map(ControlPointView::ref)
+                    .orElse(String.valueOf(u.controlPointId()));
+            trace.resultChanged(audit, pointRef, before,
+                    new AuditTrace.ResultSnap(compliance, u.evidenceNotes(), u.auditorComment()));
         }
         if (audit.getStatus() == AuditStatus.DRAFT) {
             audit.setStatus(AuditStatus.IN_PROGRESS);
             audits.save(audit);
+            trace.transitioned(audit, AuditStatus.DRAFT, AuditStatus.IN_PROGRESS);
         }
         return getResults(id);
     }

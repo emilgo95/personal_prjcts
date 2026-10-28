@@ -28,7 +28,7 @@ export default function DocumentsTab({ auditId }: { auditId: number }) {
   const queryClient = useQueryClient();
   const { notify } = useToast();
   const { hasRole } = useAuth();
-  const canGenerate = hasRole('ADMIN', 'AUDITOR');
+  const canGenerate = hasRole('ADMIN', 'AUDITOR', 'QUALITY');
 
   const options = useQuery({
     queryKey: ['audit', auditId, 'doc-options'],

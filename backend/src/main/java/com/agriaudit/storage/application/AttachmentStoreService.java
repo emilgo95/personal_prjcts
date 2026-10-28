@@ -109,6 +109,7 @@ public class AttachmentStoreService implements AttachmentStore {
         deletionGuards.orderedStream().forEach(g -> g.checkCanDelete(type, a.getEntityId()));
         blobs.delete(a.getStorageKey());
         attachments.delete(a);
+        deletionGuards.orderedStream().forEach(g -> g.afterDelete(type, a.getEntityId(), a.getFileName()));
     }
 
     private Attachment require(Long organizationId, Long attachmentId) {

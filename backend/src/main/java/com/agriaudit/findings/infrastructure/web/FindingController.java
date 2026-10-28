@@ -68,4 +68,17 @@ public class FindingController {
                                        @PathVariable Long caId) {
         findingService.deleteCorrectiveAction(auditId, findingId, caId);
     }
+
+    @PostMapping("/{findingId}/corrective-actions/{caId}/verify")
+    @PreAuthorize("hasAnyRole('ADMIN','QUALITY')")
+    public CorrectiveActionDto verifyCorrectiveAction(@PathVariable Long auditId, @PathVariable Long findingId,
+                                                      @PathVariable Long caId) {
+        return findingService.verifyCorrectiveAction(auditId, findingId, caId);
+    }
+
+    @PostMapping("/{findingId}/close")
+    @PreAuthorize("hasAnyRole('ADMIN','QUALITY')")
+    public FindingDto close(@PathVariable Long auditId, @PathVariable Long findingId) {
+        return findingService.closeFinding(auditId, findingId);
+    }
 }

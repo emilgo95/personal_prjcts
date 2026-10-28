@@ -13,6 +13,7 @@ public class AppUserPrincipal implements UserDetails {
     private final Long id;
     private final Long organizationId;
     private final String email;
+    private final String fullName;
     private final String passwordHash;
     private final Role role;
     private final boolean active;
@@ -21,6 +22,7 @@ public class AppUserPrincipal implements UserDetails {
         this.id = user.getId();
         this.organizationId = user.getOrganization().getId();
         this.email = user.getEmail();
+        this.fullName = user.getFullName();
         this.passwordHash = user.getPasswordHash();
         this.role = user.getRole();
         this.active = user.isActive();
@@ -29,6 +31,7 @@ public class AppUserPrincipal implements UserDetails {
     public Long getId() { return id; }
     public Long getOrganizationId() { return organizationId; }
     public Role getRole() { return role; }
+    public String getFullName() { return fullName; }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

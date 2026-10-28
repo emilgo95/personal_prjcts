@@ -1,6 +1,7 @@
 package com.agriaudit.findings.application;
 
 import com.agriaudit.common.BadRequestException;
+import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.common.ConflictException;
 import com.agriaudit.common.NotFoundException;
 import com.agriaudit.audit.AuditLookup;
@@ -35,16 +36,19 @@ public class FindingService implements FindingLookup {
     private final AuditLookup audits;
     private final AttachmentStore attachmentLookup;
     private final FindingReferenceSequence referenceSequences;
+    private final FindingTrace trace;
 
     public FindingService(FindingRepository findings, CorrectiveActionRepository correctiveActions,
                           CatalogLookup catalog, AuditLookup audits,
-                          AttachmentStore attachmentLookup, FindingReferenceSequence referenceSequences) {
+                          AttachmentStore attachmentLookup, FindingReferenceSequence referenceSequences,
+                          FindingTrace trace) {
         this.findings = findings;
         this.correctiveActions = correctiveActions;
         this.catalog = catalog;
         this.audits = audits;
         this.attachmentLookup = attachmentLookup;
         this.referenceSequences = referenceSequences;
+        this.trace = trace;
     }
 
     @Transactional(readOnly = true)
@@ -61,17 +65,22 @@ public class FindingService implements FindingLookup {
         applyRequest(finding, request);
         validateManualStatus(finding, null, List.of());
         finding.setReference(nextReference(auditId));
-        return toDto(findings.save(finding));
+        Finding saved = findings.save(finding);
+        trace.created(saved);
+        return toDto(saved);
     }
 
     public FindingDto update(Long auditId, Long findingId, FindingRequest request) {
         AuditRef audit = requireEditableAudit(auditId);
         Finding finding = requireFinding(auditId, findingId);
         FindingStatus previous = finding.getStatus();
+        FindingTrace.FindingSnap before = FindingTrace.snapshot(finding);
         applyControlPoint(finding, request.controlPointId(), audit);
         applyRequest(finding, request);
         validateManualStatus(finding, previous, correctiveActions.findByFindingIdOrderByIdAsc(finding.getId()));
-        return toDto(findings.save(finding));
+        Finding saved = findings.save(finding);
+        trace.updated(before, saved);
+        return toDto(saved);
     }
 
     public void delete(Long auditId, Long findingId) {
@@ -79,6 +88,7 @@ public class FindingService implements FindingLookup {
         Finding finding = requireFinding(auditId, findingId);
         attachmentLookup.deleteByEntity(AttachmentEntityType.FINDING, finding.getId());
         findings.delete(finding);
+        trace.deleted(finding);
     }
 
     public CorrectiveActionDto addCorrectiveAction(Long auditId, Long findingId, CorrectiveActionRequest request) {
@@ -88,6 +98,7 @@ public class FindingService implements FindingLookup {
         ca.setFindingId(finding.getId());
         applyCa(ca, request);
         CorrectiveAction saved = correctiveActions.save(ca);
+        trace.actionCreated(finding, saved);
         syncFindingStatus(finding);
         return toDto(saved);
     }
@@ -99,8 +110,10 @@ public class FindingService implements FindingLookup {
         CorrectiveAction ca = correctiveActions.findById(caId)
                 .filter(x -> x.getFindingId().equals(finding.getId()))
                 .orElseThrow(() -> new NotFoundException("Acción correctiva no encontrada: " + caId));
+        FindingTrace.CaSnap before = FindingTrace.snapshot(ca);
         applyCa(ca, request);
         CorrectiveAction saved = correctiveActions.save(ca);
+        trace.actionUpdated(finding, before, saved);
         syncFindingStatus(finding);
         return toDto(saved);
     }
@@ -112,7 +125,47 @@ public class FindingService implements FindingLookup {
                 .filter(x -> x.getFindingId().equals(finding.getId()))
                 .orElseThrow(() -> new NotFoundException("Acción correctiva no encontrada: " + caId));
         correctiveActions.delete(ca);
+        trace.actionDeleted(finding, ca);
         syncFindingStatus(finding);
+    }
+
+    /** Verifica una acción correctiva (responsable de calidad): queda verificada y, si eran todas, la NC se cierra. */
+    public CorrectiveActionDto verifyCorrectiveAction(Long auditId, Long findingId, Long caId) {
+        requireEditableAudit(auditId);
+        Finding finding = requireFinding(auditId, findingId);
+        CorrectiveAction ca = correctiveActions.findById(caId)
+                .filter(x -> x.getFindingId().equals(finding.getId()))
+                .orElseThrow(() -> new NotFoundException("Acción correctiva no encontrada: " + caId));
+        if (ca.getStatus() == CorrectiveActionStatus.VERIFIED) {
+            throw new ConflictException("La acción correctiva ya está verificada.");
+        }
+        FindingTrace.CaSnap before = FindingTrace.snapshot(ca);
+        ca.setStatus(CorrectiveActionStatus.VERIFIED);
+        ca.setVerifiedBy(SecurityUtils.currentPrincipal().getFullName() != null
+                ? SecurityUtils.currentPrincipal().getFullName() : SecurityUtils.currentUsername());
+        if (ca.getCompletedDate() == null) {
+            ca.setCompletedDate(LocalDate.now());
+        }
+        CorrectiveAction saved = correctiveActions.save(ca);
+        trace.actionUpdated(finding, before, saved);
+        syncFindingStatus(finding);
+        return toDto(saved);
+    }
+
+    /** Cierra la NC (responsable de calidad) con las mismas condiciones que un cierre manual. */
+    public FindingDto closeFinding(Long auditId, Long findingId) {
+        requireEditableAudit(auditId);
+        Finding finding = requireFinding(auditId, findingId);
+        FindingStatus previous = finding.getStatus();
+        if (previous == FindingStatus.CLOSED) {
+            throw new ConflictException("La no conformidad ya está cerrada.");
+        }
+        FindingTrace.FindingSnap before = FindingTrace.snapshot(finding);
+        finding.setStatus(FindingStatus.CLOSED);
+        validateManualStatus(finding, previous, correctiveActions.findByFindingIdOrderByIdAsc(finding.getId()));
+        Finding saved = findings.save(finding);
+        trace.updated(before, saved);
+        return toDto(saved);
     }
 
     // ---- FindingLookup ----
@@ -291,6 +344,7 @@ public class FindingService implements FindingLookup {
         if (next != current) {
             finding.setStatus(next);
             findings.save(finding);
+            trace.statusFollowedActions(finding, current);
         }
     }
 

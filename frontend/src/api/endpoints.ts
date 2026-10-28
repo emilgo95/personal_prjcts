@@ -5,6 +5,10 @@ import type {
   AuditItemResult,
   AuditRequest,
   AuditPage,
+  IntegrityReport,
+  TracePage,
+  TraceQuery,
+  TraceSeal,
   AuditSummary,
   CorrectiveAction,
   CorrectiveActionRequest,
@@ -78,6 +82,37 @@ export const FindingApi = {
       .then((r) => r.data),
   deleteAction: (auditId: number, findingId: number, caId: number) =>
     api.delete(`/audits/${auditId}/findings/${findingId}/corrective-actions/${caId}`).then(() => undefined),
+  verifyAction: (auditId: number, findingId: number, caId: number) =>
+    api
+      .post<CorrectiveAction>(`/audits/${auditId}/findings/${findingId}/corrective-actions/${caId}/verify`)
+      .then((r) => r.data),
+  close: (auditId: number, findingId: number) =>
+    api.post<Finding>(`/audits/${auditId}/findings/${findingId}/close`).then((r) => r.data),
+};
+
+const clean = (q: TraceQuery) => Object.fromEntries(Object.entries(q).filter(([, v]) => v !== '' && v != null));
+
+/** Descarga un fichero protegido (con el token) y lo guarda desde el navegador. */
+async function saveBlob(url: string, params: object, fileName: string) {
+  const res = await api.get<Blob>(url, { params, responseType: 'blob' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(res.data);
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+export const TraceApi = {
+  search: (q: TraceQuery) => api.get<TracePage>('/trace', { params: clean(q) }).then((r) => r.data),
+  forAudit: (auditId: number, page = 0, size = 50) =>
+    api.get<TracePage>(`/audits/${auditId}/trace`, { params: { page, size } }).then((r) => r.data),
+  forFinding: (auditId: number, findingId: number) =>
+    api.get<TracePage>(`/audits/${auditId}/findings/${findingId}/trace`, { params: { size: 100 } }).then((r) => r.data),
+  verify: () => api.get<IntegrityReport>('/trace/verify').then((r) => r.data),
+  seals: () => api.get<TraceSeal[]>('/trace/seals').then((r) => r.data),
+  sealNow: () => api.post<TraceSeal & { message?: string }>('/trace/seals').then((r) => r.data),
+  downloadCsv: (q: TraceQuery) => saveBlob('/trace/export', clean({ ...q, page: undefined, size: undefined }), 'trazabilidad.csv'),
+  downloadSeals: () => saveBlob('/trace/seals/export', {}, 'sellos-trazabilidad.txt'),
 };
 
 export const AttachmentApi = {

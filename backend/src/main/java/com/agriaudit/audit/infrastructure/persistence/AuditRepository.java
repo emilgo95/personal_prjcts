@@ -14,6 +14,12 @@ public interface AuditRepository extends JpaRepository<Audit, Long> {
     List<Audit> findByOrganizationIdOrderByCreatedAtDesc(Long organizationId);
     Optional<Audit> findByIdAndOrganizationId(Long id, Long organizationId);
     long countByOrganizationId(Long organizationId);
+
+    /** Ids de las auditorías que creó el usuario o donde figura (por nombre) como auditor líder. */
+    @Query("select a.id from Audit a where a.organizationId = :orgId and (a.createdByUserId = :userId "
+            + "or (:fullName is not null and lower(a.leadAuditor) = lower(:fullName)))")
+    List<Long> findIdsOwnedBy(@Param("orgId") Long organizationId, @Param("userId") Long userId,
+                              @Param("fullName") String fullName);
     Page<Audit> findByOrganizationId(Long organizationId, Pageable pageable);
     List<Audit> findByIdInAndOrganizationId(java.util.Collection<Long> ids, Long organizationId);
 

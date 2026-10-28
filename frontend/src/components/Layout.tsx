@@ -21,6 +21,7 @@ import FactCheckIcon from '@mui/icons-material/FactCheck';
 import DescriptionIcon from '@mui/icons-material/Description';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import GavelIcon from '@mui/icons-material/Gavel';
+import HistoryIcon from '@mui/icons-material/History';
 import GroupIcon from '@mui/icons-material/Group';
 import { useAuth } from '../auth/AuthContext';
 import { label, roleLabels } from '../utils/labels';
@@ -32,6 +33,8 @@ interface NavItem {
   label: string;
   icon: ReactNode;
   adminOnly?: boolean;
+  /** Si se indica, solo estos roles ven la entrada. */
+  roles?: Array<'ADMIN' | 'AUDITOR' | 'QUALITY' | 'VIEWER'>;
 }
 
 const navItems: NavItem[] = [
@@ -41,6 +44,7 @@ const navItems: NavItem[] = [
   { to: '/documents', label: 'Centro de documentos', icon: <DescriptionIcon /> },
   { to: '/standards', label: 'Estándares', icon: <MenuBookIcon /> },
   { to: '/regulations', label: 'Normativa', icon: <GavelIcon /> },
+  { to: '/trace', label: 'Trazabilidad', icon: <HistoryIcon />, roles: ['ADMIN', 'QUALITY'] },
   { to: '/users', label: 'Usuarios', icon: <GroupIcon />, adminOnly: true },
 ];
 
@@ -61,6 +65,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <List component="div">
         {navItems
           .filter((item) => !item.adminOnly || hasRole('ADMIN'))
+          .filter((item) => !item.roles || hasRole(...item.roles))
           .map((item) => {
             const selected =
               item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);

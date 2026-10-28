@@ -40,7 +40,7 @@ public class DocumentController {
 
     @PostMapping("/audits/{auditId}/documents/generate")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('ADMIN','AUDITOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','AUDITOR','QUALITY')")
     public GeneratedDocumentDto generate(@PathVariable Long auditId, @Valid @RequestBody GenerateRequest request) {
         return documents.generate(auditId, request.documentType(), request.format());
     }

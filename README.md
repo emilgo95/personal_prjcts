@@ -10,6 +10,11 @@ y **generar los documentos en el formato esperado por cada estándar del sector*
 - **OCR:** Python 3.12 · FastAPI · RapidOCR (servicio aparte); el frontal se sirve con nginx 1.31
 - **Generación de documentos:** PDF (Thymeleaf + openhtmltopdf), DOCX y XLSX (Apache POI)
 
+**Trazabilidad de cambios:** registro inalterable de quién cambió qué y cuándo (con el valor anterior y el nuevo de
+cada campo), encadenado con SHA-512 y firmado con HMAC-SHA-512, con verificación de integridad, sellos diarios
+descargables y exportación a CSV. Visible para administración y calidad (toda la organización) y para cada auditora
+(sus auditorías). Roles: administrador, auditor, **calidad** y lector.
+
 Estándares implementados end-to-end: **GLOBALG.A.P. IFA v6**, **GRASP v2** y **SMETA 6.1 (4 pilares)**.
 El esquema soporta añadir más estándares como datos semilla.
 

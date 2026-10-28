@@ -13,4 +13,8 @@ public interface AttachmentDeletionGuard {
      * @throws com.agriaudit.common.ConflictException si la entidad está congelada (p. ej. auditoría cerrada)
      */
     void checkCanDelete(AttachmentEntityType type, Long entityId);
+
+    /** Se llama tras borrar el adjunto: el módulo dueño de la entidad puede dejar constancia (traza). */
+    default void afterDelete(AttachmentEntityType type, Long entityId, String fileName) {
+    }
 }

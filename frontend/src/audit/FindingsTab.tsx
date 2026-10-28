@@ -20,7 +20,9 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import { AttachmentApi, AuditApi, FindingApi } from '../api/endpoints';
+import { AttachmentApi, AuditApi, FindingApi, TraceApi } from '../api/endpoints';
+import TraceTimeline from '../components/TraceTimeline';
+import { useAuth } from '../auth/AuthContext';
 import type { CorrectiveAction, CorrectiveActionRequest, Finding, FindingRequest } from '../api/types';
 import QueryBoundary from '../components/QueryBoundary';
 import AttachmentPanel from '../components/AttachmentPanel';
@@ -36,7 +38,6 @@ import {
   findingStatusLabels,
   label,
 } from '../utils/labels';
-import { useAuth } from '../auth/AuthContext';
 
 const emptyFinding: FindingRequest = {
   controlPointId: null,
@@ -75,6 +76,7 @@ export default function FindingsTab({
   const { notify } = useToast();
   const { hasRole } = useAuth();
   const canEdit = hasRole('ADMIN', 'AUDITOR') && !locked;
+  const canVerify = hasRole('ADMIN', 'QUALITY') && !locked;
 
   const findings = useQuery({ queryKey: ['audit', auditId, 'findings'], queryFn: () => FindingApi.list(auditId) });
   const controls = useQuery({ queryKey: ['audit', auditId, 'results'], queryFn: () => AuditApi.results(auditId) });
@@ -136,6 +138,7 @@ export default function FindingsTab({
               finding={f}
               options={options}
               canEdit={canEdit}
+              canVerify={canVerify}
               onChanged={invalidate}
             />
           ))}
@@ -277,17 +280,36 @@ function FindingCard({
   finding,
   options,
   canEdit,
+  canVerify,
   onChanged,
 }: {
   auditId: number;
   finding: Finding;
   options: ControlOption[];
   canEdit: boolean;
+  canVerify: boolean;
   onChanged: () => void;
 }) {
   const { notify } = useToast();
   const [editing, setEditing] = useState(false);
   const [addingCa, setAddingCa] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const { hasRole } = useAuth();
+  const canSeeHistory = hasRole('ADMIN', 'QUALITY', 'AUDITOR');
+  const history = useQuery({
+    queryKey: ['audit', auditId, 'finding', finding.id, 'trace'],
+    queryFn: () => TraceApi.forFinding(auditId, finding.id),
+    enabled: historyOpen,
+  });
+
+  const closeFinding = useMutation({
+    mutationFn: () => FindingApi.close(auditId, finding.id),
+    onSuccess: () => {
+      notify('No conformidad cerrada', 'success');
+      onChanged();
+    },
+    onError: (e) => notify(extractErrorMessage(e), 'error'),
+  });
 
   const update = useMutation({
     mutationFn: (body: FindingRequest) => FindingApi.update(auditId, finding.id, body),
@@ -368,6 +390,11 @@ function FindingCard({
                   closed={finding.status === 'CLOSED' || finding.status === 'VERIFIED'}
                 />
               )}
+              {canVerify && finding.status !== 'CLOSED' && (
+                <Button size="small" variant="outlined" disabled={closeFinding.isPending} onClick={() => closeFinding.mutate()}>
+                  Cerrar NC
+                </Button>
+              )}
               {canEdit && (
                 <>
                   <IconButton size="small" onClick={() => setEditing(true)}>
@@ -433,6 +460,7 @@ function FindingCard({
                   findingId={finding.id}
                   action={a}
                   canEdit={canEdit}
+                  canVerify={canVerify}
                   onChanged={onChanged}
                 />
               ))}
@@ -460,6 +488,19 @@ function FindingCard({
             )}
           </AccordionDetails>
         </Accordion>
+
+        {canSeeHistory && (
+          <Accordion sx={{ mt: 1 }} disableGutters expanded={historyOpen} onChange={(_, v) => setHistoryOpen(v)}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="body2">Historial de cambios</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <QueryBoundary isLoading={history.isLoading} error={history.error}>
+                <TraceTimeline entries={history.data?.content ?? []} />
+              </QueryBoundary>
+            </AccordionDetails>
+          </Accordion>
+        )}
       </CardContent>
     </Card>
   );
@@ -472,12 +513,14 @@ function CorrectiveActionRow({
   findingId,
   action,
   canEdit,
+  canVerify,
   onChanged,
 }: {
   auditId: number;
   findingId: number;
   action: CorrectiveAction;
   canEdit: boolean;
+  canVerify: boolean;
   onChanged: () => void;
 }) {
   const { notify } = useToast();
@@ -489,6 +532,15 @@ function CorrectiveActionRow({
     onSuccess: () => {
       notify('Acción correctiva actualizada', 'success');
       setEditing(false);
+      onChanged();
+    },
+    onError: (e) => notify(extractErrorMessage(e), 'error'),
+  });
+
+  const verify = useMutation({
+    mutationFn: () => FindingApi.verifyAction(auditId, findingId, action.id),
+    onSuccess: () => {
+      notify('Acción correctiva verificada', 'success');
       onChanged();
     },
     onError: (e) => notify(extractErrorMessage(e), 'error'),
@@ -548,6 +600,11 @@ function CorrectiveActionRow({
             {label(caStatusLabels, action.status)}
           </Typography>
         </Box>
+        {canVerify && action.status !== 'VERIFIED' && (
+          <Button size="small" variant="outlined" disabled={verify.isPending} onClick={() => verify.mutate()}>
+            Verificar
+          </Button>
+        )}
         {canEdit && (
           <Stack direction="row">
             <IconButton size="small" onClick={() => setEditing(true)}>

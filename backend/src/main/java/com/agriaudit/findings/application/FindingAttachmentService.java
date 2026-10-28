@@ -4,6 +4,11 @@ import com.agriaudit.common.BadRequestException;
 import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import com.agriaudit.storage.AttachmentEntityType;
+import com.agriaudit.trace.ChangeEntry;
+import com.agriaudit.trace.ChangeRecorder;
+import com.agriaudit.trace.Changes;
+import com.agriaudit.trace.TraceAction;
+import com.agriaudit.trace.TraceEntity;
 import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.storage.AttachmentStore.NewAttachment;
 import org.springframework.stereotype.Service;
@@ -24,14 +29,18 @@ public class FindingAttachmentService {
 
     private final AttachmentStore attachments;
     private final FindingService findingService;
+    private final ChangeRecorder trace;
 
-    public FindingAttachmentService(AttachmentStore attachments, FindingService findingService) {
+    public FindingAttachmentService(AttachmentStore attachments, FindingService findingService,
+                                    ChangeRecorder trace) {
         this.attachments = attachments;
         this.findingService = findingService;
+        this.trace = trace;
     }
 
     public AttachmentDto uploadForFinding(Long auditId, Long findingId, MultipartFile file) {
-        Long id = findingService.requireEditableFinding(auditId, findingId).getId();
+        var finding = findingService.requireEditableFinding(auditId, findingId);
+        Long id = finding.getId();
         if (file == null) {
             throw new BadRequestException("El fichero está vacío");
         }
@@ -41,9 +50,14 @@ public class FindingAttachmentService {
         } catch (IOException e) {
             throw new UncheckedIOException("No se pudo leer el fichero subido", e);
         }
-        return attachments.store(new NewAttachment(SecurityUtils.currentOrganizationId(),
+        AttachmentDto stored = attachments.store(new NewAttachment(SecurityUtils.currentOrganizationId(),
                 SecurityUtils.currentUsername(), AttachmentEntityType.FINDING, id, file.getOriginalFilename(),
                 file.getContentType(), bytes));
+        trace.record(new ChangeEntry(TraceEntity.ATTACHMENT, stored.id(), stored.fileName(), TraceEntity.FINDING,
+                id, finding.getAuditId(), TraceAction.UPLOAD, "Subió el adjunto «" + stored.fileName()
+                + "» a la no conformidad " + finding.getReference(),
+                Changes.create().initial("file", "Fichero", stored.fileName()).list()));
+        return stored;
     }
 
     @Transactional(readOnly = true)

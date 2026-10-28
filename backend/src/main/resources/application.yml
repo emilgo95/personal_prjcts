@@ -58,6 +58,10 @@ agriaudit:
     email: ${ADMIN_EMAIL:admin@demo.test}
     password: ${ADMIN_PASSWORD:Admin123!}
     org-name: ${ADMIN_ORG_NAME:Organización Demo}
+  trace:
+    # Clave con la que se firman (HMAC-SHA-512) las huellas de la traza; debe estar fuera de la base de datos.
+    hmac-key: ${TRACE_HMAC_KEY:dev-only-trace-hmac-key-change-me-in-production-0123456789abcdef}
+    seal-cron: ${TRACE_SEAL_CRON:0 5 0 * * *}
   demo:
     seed: ${AGRIAUDIT_DEMO_SEED:true}
   ocr:

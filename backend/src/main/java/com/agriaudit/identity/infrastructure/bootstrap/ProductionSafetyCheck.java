@@ -20,16 +20,23 @@ public class ProductionSafetyCheck {
 
     public ProductionSafetyCheck(@Value("${agriaudit.jwt.secret}") String jwtSecret,
                                  @Value("${agriaudit.admin.password}") String adminPassword,
-                                 @Value("${agriaudit.demo.seed:true}") boolean demoSeed) {
-        List<String> problems = problems(jwtSecret, adminPassword, demoSeed);
+                                 @Value("${agriaudit.demo.seed:true}") boolean demoSeed,
+                                 @Value("${agriaudit.trace.hmac-key}") String traceKey) {
+        List<String> problems = problems(jwtSecret, adminPassword, demoSeed, traceKey);
         if (!problems.isEmpty()) {
             throw new IllegalStateException(
                     "Configuración insegura para producción: " + String.join("; ", problems));
         }
     }
 
-    static List<String> problems(String jwtSecret, String adminPassword, boolean demoSeed) {
+    static List<String> problems(String jwtSecret, String adminPassword, boolean demoSeed, String traceKey) {
         List<String> problems = new ArrayList<>();
+        String traceLower = traceKey == null ? "" : traceKey.toLowerCase();
+        if (traceKey == null || traceKey.length() < MIN_SECRET_LENGTH || traceLower.contains("dev-only")
+                || traceLower.contains("change-me")) {
+            problems.add("TRACE_HMAC_KEY debe ser una clave propia de al menos " + MIN_SECRET_LENGTH
+                    + " caracteres (firma la traza de cambios)");
+        }
         String lower = jwtSecret == null ? "" : jwtSecret.toLowerCase();
         if (jwtSecret == null || jwtSecret.length() < MIN_SECRET_LENGTH
                 || lower.contains("dev-only") || lower.contains("change-me") || lower.contains("change-this")) {

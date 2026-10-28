@@ -44,7 +44,7 @@ public class AuditController {
     }
 
     @PostMapping("/{id}/transition")
-    @PreAuthorize("hasAnyRole('ADMIN','AUDITOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','AUDITOR','QUALITY')")
     public AuditDetailDto transition(@PathVariable Long id, @Valid @RequestBody TransitionRequest request) {
         return auditService.transition(id, request.status());
     }

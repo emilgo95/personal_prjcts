@@ -11,6 +11,11 @@ import com.agriaudit.common.NotFoundException;
 import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.storage.AttachmentDtos.AttachmentDto;
 import com.agriaudit.storage.AttachmentEntityType;
+import com.agriaudit.trace.ChangeEntry;
+import com.agriaudit.trace.ChangeRecorder;
+import com.agriaudit.trace.Changes;
+import com.agriaudit.trace.TraceAction;
+import com.agriaudit.trace.TraceEntity;
 import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.storage.AttachmentStore.NewAttachment;
 import org.springframework.stereotype.Service;
@@ -33,9 +38,11 @@ public class AuditAttachmentService {
     private final AuditService auditService;
     private final AuditItemResultRepository results;
     private final CatalogLookup catalog;
+    private final ChangeRecorder trace;
 
     public AuditAttachmentService(AttachmentStore attachments, AuditService auditService,
-                                  AuditItemResultRepository results, CatalogLookup catalog) {
+                                  AuditItemResultRepository results, CatalogLookup catalog, ChangeRecorder trace) {
+        this.trace = trace;
         this.attachments = attachments;
         this.auditService = auditService;
         this.results = results;
@@ -44,12 +51,13 @@ public class AuditAttachmentService {
 
     public AttachmentDto uploadForAudit(Long auditId, MultipartFile file) {
         Audit audit = auditService.requireEditableAuditEntity(auditId);
-        return store(file, AttachmentEntityType.AUDIT, audit.getId());
+        return store(file, AttachmentEntityType.AUDIT, audit.getId(), audit.getId(), "la auditoría");
     }
 
     public AttachmentDto uploadForControlPoint(Long auditId, Long controlPointId, MultipartFile file) {
         AuditItemResult result = getOrCreateResult(auditId, controlPointId);
-        return store(file, AttachmentEntityType.AUDIT_ITEM_RESULT, result.getId());
+        return store(file, AttachmentEntityType.AUDIT_ITEM_RESULT, result.getId(), auditId,
+                "un punto de control");
     }
 
     @Transactional(readOnly = true)
@@ -66,7 +74,8 @@ public class AuditAttachmentService {
                 .orElse(List.of());
     }
 
-    private AttachmentDto store(MultipartFile file, AttachmentEntityType type, Long entityId) {
+    private AttachmentDto store(MultipartFile file, AttachmentEntityType type, Long entityId, Long auditId,
+                                String target) {
         if (file == null) {
             throw new BadRequestException("El fichero está vacío");
         }
@@ -76,9 +85,13 @@ public class AuditAttachmentService {
         } catch (IOException e) {
             throw new UncheckedIOException("No se pudo leer el fichero subido", e);
         }
-        return attachments.store(new NewAttachment(SecurityUtils.currentOrganizationId(),
+        AttachmentDto stored = attachments.store(new NewAttachment(SecurityUtils.currentOrganizationId(),
                 SecurityUtils.currentUsername(), type, entityId, file.getOriginalFilename(),
                 file.getContentType(), bytes));
+        trace.record(new ChangeEntry(TraceEntity.ATTACHMENT, stored.id(), stored.fileName(), TraceEntity.AUDIT,
+                auditId, auditId, TraceAction.UPLOAD, "Subió el adjunto «" + stored.fileName() + "» a " + target,
+                Changes.create().initial("file", "Fichero", stored.fileName()).list()));
+        return stored;
     }
 
     private AuditItemResult getOrCreateResult(Long auditId, Long controlPointId) {

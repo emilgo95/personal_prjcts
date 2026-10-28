@@ -2,7 +2,7 @@ export interface UserDto {
   id: number;
   email: string;
   fullName: string | null;
-  role: 'ADMIN' | 'AUDITOR' | 'VIEWER';
+  role: 'ADMIN' | 'AUDITOR' | 'QUALITY' | 'VIEWER';
   organizationId: number;
   organizationName: string;
   active: boolean;
@@ -96,6 +96,71 @@ export interface Farm {
 }
 
 export type FarmRequest = Omit<Farm, 'id'>;
+
+export interface FieldChange {
+  field: string;
+  label: string;
+  oldValue: string | null;
+  newValue: string | null;
+}
+
+export interface TraceEntry {
+  id: number;
+  seq: number;
+  occurredAt: string;
+  createdAt: string;
+  userId: number | null;
+  username: string;
+  userFullName: string | null;
+  userRole: string;
+  entityType: string;
+  entityId: number | null;
+  entityRef: string | null;
+  parentType: string | null;
+  parentId: number | null;
+  auditId: number | null;
+  action: string;
+  summary: string;
+  changes: FieldChange[];
+  prevHash: string;
+  hash: string;
+  signature: string;
+}
+
+export interface TracePage {
+  content: TraceEntry[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+export interface IntegrityReport {
+  ok: boolean;
+  entriesChecked: number;
+  sealsChecked: number;
+  firstBrokenSeq: number | null;
+  message: string;
+  verifiedAt: string;
+}
+
+export interface TraceSeal {
+  id: number;
+  sealedAt: string;
+  lastSeq: number;
+  lastHash: string;
+  signature: string;
+}
+
+export interface TraceQuery {
+  user?: string;
+  action?: string;
+  entityType?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  size?: number;
+}
 
 export interface AuditPage {
   content: AuditSummary[];

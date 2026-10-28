@@ -7,6 +7,12 @@ import com.agriaudit.fieldbook.FarmDtos.FarmDto;
 import com.agriaudit.fieldbook.FarmDtos.FarmRequest;
 import com.agriaudit.fieldbook.domain.Farm;
 import com.agriaudit.fieldbook.domain.FarmProfile;
+import com.agriaudit.trace.ChangeEntry;
+import com.agriaudit.trace.ChangeRecorder;
+import com.agriaudit.trace.Changes;
+import com.agriaudit.trace.TraceAction;
+import com.agriaudit.trace.TraceEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.agriaudit.fieldbook.port.FarmRepository;
 import com.agriaudit.identity.SecurityUtils;
 import org.springframework.stereotype.Service;
@@ -25,8 +31,10 @@ import java.util.stream.Collectors;
 public class FarmService implements FarmDirectory {
 
     private final FarmRepository farms;
+    private final ChangeRecorder trace;
 
-    public FarmService(FarmRepository farms) {
+    public FarmService(FarmRepository farms, ChangeRecorder trace) {
+        this.trace = trace;
         this.farms = farms;
     }
 
@@ -47,12 +55,23 @@ public class FarmService implements FarmDirectory {
     public FarmDto update(Long id, FarmRequest request) {
         Farm farm = require(id);
         requireUniqueRegistration(farm.organizationId(), request.registrationNumber(), farm.id());
+        FarmProfile before = farm.profile();
         farm.updateProfile(toProfile(request));
-        return toDto(farms.save(farm));
+        Farm saved = farms.save(farm);
+        Changes c = profileChanges(before, saved.profile());
+        if (!c.isEmpty()) {
+            trace.record(ChangeEntry.of(TraceEntity.FARM, saved.id(), saved.profile().legalName(), null,
+                    TraceAction.UPDATE, "Modificó la explotación «" + saved.profile().legalName() + "»", c.list()));
+        }
+        return toDto(saved);
     }
 
     public void delete(Long id) {
-        farms.delete(require(id));
+        Farm farm = require(id);
+        farms.delete(farm);
+        trace.record(ChangeEntry.of(TraceEntity.FARM, farm.id(), farm.profile().legalName(), null,
+                TraceAction.DELETE, "Eliminó la explotación «" + farm.profile().legalName() + "»",
+                Changes.create().track("legalName", "Razón social", farm.profile().legalName(), null).list()));
     }
 
     // ---- FarmDirectory ----
@@ -86,7 +105,37 @@ public class FarmService implements FarmDirectory {
     @Override
     public FarmDto registerFarm(Long organizationId, FarmRequest request) {
         requireUniqueRegistration(organizationId, request.registrationNumber(), null);
-        return toDto(farms.save(Farm.register(organizationId, toProfile(request))));
+        Farm saved = farms.save(Farm.register(organizationId, toProfile(request)));
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            trace.record(ChangeEntry.of(TraceEntity.FARM, saved.id(), saved.profile().legalName(), null,
+                    TraceAction.CREATE, "Creó la explotación «" + saved.profile().legalName() + "»",
+                    profileChanges(null, saved.profile()).list()));
+        }
+        return toDto(saved);
+    }
+
+    private static Changes profileChanges(FarmProfile before, FarmProfile after) {
+        FarmProfile b = before;
+        Changes c = Changes.create();
+        c.track("legalName", "Razón social", b == null ? null : b.legalName(), after.legalName())
+                .track("tradeName", "Nombre comercial", b == null ? null : b.tradeName(), after.tradeName())
+                .track("registrationNumber", "GGN / Nº de registro", b == null ? null : b.registrationNumber(),
+                        after.registrationNumber())
+                .track("address", "Dirección", b == null ? null : b.address(), after.address())
+                .track("city", "Localidad", b == null ? null : b.city(), after.city())
+                .track("region", "Región", b == null ? null : b.region(), after.region())
+                .track("country", "País", b == null ? null : b.country(), after.country())
+                .track("totalHectares", "Hectáreas", b == null ? null : b.totalHectares(), after.totalHectares())
+                .track("crops", "Cultivos", b == null ? null : b.crops(), after.crops())
+                .track("productionAreas", "Áreas de producción", b == null ? null : b.productionAreas(),
+                        after.productionAreas())
+                .track("contactName", "Contacto", b == null ? null : b.contactName(), after.contactName())
+                .track("contactEmail", "Email de contacto", b == null ? null : b.contactEmail(),
+                        after.contactEmail())
+                .track("contactPhone", "Teléfono de contacto", b == null ? null : b.contactPhone(),
+                        after.contactPhone())
+                .track("notes", "Notas", b == null ? null : b.notes(), after.notes());
+        return c;
     }
 
     // ---- helpers ----

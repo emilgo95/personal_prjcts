@@ -42,7 +42,14 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
   const queryClient = useQueryClient();
   const { notify } = useToast();
   const { hasRole } = useAuth();
-  const canEdit = hasRole('ADMIN', 'AUDITOR');
+  const canEdit = hasRole('ADMIN', 'AUDITOR', 'QUALITY');
+  // Calidad solo envía, cierra o reabre desde «Enviada»; el resto de pasos son del auditor o de administración.
+  const allowedTransitions =
+    hasRole('QUALITY') && !hasRole('ADMIN', 'AUDITOR')
+      ? audit.allowedTransitions.filter(
+          (t) => t === 'SUBMITTED' || t === 'CLOSED' || (audit.status === 'SUBMITTED' && t === 'CLOSING'),
+        )
+      : audit.allowedTransitions;
   const currentStep = statusFlow.indexOf(audit.status);
   const score = useQuery({ queryKey: ['audit', auditId, 'score'], queryFn: () => AuditApi.score(auditId) });
 
@@ -71,9 +78,9 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
               </Step>
             ))}
           </Stepper>
-          {canEdit && audit.allowedTransitions.length > 0 && (
+          {canEdit && allowedTransitions.length > 0 && (
             <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap", justifyContent: "center" }}>
-              {audit.allowedTransitions.map((next) => {
+              {allowedTransitions.map((next) => {
                 const forward = statusFlow.indexOf(next) > currentStep;
                 return (
                   <Button

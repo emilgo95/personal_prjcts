@@ -12,6 +12,11 @@ import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.identity.application.AuthDtos.UserDto;
 import com.agriaudit.identity.application.UserDtos.UserCreateRequest;
 import com.agriaudit.identity.application.UserDtos.UserUpdateRequest;
+import com.agriaudit.trace.ChangeEntry;
+import com.agriaudit.trace.ChangeRecorder;
+import com.agriaudit.trace.Changes;
+import com.agriaudit.trace.TraceAction;
+import com.agriaudit.trace.TraceEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,9 +30,11 @@ public class UserService {
     private final AppUserRepository users;
     private final OrganizationRepository organizations;
     private final PasswordEncoder passwordEncoder;
+    private final ChangeRecorder trace;
 
     public UserService(AppUserRepository users, OrganizationRepository organizations,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder, ChangeRecorder trace) {
+        this.trace = trace;
         this.users = users;
         this.organizations = organizations;
         this.passwordEncoder = passwordEncoder;
@@ -52,7 +59,13 @@ public class UserService {
         user.setRole(parseRole(request.role()));
         user.setActive(true);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
-        return toDto(users.save(user));
+        AppUser saved = users.save(user);
+        trace.record(ChangeEntry.of(TraceEntity.USER, saved.getId(), saved.getEmail(), null, TraceAction.CREATE,
+                "Creó el usuario " + saved.getEmail() + " con el rol «" + roleLabel(saved.getRole()) + "»",
+                Changes.create().initial("email", "Correo", saved.getEmail())
+                        .initial("fullName", "Nombre", saved.getFullName())
+                        .initial("role", "Rol", roleLabel(saved.getRole())).list()));
+        return toDto(saved);
     }
 
     public UserDto update(Long id, UserUpdateRequest request) {
@@ -62,13 +75,30 @@ public class UserService {
         Role newRole = parseRole(request.role());
         boolean newActive = request.active() != null ? request.active() : user.isActive();
         guardAdministrators(user, newRole, newActive);
+        String oldName = user.getFullName();
+        Role oldRole = user.getRole();
+        boolean oldActive = user.isActive();
         user.setFullName(request.fullName());
         user.setRole(newRole);
         user.setActive(newActive);
-        if (request.password() != null && !request.password().isBlank()) {
+        boolean passwordChanged = request.password() != null && !request.password().isBlank();
+        if (passwordChanged) {
             user.setPasswordHash(passwordEncoder.encode(request.password()));
         }
-        return toDto(users.save(user));
+        AppUser saved = users.save(user);
+        Changes c = Changes.create()
+                .track("fullName", "Nombre", oldName, saved.getFullName())
+                .track("role", "Rol", roleLabel(oldRole), roleLabel(saved.getRole()))
+                .track("active", "Estado", oldActive ? "Activo" : "Desactivado",
+                        saved.isActive() ? "Activo" : "Desactivado");
+        if (passwordChanged) {
+            c.track("password", "Contraseña", "(anterior)", "(restablecida)");
+        }
+        if (!c.isEmpty()) {
+            trace.record(ChangeEntry.of(TraceEntity.USER, saved.getId(), saved.getEmail(), null, TraceAction.UPDATE,
+                    "Modificó el usuario " + saved.getEmail(), c.list()));
+        }
+        return toDto(saved);
     }
 
     /**
@@ -90,6 +120,15 @@ public class UserService {
         if (activeAdmins <= 1) {
             throw new ConflictException("La organización debe conservar al menos un administrador activo.");
         }
+    }
+
+    private static String roleLabel(Role role) {
+        return switch (role) {
+            case ADMIN -> "Administrador";
+            case AUDITOR -> "Auditor";
+            case QUALITY -> "Calidad";
+            case VIEWER -> "Lector";
+        };
     }
 
     private Role parseRole(String value) {
