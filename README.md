@@ -3,9 +3,11 @@
 Aplicación para **gestionar la documentación de auditorías internacionales de empresas agrícolas**
 y **generar los documentos en el formato esperado por cada estándar del sector**.
 
-- **Backend:** Java 21 · Spring Boot 3.3 · Spring Security (JWT) · Flyway
+- **Backend:** Java 21 (LTS) · Spring Boot 4.1 (Spring Framework 7, Jackson 3) ·
+  Spring Modulith 2.1 · Spring Security (JWT) · Flyway
 - **Base de datos:** PostgreSQL 16
-- **Frontend:** React 18 · TypeScript · Vite · MUI · TanStack Query
+- **Frontend:** React 18 · TypeScript 7 · Vite 8 · MUI 9 · TanStack Query 5 · React Router 7 · Node 24 LTS
+- **OCR:** Python 3.12 · FastAPI · RapidOCR (servicio aparte); el frontal se sirve con nginx 1.31
 - **Generación de documentos:** PDF (Thymeleaf + openhtmltopdf), DOCX y XLSX (Apache POI)
 
 Estándares implementados end-to-end: **GLOBALG.A.P. IFA v6**, **GRASP v2** y **SMETA 6.1 (4 pilares)**.

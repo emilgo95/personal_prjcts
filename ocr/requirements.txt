@@ -1,8 +1,8 @@
-fastapi==0.115.5
-uvicorn[standard]==0.32.1
-python-multipart==0.0.31
+fastapi==0.161.1
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
 rapidocr-onnxruntime==1.3.24
-opencv-python-headless==4.10.0.84
+opencv-python-headless==4.11.0.86
 numpy==1.26.4
 pypdfium2==5.14.0
 Pillow==13.0.0
