@@ -7,7 +7,7 @@ COPY src ./src
 RUN mvn -q -B clean package -DskipTests
 
 # ---------- Runtime stage ----------
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 RUN apk add --no-cache wget && addgroup -S app && adduser -S app -G app
 COPY --from=build /build/target/agriaudit-backend.jar app.jar
