@@ -130,24 +130,28 @@ export const TraceApi = {
 };
 
 export const AttachmentApi = {
-  uploadForControlPoint: (auditId: number, controlPointId: number, file: File) => {
+  uploadForControlPoint: (auditId: number, controlPointId: number, file: File, personalData = false) => {
     const form = new FormData();
     form.append('file', file);
+    if (personalData) form.append('containsPersonalData', 'true');
     return api
       .post<Attachment>(`/audits/${auditId}/results/${controlPointId}/attachments`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then((r) => r.data);
   },
-  uploadForFinding: (auditId: number, findingId: number, file: File) => {
+  uploadForFinding: (auditId: number, findingId: number, file: File, personalData = false) => {
     const form = new FormData();
     form.append('file', file);
+    if (personalData) form.append('containsPersonalData', 'true');
     return api
       .post<Attachment>(`/audits/${auditId}/findings/${findingId}/attachments`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then((r) => r.data);
   },
+  markPersonalData: (id: number, containsPersonalData: boolean) =>
+    api.put<Attachment>(`/attachments/${id}/personal-data`, { containsPersonalData }).then((r) => r.data),
   remove: (id: number) => api.delete(`/attachments/${id}`).then(() => undefined),
   download: (id: number) =>
     api.get(`/attachments/${id}/download`, { responseType: 'blob' }).then((r) => r.data as Blob),

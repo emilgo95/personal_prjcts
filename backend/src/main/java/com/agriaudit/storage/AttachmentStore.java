@@ -30,7 +30,16 @@ public interface AttachmentStore {
     /** Contenido del adjunto de la organización; {@code NotFoundException} si no existe o es ajeno. */
     byte[] content(Long organizationId, Long attachmentId);
 
+    /** Cambia la marca «contiene datos personales»; solo administración, calidad o quien lo subió. */
+    AttachmentDto markPersonalData(Long organizationId, Long attachmentId, boolean containsPersonalData);
+
     record NewAttachment(Long organizationId, String uploadedBy, AttachmentEntityType entityType, Long entityId,
-                         String fileName, String declaredContentType, byte[] content) {
+                         String fileName, String declaredContentType, byte[] content,
+                         boolean containsPersonalData) {
+
+        public NewAttachment(Long organizationId, String uploadedBy, AttachmentEntityType entityType, Long entityId,
+                             String fileName, String declaredContentType, byte[] content) {
+            this(organizationId, uploadedBy, entityType, entityId, fileName, declaredContentType, content, false);
+        }
     }
 }

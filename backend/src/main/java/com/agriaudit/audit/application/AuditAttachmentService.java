@@ -49,15 +49,16 @@ public class AuditAttachmentService {
         this.catalog = catalog;
     }
 
-    public AttachmentDto uploadForAudit(Long auditId, MultipartFile file) {
+    public AttachmentDto uploadForAudit(Long auditId, MultipartFile file, boolean personalData) {
         Audit audit = auditService.requireEditableAuditEntity(auditId);
-        return store(file, AttachmentEntityType.AUDIT, audit.getId(), audit.getId(), "la auditoría");
+        return store(file, AttachmentEntityType.AUDIT, audit.getId(), audit.getId(), "la auditoría", personalData);
     }
 
-    public AttachmentDto uploadForControlPoint(Long auditId, Long controlPointId, MultipartFile file) {
+    public AttachmentDto uploadForControlPoint(Long auditId, Long controlPointId, MultipartFile file,
+                                               boolean personalData) {
         AuditItemResult result = getOrCreateResult(auditId, controlPointId);
         return store(file, AttachmentEntityType.AUDIT_ITEM_RESULT, result.getId(), auditId,
-                "un punto de control");
+                "un punto de control", personalData);
     }
 
     @Transactional(readOnly = true)
@@ -75,7 +76,7 @@ public class AuditAttachmentService {
     }
 
     private AttachmentDto store(MultipartFile file, AttachmentEntityType type, Long entityId, Long auditId,
-                                String target) {
+                                String target, boolean personalData) {
         if (file == null) {
             throw new BadRequestException("El fichero está vacío");
         }
@@ -87,10 +88,11 @@ public class AuditAttachmentService {
         }
         AttachmentDto stored = attachments.store(new NewAttachment(SecurityUtils.currentOrganizationId(),
                 SecurityUtils.currentUsername(), type, entityId, file.getOriginalFilename(),
-                file.getContentType(), bytes));
+                file.getContentType(), bytes, personalData));
         trace.record(new ChangeEntry(TraceEntity.ATTACHMENT, stored.id(), stored.fileName(), TraceEntity.AUDIT,
                 auditId, auditId, TraceAction.UPLOAD, "Subió el adjunto «" + stored.fileName() + "» a " + target,
-                Changes.create().initial("file", "Fichero", stored.fileName()).list()));
+                Changes.create().initial("file", "Fichero", stored.fileName())
+                        .initial("containsPersonalData", "Contiene datos personales", personalData ? "Sí" : null).list()));
         return stored;
     }
 

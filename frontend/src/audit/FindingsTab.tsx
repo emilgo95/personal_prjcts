@@ -418,10 +418,11 @@ function FindingCard({
           <AttachmentPanel
             attachments={finding.attachments}
             canEdit={canEdit}
-            onUpload={(file) =>
-              AttachmentApi.uploadForFinding(auditId, finding.id, file).then(() => onChanged())
+            onUpload={(file, personalData) =>
+              AttachmentApi.uploadForFinding(auditId, finding.id, file, personalData).then(() => onChanged())
             }
             onDelete={(id) => AttachmentApi.remove(id).then(() => onChanged())}
+            onMarkPersonalData={(id, value) => AttachmentApi.markPersonalData(id, value).then(() => onChanged())}
             analyze={
               canEdit
                 ? {

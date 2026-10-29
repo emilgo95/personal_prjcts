@@ -40,6 +40,15 @@ public class AttachmentFileController {
                 .body(new ByteArrayResource(data));
     }
 
+    public record PersonalDataRequest(boolean containsPersonalData) {
+    }
+
+    /** Marca o desmarca «contiene datos personales»; el servicio exige ser administración, calidad o quien lo subió. */
+    @PutMapping("/{id}/personal-data")
+    public AttachmentDto markPersonalData(@PathVariable Long id, @RequestBody PersonalDataRequest request) {
+        return attachments.markPersonalData(SecurityUtils.currentOrganizationId(), id, request.containsPersonalData());
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAnyRole('ADMIN','AUDITOR')")

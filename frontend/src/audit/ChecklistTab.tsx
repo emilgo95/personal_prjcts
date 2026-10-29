@@ -278,12 +278,15 @@ export default function ChecklistTab({
                             attachments={item.attachments}
                             canEdit={!readOnly}
                             compact
-                            onUpload={(file) =>
-                              AttachmentApi.uploadForControlPoint(auditId, item.controlPointId, file).then(
+                            onUpload={(file, personalData) =>
+                              AttachmentApi.uploadForControlPoint(auditId, item.controlPointId, file, personalData).then(
                                 () => refreshResults(),
                               )
                             }
                             onDelete={(id) => AttachmentApi.remove(id).then(() => refreshResults())}
+                            onMarkPersonalData={(id, value) =>
+                              AttachmentApi.markPersonalData(id, value).then(() => refreshResults())
+                            }
                             analyze={
                               readOnly
                                 ? undefined

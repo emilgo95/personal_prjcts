@@ -274,6 +274,8 @@ export interface Attachment {
   uploadedBy: string | null;
   uploadedAt: string;
   image: boolean;
+  /** Solo la reciben administración, calidad y quien lo subió; para el resto es null. */
+  containsPersonalData: boolean | null;
 }
 
 export interface AuditItemResult {

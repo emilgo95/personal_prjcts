@@ -38,7 +38,7 @@ public class FindingAttachmentService {
         this.trace = trace;
     }
 
-    public AttachmentDto uploadForFinding(Long auditId, Long findingId, MultipartFile file) {
+    public AttachmentDto uploadForFinding(Long auditId, Long findingId, MultipartFile file, boolean personalData) {
         var finding = findingService.requireEditableFinding(auditId, findingId);
         Long id = finding.getId();
         if (file == null) {
@@ -52,11 +52,12 @@ public class FindingAttachmentService {
         }
         AttachmentDto stored = attachments.store(new NewAttachment(SecurityUtils.currentOrganizationId(),
                 SecurityUtils.currentUsername(), AttachmentEntityType.FINDING, id, file.getOriginalFilename(),
-                file.getContentType(), bytes));
+                file.getContentType(), bytes, personalData));
         trace.record(new ChangeEntry(TraceEntity.ATTACHMENT, stored.id(), stored.fileName(), TraceEntity.FINDING,
                 id, finding.getAuditId(), TraceAction.UPLOAD, "Subió el adjunto «" + stored.fileName()
                 + "» a la no conformidad " + finding.getReference(),
-                Changes.create().initial("file", "Fichero", stored.fileName()).list()));
+                Changes.create().initial("file", "Fichero", stored.fileName())
+                        .initial("containsPersonalData", "Contiene datos personales", personalData ? "Sí" : null).list()));
         return stored;
     }
 

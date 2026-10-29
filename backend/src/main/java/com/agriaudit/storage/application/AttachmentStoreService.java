@@ -9,7 +9,17 @@ import com.agriaudit.storage.AttachmentStore;
 import com.agriaudit.storage.BlobStore;
 import com.agriaudit.storage.infrastructure.persistence.Attachment;
 import com.agriaudit.storage.infrastructure.persistence.AttachmentRepository;
+import com.agriaudit.identity.AppUserPrincipal;
+import com.agriaudit.identity.Role;
+import com.agriaudit.trace.ChangeEntry;
+import com.agriaudit.trace.ChangeRecorder;
+import com.agriaudit.trace.Changes;
+import com.agriaudit.trace.TraceAction;
+import com.agriaudit.trace.TraceEntity;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,9 +41,11 @@ public class AttachmentStoreService implements AttachmentStore {
     private final AttachmentRepository attachments;
     private final BlobStore blobs;
     private final ObjectProvider<AttachmentDeletionGuard> deletionGuards;
+    private final ChangeRecorder trace;
 
     public AttachmentStoreService(AttachmentRepository attachments, BlobStore blobs,
-                                  ObjectProvider<AttachmentDeletionGuard> deletionGuards) {
+                                  ObjectProvider<AttachmentDeletionGuard> deletionGuards, ChangeRecorder trace) {
+        this.trace = trace;
         this.attachments = attachments;
         this.blobs = blobs;
         // Se resuelven al borrar, no al arrancar: los guardianes dependen de módulos que a su vez usan este servicio.
@@ -66,6 +78,7 @@ public class AttachmentStoreService implements AttachmentStore {
         a.setSizeBytes((long) bytes.length);
         a.setStorageKey(key);
         a.setUploadedBy(cmd.uploadedBy());
+        a.setContainsPersonalData(cmd.containsPersonalData());
         return toDto(attachments.save(a));
     }
 
@@ -102,6 +115,24 @@ public class AttachmentStoreService implements AttachmentStore {
         return blobs.load(require(organizationId, attachmentId).getStorageKey());
     }
 
+    @Override
+    public AttachmentDto markPersonalData(Long organizationId, Long attachmentId, boolean containsPersonalData) {
+        Attachment a = require(organizationId, attachmentId);
+        if (!canSeeMark(a)) {
+            throw new AccessDeniedException(
+                    "Solo administración, calidad o quien subió el adjunto pueden cambiar esta marca");
+        }
+        if (a.isContainsPersonalData() != containsPersonalData) {
+            a.setContainsPersonalData(containsPersonalData);
+            trace.record(ChangeEntry.of(TraceEntity.ATTACHMENT, a.getId(), a.getFileName(), null, TraceAction.UPDATE,
+                    (containsPersonalData ? "Marcó" : "Quitó la marca de") + " «contiene datos personales» en el adjunto «"
+                            + a.getFileName() + "»",
+                    Changes.create().track("containsPersonalData", "Contiene datos personales",
+                            containsPersonalData ? "No" : "Sí", containsPersonalData ? "Sí" : "No").list()));
+        }
+        return toDto(a);
+    }
+
     /** Borra metadatos y contenido de un adjunto de la organización. */
     public void delete(Long organizationId, Long attachmentId) {
         Attachment a = require(organizationId, attachmentId);
@@ -120,7 +151,18 @@ public class AttachmentStoreService implements AttachmentStore {
     static AttachmentDto toDto(Attachment a) {
         boolean image = a.getContentType() != null && a.getContentType().startsWith("image/");
         return new AttachmentDto(a.getId(), a.getEntityType(), a.getEntityId(), a.getFileName(),
-                a.getContentType(), a.getSizeBytes(), a.getUploadedBy(), a.getUploadedAt(), image);
+                a.getContentType(), a.getSizeBytes(), a.getUploadedBy(), a.getUploadedAt(), image,
+                canSeeMark(a) ? a.isContainsPersonalData() : null);
+    }
+
+    /** Administración, calidad y quien subió el adjunto ven (y cambian) la marca de datos personales. */
+    private static boolean canSeeMark(Attachment a) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (!(auth != null && auth.getPrincipal() instanceof AppUserPrincipal p)) {
+            return false;
+        }
+        return p.getRole() == Role.ADMIN || p.getRole() == Role.QUALITY
+                || (a.getUploadedBy() != null && a.getUploadedBy().equals(p.getUsername()));
     }
 
     /**

@@ -32,7 +32,7 @@ class StorageDataContributor implements OrganizationDataContributor {
     public void contribute(Long organizationId, ExportSink sink) {
         List<Map<String, Object>> rows = jdbc.queryForList(
                 "SELECT id, entity_type, entity_id, file_name, content_type, size_bytes, uploaded_by, uploaded_at, "
-                        + "storage_key FROM storage.attachments WHERE organization_id = ? ORDER BY id", organizationId);
+                        + "contains_personal_data, storage_key FROM storage.attachments WHERE organization_id = ? ORDER BY id", organizationId);
         sink.json("datos/adjuntos.json", rows);
         for (Map<String, Object> r : rows) {
             try {

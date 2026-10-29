@@ -31,7 +31,7 @@ class AttachmentStoreServiceTest {
     void setUp() {
         repository = mock(AttachmentRepository.class);
         blobs = mock(BlobStore.class);
-        service = new AttachmentStoreService(repository, blobs, new org.springframework.beans.factory.support.DefaultListableBeanFactory().getBeanProvider(com.agriaudit.storage.AttachmentDeletionGuard.class));
+        service = new AttachmentStoreService(repository, blobs, new org.springframework.beans.factory.support.DefaultListableBeanFactory().getBeanProvider(com.agriaudit.storage.AttachmentDeletionGuard.class), mock(com.agriaudit.trace.ChangeRecorder.class));
         when(blobs.store(any(), anyString(), eq("attachments"))).thenReturn("attachments/2026/k");
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }

@@ -141,7 +141,14 @@ class PrivacyIntegrationTest {
     }
 
     private ResponseEntity<JsonNode> uploadPng(String token, String path) {
+        return uploadPng(token, path, false);
+    }
+
+    private ResponseEntity<JsonNode> uploadPng(String token, String path, boolean personalData) {
         LinkedMultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        if (personalData) {
+            parts.add("containsPersonalData", "true");
+        }
         parts.add("file", new ByteArrayResource(PNG) {
             @Override
             public String getFilename() {
@@ -396,5 +403,44 @@ class PrivacyIntegrationTest {
         assertThat(trace.toString()).contains("Exportó todos los datos de la organización");
         List<String> unused = new ArrayList<>(files.keySet());
         assertThat(unused).isNotEmpty();
+    }
+
+    @Test
+    void personalDataMarkOnAttachmentsIsVisibleOnlyToAdminQualityAndUploader() {
+        Person ana = person("AUDITOR", "Ana Adjuntos " + unique());
+        Person otherAuditor = person("AUDITOR", "Otro Auditor " + unique());
+        Person quality = person("QUALITY", "Calidad Adjuntos " + unique());
+        long farm = id(call(ana.token(), HttpMethod.POST, "/api/farms", Map.of("legalName", "Finca " + unique())));
+        long audit = id(call(ana.token(), HttpMethod.POST, "/api/audits", Map.of("farmId", farm,
+                "standardCode", "GLOBALGAP_IFA_V6", "auditType", "INTERNAL", "leadAuditor", ana.fullName())));
+
+        ResponseEntity<JsonNode> up = uploadPng(ana.token(), "/api/audits/" + audit + "/attachments", true);
+        assertThat(up.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        long attachment = up.getBody().get("id").asLong();
+        assertThat(up.getBody().get("containsPersonalData").asBoolean()).isTrue();
+        long plain = id(uploadPng(ana.token(), "/api/audits/" + audit + "/attachments"));
+
+        // Administración, calidad y quien lo subió ven la marca; el resto no ve nada (ni sí ni no).
+        for (String token : List.of(admin, quality.token(), ana.token())) {
+            JsonNode list = call(token, HttpMethod.GET, "/api/audits/" + audit + "/attachments", null).getBody();
+            assertThat(list.get(0).get("containsPersonalData").asBoolean()).isTrue();
+            assertThat(list.get(1).get("containsPersonalData").asBoolean()).isFalse();
+        }
+        JsonNode hidden = call(otherAuditor.token(), HttpMethod.GET, "/api/audits/" + audit + "/attachments", null)
+                .getBody();
+        assertThat(hidden.get(0).get("containsPersonalData").isNull()).isTrue();
+        assertThat(hidden.get(1).get("containsPersonalData").isNull()).isTrue();
+
+        // Quien no puede verla tampoco puede cambiarla.
+        assertThat(call(otherAuditor.token(), HttpMethod.PUT, "/api/attachments/" + attachment + "/personal-data",
+                Map.of("containsPersonalData", false)).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        // Calidad la quita y queda en la traza.
+        ResponseEntity<JsonNode> cleared = call(quality.token(), HttpMethod.PUT,
+                "/api/attachments/" + attachment + "/personal-data", Map.of("containsPersonalData", false));
+        assertThat(cleared.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(cleared.getBody().get("containsPersonalData").asBoolean()).isFalse();
+        assertThat(call(admin, HttpMethod.GET, "/api/trace?entityType=ATTACHMENT&size=50", null).getBody()
+                .get("content").toString()).contains("contiene datos personales");
+        assertThat(plain).isNotEqualTo(attachment);
     }
 }

@@ -37,6 +37,9 @@ public class Attachment {
     @Column(name = "uploaded_by")
     private String uploadedBy;
 
+    @Column(name = "contains_personal_data", nullable = false)
+    private boolean containsPersonalData;
+
     @CreationTimestamp
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private Instant uploadedAt;
@@ -60,4 +63,6 @@ public class Attachment {
     public String getUploadedBy() { return uploadedBy; }
     public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }
     public Instant getUploadedAt() { return uploadedAt; }
+    public boolean isContainsPersonalData() { return containsPersonalData; }
+    public void setContainsPersonalData(boolean containsPersonalData) { this.containsPersonalData = containsPersonalData; }
 }

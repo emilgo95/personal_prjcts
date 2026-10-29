@@ -20,6 +20,8 @@ personales no se copian al historial). El administrador puede **bloquear los dat
 su nombre y correo dejan de verse en toda la aplicación, se reservan y se destruyen automáticamente al vencer el plazo
 de conservación, configurable por organización (`AGRIAUDIT_BLOCKED_RETENTION_MONTHS`). También puede **exportar todos
 los datos de la organización** en un ZIP (pantalla Privacidad).
+Las evidencias adjuntas se pueden marcar como «contienen datos personales» (con aviso al subirlas); la marca solo la
+ven administración, calidad y quien las subió.
 
 **Listados propios:** cada organización importa los listados de su estándar desde Excel o CSV (plantilla
 descargable, validación fila a fila y previsualización); son privados de la organización, las versiones nuevas no

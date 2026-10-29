@@ -16,6 +16,11 @@ public final class AttachmentDtos {
             Long sizeBytes,
             String uploadedBy,
             Instant uploadedAt,
-            boolean image) {
+            boolean image,
+            /**
+             * Marca «contiene datos personales». Solo la ven administración, calidad y quien subió el adjunto;
+             * para el resto es {@code null} (no se informa, ni en un sentido ni en otro).
+             */
+            Boolean containsPersonalData) {
     }
 }

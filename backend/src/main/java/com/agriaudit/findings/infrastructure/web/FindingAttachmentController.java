@@ -29,7 +29,9 @@ public class FindingAttachmentController {
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('ADMIN','AUDITOR')")
     public AttachmentDto uploadForFinding(@PathVariable Long auditId, @PathVariable Long findingId,
-                                          @RequestParam("file") MultipartFile file) {
-        return attachments.uploadForFinding(auditId, findingId, file);
+                                          @RequestParam("file") MultipartFile file,
+                                          @RequestParam(value = "containsPersonalData", defaultValue = "false")
+                                          boolean personalData) {
+        return attachments.uploadForFinding(auditId, findingId, file, personalData);
     }
 }

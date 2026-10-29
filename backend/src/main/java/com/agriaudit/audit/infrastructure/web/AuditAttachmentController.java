@@ -28,8 +28,10 @@ public class AuditAttachmentController {
     @PostMapping(value = "/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('ADMIN','AUDITOR')")
-    public AttachmentDto uploadForAudit(@PathVariable Long auditId, @RequestParam("file") MultipartFile file) {
-        return attachments.uploadForAudit(auditId, file);
+    public AttachmentDto uploadForAudit(@PathVariable Long auditId, @RequestParam("file") MultipartFile file,
+                                        @RequestParam(value = "containsPersonalData", defaultValue = "false")
+                                        boolean personalData) {
+        return attachments.uploadForAudit(auditId, file, personalData);
     }
 
     @GetMapping("/results/{controlPointId}/attachments")
@@ -41,7 +43,9 @@ public class AuditAttachmentController {
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('ADMIN','AUDITOR')")
     public AttachmentDto uploadForControlPoint(@PathVariable Long auditId, @PathVariable Long controlPointId,
-                                               @RequestParam("file") MultipartFile file) {
-        return attachments.uploadForControlPoint(auditId, controlPointId, file);
+                                               @RequestParam("file") MultipartFile file,
+                                               @RequestParam(value = "containsPersonalData", defaultValue = "false")
+                                               boolean personalData) {
+        return attachments.uploadForControlPoint(auditId, controlPointId, file, personalData);
     }
 }

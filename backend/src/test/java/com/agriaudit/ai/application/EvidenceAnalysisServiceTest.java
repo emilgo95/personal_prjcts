@@ -47,7 +47,7 @@ class EvidenceAnalysisServiceTest {
                 new UsernamePasswordAuthenticationToken(principal, null, List.of()));
 
         AttachmentDto att = new AttachmentDto(9L, "AUDIT_ITEM_RESULT", 1L, "nota.jpg", "image/jpeg", 3L,
-                "ana@demo.test", null, true);
+                "ana@demo.test", null, true, null);
         when(attachments.find(1L, 9L)).thenReturn(Optional.of(att));
         when(attachments.content(1L, 9L)).thenReturn(new byte[]{1, 2, 3});
     }

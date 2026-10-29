@@ -61,9 +61,9 @@ public final class TestModels {
 
         Instant now = Instant.now();
         AttachmentDto photo = new AttachmentDto(500L, "AUDIT_ITEM_RESULT", 1L, "foto-parcela.png",
-                "image/png", 1234L, "ana", now, true);
+                "image/png", 1234L, "ana", now, true, null);
         AttachmentDto pdf = new AttachmentDto(501L, "FINDING", 1L, "analitica-agua.pdf",
-                "application/pdf", 45678L, "ana", now, false);
+                "application/pdf", 45678L, "ana", now, false, null);
 
         AuditItemResultDto r1 = new AuditItemResultDto(1L, 101L, "AF 2.1", "Trazabilidad del producto certificado",
                 "desc", "guía", "MAJOR_MUST", "ALL", "MGMT", "Gestión y trazabilidad",

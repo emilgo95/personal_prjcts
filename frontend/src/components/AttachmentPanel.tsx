@@ -1,9 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import { Box, Button, CircularProgress, IconButton, Link, Stack, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  FormControlLabel,
+  IconButton,
+  Link,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import { AttachmentApi } from '../api/endpoints';
 import type { Attachment, ComplianceValue, SuggestedFinding } from '../api/types';
 import { useToast } from '../utils/toast';
@@ -84,13 +97,16 @@ export default function AttachmentPanel({
   canEdit,
   onUpload,
   onDelete,
+  onMarkPersonalData,
   compact,
   analyze,
 }: {
   attachments: Attachment[];
   canEdit: boolean;
-  onUpload: (file: File) => Promise<unknown>;
+  onUpload: (file: File, containsPersonalData: boolean) => Promise<unknown>;
   onDelete: (id: number) => Promise<unknown>;
+  /** Cambia la marca de datos personales; si no se indica, la marca es solo de lectura. */
+  onMarkPersonalData?: (id: number, value: boolean) => Promise<unknown>;
   compact?: boolean;
   analyze?: AnalyzeContext;
 }) {
@@ -98,6 +114,7 @@ export default function AttachmentPanel({
   const features = useFeatures();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [personalData, setPersonalData] = useState(false);
   const [analyzing, setAnalyzing] = useState<Attachment | null>(null);
   const ocrEnabled = features.evidenceOcr && !!analyze;
   const canAnalyze = (a: Attachment) =>
@@ -108,9 +125,10 @@ export default function AttachmentPanel({
     setBusy(true);
     try {
       for (const file of Array.from(files)) {
-        await onUpload(file);
+        await onUpload(file, personalData);
       }
       notify('Evidencia subida', 'success');
+      setPersonalData(false);
     } catch (e) {
       notify(extractErrorMessage(e), 'error');
     } finally {
@@ -139,6 +157,40 @@ export default function AttachmentPanel({
       notify(extractErrorMessage(e), 'error');
     }
   };
+
+  const toggleMark = async (att: Attachment) => {
+    if (!onMarkPersonalData) return;
+    try {
+      await onMarkPersonalData(att.id, !att.containsPersonalData);
+      notify(att.containsPersonalData ? 'Marca de datos personales quitada' : 'Marcada como con datos personales', 'success');
+    } catch (e) {
+      notify(extractErrorMessage(e), 'error');
+    }
+  };
+
+  // La marca solo llega a administración, calidad y a quien subió el adjunto; para el resto es null y no se muestra.
+  const personalMark = (a: Attachment) =>
+    a.containsPersonalData === null || a.containsPersonalData === undefined ? null : (
+      <Tooltip
+        title={
+          a.containsPersonalData
+            ? 'Contiene datos personales (visible solo para administración, calidad y quien lo subió)'
+            : 'Sin marca de datos personales'
+        }
+      >
+        <span>
+          <Chip
+            size="small"
+            icon={<PersonOutlineIcon />}
+            label={a.containsPersonalData ? 'Datos personales' : 'Sin marca'}
+            color={a.containsPersonalData ? 'warning' : 'default'}
+            variant={a.containsPersonalData ? 'filled' : 'outlined'}
+            onClick={onMarkPersonalData ? () => toggleMark(a) : undefined}
+            sx={{ height: 20, fontSize: 11 }}
+          />
+        </span>
+      </Tooltip>
+    );
 
   const images = attachments.filter((a) => a.image);
   const files = attachments.filter((a) => !a.image);
@@ -189,12 +241,32 @@ export default function AttachmentPanel({
           </>
         )}
       </Stack>
+      {canEdit && (
+        <>
+          <FormControlLabel
+            sx={{ mt: 0.5, mb: -0.5 }}
+            control={
+              <Checkbox size="small" checked={personalData} onChange={(e) => setPersonalData(e.target.checked)} />
+            }
+            label={
+              <Typography variant="caption">
+                La evidencia que voy a subir contiene datos personales (personas identificables, nombres, DNI…)
+              </Typography>
+            }
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+            Aviso: suba solo lo necesario como prueba y evite fotografiar a personas o documentos de identidad si no es
+            imprescindible. La marca solo la ven administración, calidad y quien la sube.
+          </Typography>
+        </>
+      )}
 
       {images.length > 0 && (
         <Stack direction="row" spacing={1} useFlexGap sx={{ mt: 0.5, flexWrap: "wrap" }}>
           {images.map((a) => (
             <Box key={a.id} sx={{ position: 'relative' }}>
               <ImageThumb id={a.id} name={a.fileName} />
+              {personalMark(a) && <Box sx={{ mt: 0.5 }}>{personalMark(a)}</Box>}
               {canEdit && (
                 <IconButton
                   size="small"
@@ -249,6 +321,7 @@ export default function AttachmentPanel({
               <Typography variant="caption" color="text.secondary">
                 {humanSize(a.sizeBytes)}
               </Typography>
+              {personalMark(a)}
               {canAnalyze(a) && (
                 <Button
                   size="small"
