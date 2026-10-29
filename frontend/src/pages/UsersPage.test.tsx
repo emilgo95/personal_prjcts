@@ -12,7 +12,8 @@ const users = [
 ];
 
 vi.mock('../api/endpoints', () => ({
-  UserApi: { list: () => Promise.resolve(users), create: vi.fn(), update: vi.fn(), block: vi.fn() },
+  UserApi: { list: () => Promise.resolve(users), create: vi.fn(), update: vi.fn(), block: vi.fn(), dataExport: vi.fn() },
+  downloadBlob: vi.fn(),
 }));
 vi.mock('../auth/AuthContext', () => ({
   useAuth: () => ({ user: users[0], hasRole: () => true }),
@@ -61,5 +62,15 @@ describe('UsersPage', () => {
     expect(buttons[0]).toBeDisabled(); // el propio administrador
     expect(buttons[2]).toBeEnabled(); // Ana
     expect(buttons[3]).toBeDisabled(); // ya bloqueado
+  });
+
+  it('permite exportar los datos de una persona salvo si están bloqueados', async () => {
+    renderPage();
+    await screen.findByText('Desactivado');
+
+    const buttons = screen.getAllByRole('button', { name: 'Exportar datos' });
+    expect(buttons).toHaveLength(4);
+    expect(buttons[2]).toBeEnabled(); // Ana
+    expect(buttons[3]).toBeDisabled(); // bloqueado: sus datos ya no se tratan
   });
 });

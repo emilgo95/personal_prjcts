@@ -51,4 +51,6 @@ public class BlockedIdentity {
     public Long getUserId() { return userId; }
     public Long getOrganizationId() { return organizationId; }
     public Instant getDestroyAfter() { return destroyAfter; }
+    public Instant getBlockedAt() { return blockedAt; }
+    public Long getBlockedBy() { return blockedBy; }
 }

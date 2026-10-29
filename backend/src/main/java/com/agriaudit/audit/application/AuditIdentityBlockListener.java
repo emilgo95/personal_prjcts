@@ -25,5 +25,17 @@ class AuditIdentityBlockListener implements IdentityBlockListener {
         jdbc.update("UPDATE audit.audit_item_results SET assessed_by = ? WHERE assessed_by IN (?, ?) "
                 + "AND audit_id IN (SELECT id FROM audit.audits WHERE organization_id = ?)",
                 placeholder, who[0], who[1], organizationId);
+        jdbc.update("UPDATE audit.audits SET lead_auditor = ? WHERE lead_auditor IN (?, ?) AND organization_id = ?",
+                placeholder, who[0], who[1], organizationId);
+        // El equipo auditor es texto libre: se sustituye el nombre o el correo como palabra completa.
+        for (Object key : who) {
+            String k = key == null ? "" : key.toString().trim();
+            if (k.length() >= 3) {
+                jdbc.update("UPDATE audit.audits SET audit_team = regexp_replace(audit_team, ?, ?, 'gi') "
+                        + "WHERE organization_id = ? AND audit_team ~* ?",
+                        AuditPersonText.wordPattern(new Object[]{k}), placeholder, organizationId,
+                        AuditPersonText.wordPattern(new Object[]{k}));
+            }
+        }
     }
 }

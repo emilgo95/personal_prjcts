@@ -11,6 +11,8 @@ public interface BlockedIdentityRepository extends JpaRepository<BlockedIdentity
 
     List<BlockedIdentity> findByDestroyAfterBefore(Instant instant);
 
+    List<BlockedIdentity> findByOrganizationIdOrderByDestroyAfterAsc(Long organizationId);
+
     long countByOrganizationId(Long organizationId);
 
     Optional<BlockedIdentity> findFirstByOrganizationIdOrderByDestroyAfterAsc(Long organizationId);

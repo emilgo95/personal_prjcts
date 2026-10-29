@@ -443,4 +443,150 @@ class PrivacyIntegrationTest {
                 .get("content").toString()).contains("contiene datos personales");
         assertThat(plain).isNotEqualTo(attachment);
     }
+
+    // ---------------------------------------------------------------- lista de bloqueados, exportación de una persona, inventario
+
+    private Map<String, byte[]> unzip(byte[] zip) throws IOException {
+        Map<String, byte[]> files = new HashMap<>();
+        try (ZipInputStream in = new ZipInputStream(new ByteArrayInputStream(zip))) {
+            for (ZipEntry e = in.getNextEntry(); e != null; e = in.getNextEntry()) {
+                files.put(e.getName(), in.readAllBytes());
+            }
+        }
+        return files;
+    }
+
+    private String text(Map<String, byte[]> files, String name) {
+        assertThat(files).containsKey(name);
+        return new String(files.get(name), java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private ResponseEntity<byte[]> personExport(String token, long userId) {
+        HttpHeaders h = new HttpHeaders();
+        h.setBearerAuth(token);
+        return rest.exchange("/api/users/" + userId + "/data-export", HttpMethod.GET, new HttpEntity<>(h), byte[].class);
+    }
+
+    @Test
+    void theBlockedUsersListShowsDatesButNeverNamesOrEmails() {
+        Person ana = person("AUDITOR", "Ana Listada " + unique());
+        assertThat(call(admin, HttpMethod.POST, "/api/users/" + ana.id() + "/block", null).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<JsonNode> list = call(admin, HttpMethod.GET, "/api/organization/privacy/blocked", null);
+        assertThat(list.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode row = null;
+        for (JsonNode r : list.getBody()) {
+            if (r.get("userId").asLong() == ana.id()) {
+                row = r;
+            }
+        }
+        assertThat(row).isNotNull();
+        assertThat(row.get("role").asText()).isEqualTo("AUDITOR");
+        assertThat(row.get("blockedAt").asText()).isNotBlank();
+        assertThat(row.get("destroyAfter").asText()).isNotBlank();
+        assertThat(row.get("blockedBy").asText()).isNotBlank();
+        assertThat(list.getBody().toString()).doesNotContain(ana.email()).doesNotContain(ana.fullName());
+
+        Person auditor = person("AUDITOR", "Auditor " + unique());
+        assertThat(call(auditor.token(), HttpMethod.GET, "/api/organization/privacy/blocked", null).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void blockingAlsoReplacesTheLeadAuditorTheTeamTextAndTheResponsiblePerson() {
+        String name = "Marta Sustituible " + unique();
+        Person marta = person("AUDITOR", name);
+        long farm = id(call(admin, HttpMethod.POST, "/api/farms", Map.of("legalName", "Finca " + unique())));
+        long audit = id(call(admin, HttpMethod.POST, "/api/audits", Map.of("farmId", farm,
+                "standardCode", "GLOBALGAP_IFA_V6", "auditType", "INTERNAL", "leadAuditor", name,
+                "auditTeam", "Pedro Otro, " + name + ", Lucía Más")));
+        long cp = call(admin, HttpMethod.GET, "/api/audits/" + audit + "/results", null).getBody().get(0)
+                .get("controlPointId").asLong();
+        call(admin, HttpMethod.PUT, "/api/audits/" + audit + "/results", Map.of("results",
+                List.of(Map.of("controlPointId", cp, "compliance", "NON_COMPLIANT"))));
+        long finding = id(call(admin, HttpMethod.POST, "/api/audits/" + audit + "/findings",
+                Map.of("controlPointId", cp, "classification", "MINOR", "title", "NC")));
+        id(call(admin, HttpMethod.POST, "/api/audits/" + audit + "/findings/" + finding + "/corrective-actions",
+                Map.of("rootCause", "Causa", "responsiblePerson", name)));
+
+        assertThat(call(admin, HttpMethod.POST, "/api/users/" + marta.id() + "/block", null).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        assertThat(jdbc.queryForObject("SELECT lead_auditor FROM audit.audits WHERE id = ?", String.class, audit))
+                .isEqualTo("Usuario bloqueado");
+        assertThat(jdbc.queryForObject("SELECT audit_team FROM audit.audits WHERE id = ?", String.class, audit))
+                .isEqualTo("Pedro Otro, Usuario bloqueado, Lucía Más");
+        assertThat(jdbc.queryForObject("SELECT responsible_person FROM findings.corrective_actions "
+                + "WHERE finding_id = ?", String.class, finding)).isEqualTo("Usuario bloqueado");
+    }
+
+    @Test
+    void thePersonDataExportContainsOnlyThatPersonsDataAndIsAdministrationOnly() throws IOException {
+        String name = "Ana Acceso " + unique();
+        Person ana = person("AUDITOR", name);
+        Person other = person("AUDITOR", "Otra Persona " + unique());
+        long farm = id(call(ana.token(), HttpMethod.POST, "/api/farms", Map.of("legalName", "Finca " + unique())));
+        long audit = id(call(ana.token(), HttpMethod.POST, "/api/audits", Map.of("farmId", farm,
+                "standardCode", "GLOBALGAP_IFA_V6", "auditType", "INTERNAL", "leadAuditor", name)));
+        long cp = call(ana.token(), HttpMethod.GET, "/api/audits/" + audit + "/results", null).getBody().get(0)
+                .get("controlPointId").asLong();
+        call(ana.token(), HttpMethod.PUT, "/api/audits/" + audit + "/results", Map.of("results",
+                List.of(Map.of("controlPointId", cp, "compliance", "COMPLIANT", "auditorComment", "comentario privado"))));
+        assertThat(uploadPng(ana.token(), "/api/audits/" + audit + "/attachments", true).getStatusCode()
+                .is2xxSuccessful()).isTrue();
+        // Algo hecho por otra persona: no debe aparecer.
+        long otherFarm = id(call(other.token(), HttpMethod.POST, "/api/farms", Map.of("legalName", "Finca de otra " + unique())));
+        long otherAudit = id(call(other.token(), HttpMethod.POST, "/api/audits", Map.of("farmId", otherFarm,
+                "standardCode", "GLOBALGAP_IFA_V6", "auditType", "INTERNAL", "leadAuditor", other.fullName())));
+
+        ResponseEntity<byte[]> zip = personExport(admin, ana.id());
+        assertThat(zip.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(zip.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION)).contains("datos-usuario-" + ana.id());
+        Map<String, byte[]> files = unzip(zip.getBody());
+
+        assertThat(files.keySet()).contains("LEEME.txt", "datos/cuenta-de-usuario.json",
+                "datos/auditorias-en-las-que-participa.json", "datos/puntos-evaluados.json",
+                "datos/adjuntos-subidos.json", "datos/documentos-generados.json", "datos/estandares-importados.json",
+                "datos/propuestas-ia-revisadas.json", "datos/acciones-correctivas.json", "datos/historial-de-cambios.json");
+        String account = text(files, "datos/cuenta-de-usuario.json");
+        assertThat(account).contains(ana.email()).contains(name).doesNotContain("password");
+        String audits = text(files, "datos/auditorias-en-las-que-participa.json");
+        assertThat(audits).contains("auditor jefe");
+        assertThat(audits).doesNotContain(other.fullName());
+        assertThat(text(files, "datos/puntos-evaluados.json")).contains("COMPLIANT").doesNotContain("comentario privado");
+        assertThat(text(files, "datos/adjuntos-subidos.json")).contains("foto.png");
+        assertThat(text(files, "datos/historial-de-cambios.json")).contains("Creó").doesNotContain(other.fullName());
+        assertThat(otherAudit).isNotEqualTo(audit);
+
+        // Solo administración, y queda constancia en la traza.
+        assertThat(personExport(ana.token(), ana.id()).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(call(admin, HttpMethod.GET, "/api/trace?entityType=USER&size=50", null).getBody().get("content")
+                .toString()).contains("derecho de acceso");
+        // Un usuario inexistente o con los datos bloqueados no se exporta.
+        assertThat(personExport(admin, 999_999L).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        call(admin, HttpMethod.POST, "/api/users/" + ana.id() + "/block", null);
+        assertThat(personExport(admin, ana.id()).getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void everyFieldListedInThePersonalDataInventoryReallyExistsInTheDatabase() {
+        ResponseEntity<JsonNode> inventory = call(admin, HttpMethod.GET, "/api/organization/privacy/inventory", null);
+        assertThat(inventory.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(inventory.getBody().size()).isGreaterThan(5);
+        for (JsonNode item : inventory.getBody()) {
+            assertThat(item.get("category").asText()).isNotBlank();
+            for (JsonNode field : item.get("fields")) {
+                String[] parts = field.asText().split("\\.");
+                assertThat(parts).as("campo %s", field).hasSize(3);
+                Integer found = jdbc.queryForObject("SELECT count(*) FROM information_schema.columns "
+                        + "WHERE table_schema = ? AND table_name = ? AND column_name = ?", Integer.class,
+                        parts[0], parts[1], parts[2]);
+                assertThat(found).as("columna %s", field).isEqualTo(1);
+            }
+        }
+        Person auditor = person("AUDITOR", "Auditor " + unique());
+        assertThat(call(auditor.token(), HttpMethod.GET, "/api/organization/privacy/inventory", null).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+    }
 }

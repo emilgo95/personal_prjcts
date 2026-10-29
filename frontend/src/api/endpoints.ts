@@ -30,6 +30,8 @@ import type {
   TokenResponse,
   UserDto,
   PrivacySettings,
+  BlockedUser,
+  PersonalDataItem,
 } from './types';
 
 export const AuthApi = {
@@ -199,12 +201,16 @@ export const UserApi = {
     body: { fullName?: string; role: string; active?: boolean; password?: string },
   ) => api.put<UserDto>(`/users/${id}`, body).then((r) => r.data),
   block: (id: number) => api.post<UserDto>(`/users/${id}/block`).then((r) => r.data),
+  dataExport: (id: number) =>
+    api.get(`/users/${id}/data-export`, { responseType: 'blob' }).then((r) => r.data as Blob),
 };
 
 export const PrivacyApi = {
   get: () => api.get<PrivacySettings>('/organization/privacy').then((r) => r.data),
   setRetention: (blockedRetentionMonths: number | null) =>
     api.put<PrivacySettings>('/organization/privacy', { blockedRetentionMonths }).then((r) => r.data),
+  blocked: () => api.get<BlockedUser[]>('/organization/privacy/blocked').then((r) => r.data),
+  inventory: () => api.get<PersonalDataItem[]>('/organization/privacy/inventory').then((r) => r.data),
   exportAll: () =>
     api.get('/organization/export', { responseType: 'blob' }).then((r) => r.data as Blob),
 };

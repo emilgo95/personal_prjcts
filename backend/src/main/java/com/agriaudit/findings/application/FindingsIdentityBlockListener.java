@@ -40,5 +40,7 @@ class FindingsIdentityBlockListener implements IdentityBlockListener {
         }
         jdbc.update("UPDATE findings.corrective_actions SET verified_by = ? WHERE verified_by IN (?, ?) "
                 + "AND finding_id IN (SELECT id FROM findings.findings WHERE audit_id IN (" + in + "))", args);
+        jdbc.update("UPDATE findings.corrective_actions SET responsible_person = ? WHERE responsible_person IN (?, ?) "
+                + "AND finding_id IN (SELECT id FROM findings.findings WHERE audit_id IN (" + in + "))", args);
     }
 }

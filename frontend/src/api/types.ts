@@ -19,6 +19,24 @@ export interface PrivacySettings {
   nextDestruction: string | null;
 }
 
+export interface BlockedUser {
+  userId: number;
+  role: string | null;
+  blockedAt: string;
+  destroyAfter: string;
+  blockedBy: string | null;
+}
+
+export interface PersonalDataItem {
+  category: string;
+  data: string;
+  whose: string;
+  fields: string[];
+  visibleTo: string;
+  retention: string;
+  notes: string | null;
+}
+
 export interface TokenResponse {
   accessToken: string;
   refreshToken: string;

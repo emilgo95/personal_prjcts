@@ -17,7 +17,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { UserApi } from '../api/endpoints';
+import { UserApi, downloadBlob } from '../api/endpoints';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
 import { useToast } from '../utils/toast';
@@ -65,6 +65,12 @@ export default function UsersPage() {
       notify('Datos del usuario bloqueados', 'success');
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
+    onError: (e) => notify(extractErrorMessage(e), 'error'),
+  });
+
+  const exportData = useMutation({
+    mutationFn: async (u: { id: number }) => ({ id: u.id, blob: await UserApi.dataExport(u.id) }),
+    onSuccess: ({ id, blob }) => downloadBlob(blob, `datos-usuario-${id}.zip`),
     onError: (e) => notify(extractErrorMessage(e), 'error'),
   });
 
@@ -205,6 +211,14 @@ export default function UsersPage() {
                           }}
                         >
                           Bloquear datos
+                        </Button>
+                        <Button
+                          size="small"
+                          disabled={u.blocked || exportData.isPending}
+                          title="Descarga lo que la aplicación guarda sobre esta persona (derecho de acceso)"
+                          onClick={() => exportData.mutate({ id: u.id })}
+                        >
+                          Exportar datos
                         </Button>
                       </Stack>
                     </TableCell>
