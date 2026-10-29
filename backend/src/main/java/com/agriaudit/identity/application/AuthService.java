@@ -83,6 +83,7 @@ public class AuthService {
                 user.getRole().name(),
                 user.getOrganization().getId(),
                 user.getOrganization().getName(),
-                user.isActive());
+                user.isActive(),
+                user.isBlocked());
     }
 }

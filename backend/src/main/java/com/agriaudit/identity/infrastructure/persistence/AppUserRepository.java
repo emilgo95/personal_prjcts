@@ -12,5 +12,11 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     boolean existsByEmailIgnoreCase(String email);
     List<AppUser> findByOrganizationIdOrderByEmailAsc(Long organizationId);
 
+    @org.springframework.data.jpa.repository.Query("select u.id from AppUser u where u.organization.id = :orgId and "
+            + "(lower(u.email) like lower(concat('%', :q, '%')) or lower(coalesce(u.fullName, '')) like "
+            + "lower(concat('%', :q, '%')))")
+    java.util.List<Long> findIdsMatching(@org.springframework.data.repository.query.Param("orgId") Long organizationId,
+                                         @org.springframework.data.repository.query.Param("q") String text);
+
     long countByOrganizationIdAndRoleAndActive(Long organizationId, Role role, boolean active);
 }

@@ -1,6 +1,7 @@
 package com.agriaudit.trace.application;
 
 import com.agriaudit.common.NotFoundException;
+import com.agriaudit.trace.ActorDirectory;
 import com.agriaudit.trace.ActorProvider;
 import com.agriaudit.trace.FieldChange;
 import com.agriaudit.trace.TraceActor;
@@ -17,6 +18,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -34,10 +36,12 @@ public class TraceQueryService {
     private final TraceRepository repository;
     private final ActorProvider actors;
     private final TraceAudience audience;
+    private final ActorDirectory directory;
     private final JsonMapper json;
 
     public TraceQueryService(TraceRepository repository, ActorProvider actors, TraceAudience audience,
-                             JsonMapper json) {
+                             ActorDirectory directory, JsonMapper json) {
+        this.directory = directory;
         this.repository = repository;
         this.actors = actors;
         this.audience = audience;
@@ -54,9 +58,10 @@ public class TraceQueryService {
         Set<Long> visible = visibleAudits(actor);
         int safeSize = Math.min(Math.max(size, 1), 200);
         int safePage = Math.max(page, 0);
-        long total = repository.count(actor.organizationId(), filter, visible, related);
-        List<TraceEntryDto> content = repository.search(actor.organizationId(), filter, visible, related,
-                safePage * safeSize, safeSize).stream().map(this::toDto).toList();
+        TraceFilter effective = resolveUser(actor.organizationId(), filter);
+        long total = repository.count(actor.organizationId(), effective, visible, related);
+        List<TraceEntryDto> content = toDtos(repository.search(actor.organizationId(), effective, visible, related,
+                safePage * safeSize, safeSize));
         return new TracePage(content, safePage, safeSize, total, (int) Math.ceil(total / (double) safeSize));
     }
 
@@ -74,18 +79,30 @@ public class TraceQueryService {
     public void export(TraceFilter filter, Consumer<TraceEntryDto> sink) {
         TraceActor actor = actors.current();
         Set<Long> visible = visibleAudits(actor);
+        TraceFilter effective = resolveUser(actor.organizationId(), filter);
         int page = 0;
         while (true) {
-            List<StoredEntry> batch = repository.search(actor.organizationId(), filter, visible, false,
+            List<StoredEntry> batch = repository.search(actor.organizationId(), effective, visible, false,
                     page * 500, 500);
             if (batch.isEmpty()) {
                 return;
             }
             List<StoredEntry> ordered = new ArrayList<>(batch);
             java.util.Collections.reverse(ordered);
-            ordered.forEach(e -> sink.accept(toDto(e)));
+            toDtos(ordered).forEach(sink);
             page++;
         }
+    }
+
+    /** El texto de usuario se busca en el directorio actual de usuarios (la traza solo guarda el código). */
+    private TraceFilter resolveUser(Long organizationId, TraceFilter f) {
+        String text = f.username();
+        if (text == null || text.isBlank()) {
+            return f;
+        }
+        boolean system = "sistema".contains(text.trim().toLowerCase());
+        return new TraceFilter(f.auditId(), f.entityType(), f.entityId(), f.action(), text, f.from(), f.to(),
+                directory.userIdsMatching(organizationId, text.trim()), system);
     }
 
     /** {@code null} = toda la organización; si no, las auditorías visibles. */
@@ -97,10 +114,27 @@ public class TraceQueryService {
         };
     }
 
-    private TraceEntryDto toDto(StoredEntry e) {
-        return new TraceEntryDto(e.id(), e.seq(), e.occurredAt(), e.createdAt(), e.userId(), e.username(),
-                e.userFullName(), e.userRole(), e.entityType(), e.entityId(), e.entityRef(), e.parentType(),
-                e.parentId(), e.auditId(), e.action(), e.summary(), json.readValue(e.changes(), CHANGES),
-                e.prevHash().trim(), e.hash().trim(), e.signature().trim());
+    /** Pasa las entradas a DTO buscando de una vez el nombre actual de cada usuario (los bloqueados salen ocultos). */
+    private List<TraceEntryDto> toDtos(List<StoredEntry> entries) {
+        Set<Long> ids = new java.util.HashSet<>();
+        entries.forEach(e -> {
+            if (e.userId() != null) {
+                ids.add(e.userId());
+            }
+        });
+        Map<Long, ActorDirectory.ActorName> names = ids.isEmpty() ? Map.of() : directory.names(ids);
+        return entries.stream().map(e -> toDto(e, e.userId() == null ? null : names.get(e.userId()))).toList();
+    }
+
+    private TraceEntryDto toDto(StoredEntry e, ActorDirectory.ActorName name) {
+        // El nombre sale siempre del directorio, nunca de lo guardado en la entrada (las anteriores al formato 2 lo
+        // conservan, pero no se muestra): así un usuario bloqueado queda oculto también en el historial antiguo.
+        String username = name != null ? name.username()
+                : e.userId() == null ? (e.username() != null ? e.username() : "sistema") : "usuario-" + e.userId();
+        String fullName = name != null ? name.fullName() : e.userId() == null ? "Sistema" : null;
+        return new TraceEntryDto(e.id(), e.seq(), e.occurredAt(), e.createdAt(), e.userId(), username, fullName,
+                e.userRole(), e.entityType(), e.entityId(), e.entityRef(), e.parentType(), e.parentId(), e.auditId(),
+                e.action(), e.summary(), json.readValue(e.changes(), CHANGES), e.prevHash().trim(), e.hash().trim(),
+                e.signature().trim());
     }
 }

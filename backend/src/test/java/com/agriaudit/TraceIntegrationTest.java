@@ -390,13 +390,13 @@ class TraceIntegrationTest {
             withoutImmutability(() -> jdbc.update("INSERT INTO trace.change_log (id, organization_id, seq, "
                             + "occurred_at, created_at, user_id, username, user_full_name, user_role, entity_type, "
                             + "entity_id, entity_ref, parent_type, parent_id, audit_id, action, summary, changes, "
-                            + "prev_hash, hash, signature) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                            + "prev_hash, hash, signature, format_version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     row.get("id"), row.get("organization_id"), row.get("seq"), row.get("occurred_at"),
                     row.get("created_at"), row.get("user_id"), row.get("username"), row.get("user_full_name"),
                     row.get("user_role"), row.get("entity_type"), row.get("entity_id"), row.get("entity_ref"),
                     row.get("parent_type"), row.get("parent_id"), row.get("audit_id"), row.get("action"),
                     row.get("summary"), row.get("changes"), row.get("prev_hash"), row.get("hash"),
-                    row.get("signature")));
+                    row.get("signature"), row.get("format_version")));
         }
         assertThat(call(admin, HttpMethod.GET, "/api/trace/verify", null).getBody().get("ok").asBoolean()).isTrue();
 
@@ -416,14 +416,15 @@ class TraceIntegrationTest {
 
     @Test
     void theCsvExportNeutralisesSpreadsheetFormulas() {
-        long audit = newAudit(admin, newFarm(admin), "=HYPERLINK(\"http://x\")");
-        assertThat(audit).isPositive();
+        long farm = id(call(admin, HttpMethod.POST, "/api/farms",
+                Map.of("legalName", "=HYPERLINK(\"http://x\")", "country", "España")));
+        assertThat(farm).isPositive();
 
         ResponseEntity<String> csv = rest.exchange("/api/trace/export", HttpMethod.GET,
                 new HttpEntity<>(null, json(admin)), String.class);
 
         assertThat(csv.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(csv.getBody()).contains("huella SHA-512").contains("Creó la auditoría");
+        assertThat(csv.getBody()).contains("huella SHA-512").contains("Creó la explotación");
         assertThat(csv.getBody()).doesNotContain("\"=HYPERLINK").contains("\"'=HYPERLINK");
     }
 }

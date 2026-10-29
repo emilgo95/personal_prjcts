@@ -15,6 +15,12 @@ cada campo), encadenado con SHA-512 y firmado con HMAC-SHA-512, con verificació
 descargables y exportación a CSV. Visible para administración y calidad (toda la organización) y para cada auditora
 (sus auditorías). Roles: administrador, auditor, **calidad** y lector.
 
+**Privacidad (RGPD):** el historial guarda solo el código de usuario (el nombre se resuelve aparte y los datos
+personales no se copian al historial). El administrador puede **bloquear los datos** de una persona (art. 32 LOPDGDD):
+su nombre y correo dejan de verse en toda la aplicación, se reservan y se destruyen automáticamente al vencer el plazo
+de conservación, configurable por organización (`AGRIAUDIT_BLOCKED_RETENTION_MONTHS`). También puede **exportar todos
+los datos de la organización** en un ZIP (pantalla Privacidad).
+
 **Listados propios:** cada organización importa los listados de su estándar desde Excel o CSV (plantilla
 descargable, validación fila a fila y previsualización); son privados de la organización, las versiones nuevas no
 alteran las auditorías ya hechas y los estándares de demostración se pueden ocultar.

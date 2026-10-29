@@ -6,6 +6,17 @@ export interface UserDto {
   organizationId: number;
   organizationName: string;
   active: boolean;
+  blocked: boolean;
+}
+
+export interface PrivacySettings {
+  blockedRetentionMonths: number;
+  organizationValue: number | null;
+  defaultMonths: number;
+  minMonths: number;
+  maxMonths: number;
+  blockedCount: number;
+  nextDestruction: string | null;
 }
 
 export interface TokenResponse {

@@ -34,6 +34,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-agriaudit}
       JWT_SECRET: ${JWT_SECRET:-dev-only-secret-please-change-me-to-a-long-random-string}
       TRACE_HMAC_KEY: ${TRACE_HMAC_KEY:-dev-only-trace-hmac-key-change-me-in-production-0123456789abcdef}
+      AGRIAUDIT_BLOCKED_RETENTION_MONTHS: ${AGRIAUDIT_BLOCKED_RETENTION_MONTHS:-60}
       JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-120}
       JWT_REFRESH_EXPIRATION_DAYS: ${JWT_REFRESH_EXPIRATION_DAYS:-7}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@demo.test}

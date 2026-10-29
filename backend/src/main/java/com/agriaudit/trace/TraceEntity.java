@@ -12,6 +12,7 @@ public final class TraceEntity {
     public static final String USER = "USER";
     public static final String FARM = "FARM";
     public static final String STANDARD = "STANDARD";
+    public static final String ORGANIZATION = "ORGANIZATION";
 
     private TraceEntity() {
     }

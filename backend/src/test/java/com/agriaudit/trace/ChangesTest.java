@@ -43,4 +43,17 @@ class ChangesTest {
         assertThat(changes).hasSize(1);
         assertThat(changes.get(0).oldValue()).isNull();
     }
+
+    @Test
+    void losDatosPersonalesNoGuardanSuValor() {
+        var changed = Changes.create().personal("name", "Nombre", "Ana García", "Ana López").list();
+        var created = Changes.create().personalInitial("email", "Correo", "ana@x.test").list();
+
+        assertThat(changed.get(0).oldValue()).isEqualTo("(dato personal)");
+        assertThat(changed.get(0).newValue()).isEqualTo("(modificado)");
+        assertThat(changed.toString()).doesNotContain("Ana");
+        assertThat(created.get(0).newValue()).isEqualTo("(dato personal informado)");
+        assertThat(created.toString()).doesNotContain("ana@x.test");
+        assertThat(Changes.create().personal("name", "Nombre", "Ana", "Ana").isEmpty()).isTrue();
+    }
 }

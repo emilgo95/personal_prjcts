@@ -59,6 +59,15 @@ export default function UsersPage() {
     onError: (e) => notify(extractErrorMessage(e), 'error'),
   });
 
+  const block = useMutation({
+    mutationFn: (id: number) => UserApi.block(id),
+    onSuccess: () => {
+      notify('Datos del usuario bloqueados', 'success');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (e) => notify(extractErrorMessage(e), 'error'),
+  });
+
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     create.mutate();
@@ -140,7 +149,7 @@ export default function UsersPage() {
               </TableHead>
               <TableBody>
                 {(data ?? []).map((u) => (
-                  <TableRow key={u.id} sx={u.active ? undefined : { opacity: 0.6 }}>
+                  <TableRow key={u.id} sx={u.active && !u.blocked ? undefined : { opacity: 0.6 }}>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>{u.fullName || '—'}</TableCell>
                     <TableCell>
@@ -148,7 +157,7 @@ export default function UsersPage() {
                         select
                         size="small"
                         value={u.role}
-                        disabled={!u.active || u.id === me?.id}
+                        disabled={!u.active || u.blocked || u.id === me?.id}
                         onChange={(e) =>
                           update.mutate({ id: u.id, role: e.target.value, active: u.active, fullName: u.fullName ?? undefined })
                         }
@@ -164,19 +173,38 @@ export default function UsersPage() {
                       <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
                         <Chip
                           size="small"
-                          label={u.active ? 'Activo' : 'Desactivado'}
-                          color={u.active ? 'success' : 'default'}
+                          label={u.blocked ? 'Bloqueado' : u.active ? 'Activo' : 'Desactivado'}
+                          color={u.blocked ? 'warning' : u.active ? 'success' : 'default'}
                           variant="outlined"
                         />
                         <Button
                           size="small"
-                          disabled={u.id === me?.id}
+                          disabled={u.blocked || u.id === me?.id}
                           onClick={() => {
                             if (u.active && !window.confirm(`¿Desactivar a ${u.email}? Dejará de poder iniciar sesión.`)) return;
                             update.mutate({ id: u.id, role: u.role, active: !u.active, fullName: u.fullName ?? undefined });
                           }}
                         >
                           {u.active ? 'Desactivar' : 'Reactivar'}
+                        </Button>
+                        <Button
+                          size="small"
+                          color="warning"
+                          disabled={u.blocked || u.id === me?.id}
+                          onClick={() => {
+                            if (
+                              !window.confirm(
+                                `¿Bloquear los datos de ${u.email}? Su nombre y correo dejarán de mostrarse en toda la aplicación ` +
+                                  '(aparecerá «Usuario bloqueado»), no podrá volver a entrar y sus datos originales se ' +
+                                  'conservarán reservados hasta que venza el plazo de conservación, y después se destruirán. ' +
+                                  'Esta acción no se puede deshacer.',
+                              )
+                            )
+                              return;
+                            block.mutate(u.id);
+                          }}
+                        >
+                          Bloquear datos
                         </Button>
                       </Stack>
                     </TableCell>

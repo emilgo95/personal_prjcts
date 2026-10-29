@@ -26,7 +26,7 @@ public class TraceRepository {
 
     private static final String COLUMNS = "id, organization_id, seq, occurred_at, created_at, user_id, username, "
             + "user_full_name, user_role, entity_type, entity_id, entity_ref, parent_type, parent_id, audit_id, "
-            + "action, summary, changes, prev_hash, hash, signature";
+            + "action, summary, changes, prev_hash, hash, signature, format_version";
 
     private static final RowMapper<StoredEntry> ENTRY = (rs, i) -> new StoredEntry(
             rs.getLong("id"), rs.getLong("organization_id"), rs.getLong("seq"),
@@ -36,7 +36,8 @@ public class TraceRepository {
             rs.getString("user_role"), rs.getString("entity_type"), (Long) rs.getObject("entity_id"),
             rs.getString("entity_ref"), rs.getString("parent_type"), (Long) rs.getObject("parent_id"),
             (Long) rs.getObject("audit_id"), rs.getString("action"), rs.getString("summary"),
-            rs.getString("changes"), rs.getString("prev_hash"), rs.getString("hash"), rs.getString("signature"));
+            rs.getString("changes"), rs.getString("prev_hash"), rs.getString("hash"), rs.getString("signature"),
+            rs.getInt("format_version"));
 
     private static final RowMapper<SealRow> SEAL = (rs, i) -> new SealRow(
             rs.getLong("id"), rs.getLong("organization_id"),
@@ -60,12 +61,12 @@ public class TraceRepository {
     public void insert(StoredEntry e) {
         jdbc.update("INSERT INTO trace.change_log (organization_id, seq, occurred_at, created_at, user_id, username, "
                         + "user_full_name, user_role, entity_type, entity_id, entity_ref, parent_type, parent_id, "
-                        + "audit_id, action, summary, changes, prev_hash, hash, signature) "
-                        + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        + "audit_id, action, summary, changes, prev_hash, hash, signature, format_version) "
+                        + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 e.organizationId(), e.seq(), Timestamp.from(e.occurredAt()), Timestamp.from(e.createdAt()),
                 e.userId(), e.username(), e.userFullName(), e.userRole(), e.entityType(), e.entityId(),
                 e.entityRef(), e.parentType(), e.parentId(), e.auditId(), e.action(), e.summary(), e.changes(),
-                e.prevHash(), e.hash(), e.signature());
+                e.prevHash(), e.hash(), e.signature(), e.formatVersion());
         jdbc.update("UPDATE trace.chain_head SET last_seq = ?, last_hash = ?, updated_at = now() "
                 + "WHERE organization_id = ?", e.seq(), e.hash(), e.organizationId());
     }
@@ -150,11 +151,16 @@ public class TraceRepository {
             sb.append(" AND action = ?");
             args.add(f.action());
         }
-        if (f.username() != null && !f.username().isBlank()) {
-            sb.append(" AND (lower(username) LIKE ? OR lower(coalesce(user_full_name, '')) LIKE ?)");
-            String like = "%" + f.username().trim().toLowerCase() + "%";
-            args.add(like);
-            args.add(like);
+        if (f.userIds() != null) {
+            // El nombre ya no se guarda en la traza: se filtra por los códigos de los usuarios que coinciden.
+            if (f.userIds().isEmpty()) {
+                sb.append(f.includeSystem() ? " AND user_role = 'SYSTEM'" : " AND FALSE");
+            } else {
+                sb.append(" AND (user_id IN (").append(String.join(",", java.util.Collections.nCopies(
+                        f.userIds().size(), "?"))).append(")").append(f.includeSystem() ? " OR user_role = 'SYSTEM'" : "")
+                        .append(")");
+                args.addAll(f.userIds());
+            }
         }
         if (f.from() != null) {
             sb.append(" AND occurred_at >= ?");

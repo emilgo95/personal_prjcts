@@ -33,6 +33,11 @@ public class UserController {
         return userService.create(request);
     }
 
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/block")
+    public UserDto block(@PathVariable Long id) {
+        return userService.block(id);
+    }
+
     @PutMapping("/{id}")
     public UserDto update(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
         return userService.update(id, request);

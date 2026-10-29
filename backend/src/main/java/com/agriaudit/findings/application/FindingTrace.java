@@ -99,7 +99,7 @@ class FindingTrace {
                 .initial("rootCause", "Causa raíz", s.rootCause())
                 .initial("correction", "Corrección", s.correction())
                 .initial("preventiveAction", "Acción preventiva", s.preventiveAction())
-                .initial("responsiblePerson", "Responsable", s.responsiblePerson())
+                .personalInitial("responsiblePerson", "Responsable", s.responsiblePerson())
                 .initial("targetDate", "Fecha objetivo", s.targetDate())
                 .initial("status", "Estado de la acción", actionStatus(s.status()));
         trace.record(child(f, a, TraceAction.CREATE,
@@ -112,12 +112,12 @@ class FindingTrace {
                 .track("rootCause", "Causa raíz", before.rootCause(), after.rootCause())
                 .track("correction", "Corrección", before.correction(), after.correction())
                 .track("preventiveAction", "Acción preventiva", before.preventiveAction(), after.preventiveAction())
-                .track("responsiblePerson", "Responsable", before.responsiblePerson(), after.responsiblePerson())
+                .personal("responsiblePerson", "Responsable", before.responsiblePerson(), after.responsiblePerson())
                 .track("targetDate", "Fecha objetivo", before.targetDate(), after.targetDate())
                 .track("completedDate", "Fecha de finalización", before.completedDate(), after.completedDate())
                 .track("verificationNotes", "Notas de verificación", before.verificationNotes(),
                         after.verificationNotes())
-                .track("verifiedBy", "Verificada por", before.verifiedBy(), after.verifiedBy())
+                .personal("verifiedBy", "Verificada por", before.verifiedBy(), after.verifiedBy())
                 .track("status", "Estado de la acción", actionStatus(before.status()), actionStatus(after.status()));
         if (c.isEmpty()) {
             return;

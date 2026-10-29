@@ -58,6 +58,12 @@ agriaudit:
     email: ${ADMIN_EMAIL:admin@demo.test}
     password: ${ADMIN_PASSWORD:Admin123!}
     org-name: ${ADMIN_ORG_NAME:Organización Demo}
+  privacy:
+    # Meses que se conservan, bloqueados, los datos identificativos de un usuario bloqueado antes de destruirlos.
+    # Lo fija el responsable del tratamiento (no hay plazo oficial único). Vacío = 60 solo en desarrollo; con el
+    # perfil prod es obligatorio. Cada organización puede fijar el suyo desde la aplicación.
+    blocked-retention-months: ${AGRIAUDIT_BLOCKED_RETENTION_MONTHS:}
+    destroy-cron: ${AGRIAUDIT_PRIVACY_DESTROY_CRON:0 20 0 * * *}
   trace:
     # Clave con la que se firman (HMAC-SHA-512) las huellas de la traza; debe estar fuera de la base de datos.
     hmac-key: ${TRACE_HMAC_KEY:dev-only-trace-hmac-key-change-me-in-production-0123456789abcdef}

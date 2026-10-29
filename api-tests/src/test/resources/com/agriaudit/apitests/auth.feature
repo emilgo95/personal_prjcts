@@ -22,7 +22,8 @@ Scenario: login correcto devuelve tokens y datos del usuario
         role: '#string',
         organizationId: '#number',
         organizationName: '#string',
-        active: '#boolean'
+        active: '#boolean',
+        blocked: '#boolean'
       }
     }
     """

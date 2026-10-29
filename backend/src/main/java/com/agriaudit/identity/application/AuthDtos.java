@@ -23,7 +23,8 @@ public final class AuthDtos {
             String role,
             Long organizationId,
             String organizationName,
-            boolean active) {
+            boolean active,
+            boolean blocked) {
     }
 
     public record TokenResponse(

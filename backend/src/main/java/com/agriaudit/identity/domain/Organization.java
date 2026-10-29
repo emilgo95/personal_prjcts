@@ -22,6 +22,10 @@ public class Organization {
     @Column(nullable = false)
     private String plan = "STANDARD";
 
+    /** Meses que se conservan, bloqueados, los datos de un usuario bloqueado; {@code null} = valor general. */
+    @Column(name = "blocked_retention_months")
+    private Integer blockedRetentionMonths;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -40,4 +44,7 @@ public class Organization {
     public void setPlan(String plan) { this.plan = plan; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    public Integer getBlockedRetentionMonths() { return blockedRetentionMonths; }
+    public void setBlockedRetentionMonths(Integer months) { this.blockedRetentionMonths = months; }
 }

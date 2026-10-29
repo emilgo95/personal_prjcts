@@ -21,16 +21,23 @@ public class ProductionSafetyCheck {
     public ProductionSafetyCheck(@Value("${agriaudit.jwt.secret}") String jwtSecret,
                                  @Value("${agriaudit.admin.password}") String adminPassword,
                                  @Value("${agriaudit.demo.seed:true}") boolean demoSeed,
-                                 @Value("${agriaudit.trace.hmac-key}") String traceKey) {
-        List<String> problems = problems(jwtSecret, adminPassword, demoSeed, traceKey);
+                                 @Value("${agriaudit.trace.hmac-key}") String traceKey,
+                                 @Value("${agriaudit.privacy.blocked-retention-months:}") String retentionMonths) {
+        List<String> problems = problems(jwtSecret, adminPassword, demoSeed, traceKey, retentionMonths);
         if (!problems.isEmpty()) {
             throw new IllegalStateException(
                     "Configuración insegura para producción: " + String.join("; ", problems));
         }
     }
 
-    static List<String> problems(String jwtSecret, String adminPassword, boolean demoSeed, String traceKey) {
+    static List<String> problems(String jwtSecret, String adminPassword, boolean demoSeed, String traceKey,
+                                 String retentionMonths) {
         List<String> problems = new ArrayList<>();
+        if (retentionMonths == null || retentionMonths.isBlank()) {
+            problems.add("AGRIAUDIT_BLOCKED_RETENTION_MONTHS debe definirse: es el plazo (en meses) que fija el responsable "
+                    + "del tratamiento para conservar bloqueados los datos de un usuario antes de destruirlos; no hay un valor "
+                    + "por defecto en producción");
+        }
         String traceLower = traceKey == null ? "" : traceKey.toLowerCase();
         if (traceKey == null || traceKey.length() < MIN_SECRET_LENGTH || traceLower.contains("dev-only")
                 || traceLower.contains("change-me")) {

@@ -23,6 +23,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import GavelIcon from '@mui/icons-material/Gavel';
 import HistoryIcon from '@mui/icons-material/History';
 import GroupIcon from '@mui/icons-material/Group';
+import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 import { useAuth } from '../auth/AuthContext';
 import { label, roleLabels } from '../utils/labels';
 
@@ -46,6 +47,7 @@ const navItems: NavItem[] = [
   { to: '/regulations', label: 'Normativa', icon: <GavelIcon /> },
   { to: '/trace', label: 'Trazabilidad', icon: <HistoryIcon />, roles: ['ADMIN', 'QUALITY'] },
   { to: '/users', label: 'Usuarios', icon: <GroupIcon />, adminOnly: true },
+  { to: '/privacy', label: 'Privacidad', icon: <PrivacyTipIcon />, adminOnly: true },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {

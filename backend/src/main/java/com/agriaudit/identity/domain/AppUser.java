@@ -35,6 +35,10 @@ public class AppUser {
     @Column(nullable = false)
     private boolean active = true;
 
+    /** Datos identificativos bloqueados (art. 32 LOPDGDD): la cuenta no se puede usar ni reactivar. */
+    @Column(nullable = false)
+    private boolean blocked = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -59,4 +63,7 @@ public class AppUser {
     public void setActive(boolean active) { this.active = active; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    public boolean isBlocked() { return blocked; }
+    public void setBlocked(boolean blocked) { this.blocked = blocked; }
 }

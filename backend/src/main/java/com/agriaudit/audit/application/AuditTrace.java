@@ -44,8 +44,8 @@ class AuditTrace {
                 .initial("scope", "Alcance", s.scope())
                 .initial("plannedStart", "Inicio previsto", s.plannedStart())
                 .initial("plannedEnd", "Fin previsto", s.plannedEnd())
-                .initial("leadAuditor", "Auditor líder", s.leadAuditor())
-                .initial("team", "Equipo auditor", s.team());
+                .personalInitial("leadAuditor", "Auditor líder", s.leadAuditor())
+                .personalInitial("team", "Equipo auditor", s.team());
         trace.record(ChangeEntry.of(TraceEntity.AUDIT, a.getId(), a.getReference(), a.getId(), TraceAction.CREATE,
                 "Creó la auditoría " + a.getReference() + (farmName == null ? "" : " de " + farmName), c.list()));
     }
@@ -59,8 +59,8 @@ class AuditTrace {
                 .track("plannedStart", "Inicio previsto", before.plannedStart(), after.plannedStart())
                 .track("plannedEnd", "Fin previsto", before.plannedEnd(), after.plannedEnd())
                 .track("actualDate", "Fecha real", before.actualDate(), after.actualDate())
-                .track("leadAuditor", "Auditor líder", before.leadAuditor(), after.leadAuditor())
-                .track("team", "Equipo auditor", before.team(), after.team())
+                .personal("leadAuditor", "Auditor líder", before.leadAuditor(), after.leadAuditor())
+                .personal("team", "Equipo auditor", before.team(), after.team())
                 .track("siteAddress", "Dirección del centro", before.siteAddress(), after.siteAddress())
                 .track("products", "Productos en alcance", before.products(), after.products());
         if (c.isEmpty()) {

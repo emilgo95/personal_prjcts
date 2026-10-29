@@ -14,6 +14,7 @@ import RegulationsPage from './pages/RegulationsPage';
 import DocumentCenterPage from './pages/DocumentCenterPage';
 import TracePage from './pages/TracePage';
 import UsersPage from './pages/UsersPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 function FullscreenLoader() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
   if (!user) {
     return (
       <Routes>
+        <Route path="/privacy" element={hasRole('ADMIN') ? <PrivacyPage /> : <Navigate to="/" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

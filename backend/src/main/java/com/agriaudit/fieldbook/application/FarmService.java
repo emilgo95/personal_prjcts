@@ -129,10 +129,10 @@ public class FarmService implements FarmDirectory {
                 .track("crops", "Cultivos", b == null ? null : b.crops(), after.crops())
                 .track("productionAreas", "Áreas de producción", b == null ? null : b.productionAreas(),
                         after.productionAreas())
-                .track("contactName", "Contacto", b == null ? null : b.contactName(), after.contactName())
-                .track("contactEmail", "Email de contacto", b == null ? null : b.contactEmail(),
+                .personal("contactName", "Contacto", b == null ? null : b.contactName(), after.contactName())
+                .personal("contactEmail", "Email de contacto", b == null ? null : b.contactEmail(),
                         after.contactEmail())
-                .track("contactPhone", "Teléfono de contacto", b == null ? null : b.contactPhone(),
+                .personal("contactPhone", "Teléfono de contacto", b == null ? null : b.contactPhone(),
                         after.contactPhone())
                 .track("notes", "Notas", b == null ? null : b.notes(), after.notes());
         return c;

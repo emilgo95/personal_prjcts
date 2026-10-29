@@ -49,6 +49,12 @@ public final class TraceDtos {
 
     /** Filtros de consulta de la traza. */
     public record TraceFilter(Long auditId, String entityType, Long entityId, String action, String username,
-                              Instant from, Instant to) {
+                              Instant from, Instant to, java.util.Set<Long> userIds, boolean includeSystem) {
+
+        /** Filtro por texto de usuario: el servicio lo traduce a códigos de usuario antes de consultar. */
+        public TraceFilter(Long auditId, String entityType, Long entityId, String action, String username,
+                           Instant from, Instant to) {
+            this(auditId, entityType, entityId, action, username, from, to, null, false);
+        }
     }
 }

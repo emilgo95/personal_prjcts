@@ -37,6 +37,27 @@ public final class Changes {
         return this;
     }
 
+    /**
+     * Anota que un dato personal cambió SIN guardar su valor (ni el anterior ni el nuevo): la traza es inalterable y
+     * no debe retener datos que luego haya que bloquear o suprimir.
+     */
+    public Changes personal(String field, String label, Object before, Object after) {
+        if (!Objects.equals(text(before), text(after))) {
+            changes.add(text(before) == null
+                    ? new FieldChange(field, label, null, "(dato personal informado)")
+                    : new FieldChange(field, label, "(dato personal)", text(after) == null ? "(eliminado)" : "(modificado)"));
+        }
+        return this;
+    }
+
+    /** Alta de un dato personal: consta que se informó, no su valor. */
+    public Changes personalInitial(String field, String label, Object value) {
+        if (text(value) != null) {
+            changes.add(new FieldChange(field, label, null, "(dato personal informado)"));
+        }
+        return this;
+    }
+
     public boolean isEmpty() {
         return changes.isEmpty();
     }
