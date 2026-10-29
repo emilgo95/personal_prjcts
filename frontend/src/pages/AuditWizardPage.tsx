@@ -28,7 +28,7 @@ export default function AuditWizardPage() {
   const { user } = useAuth();
 
   const farms = useQuery({ queryKey: ['farms'], queryFn: FarmApi.list });
-  const standards = useQuery({ queryKey: ['standards'], queryFn: CatalogApi.standards });
+  const standards = useQuery({ queryKey: ['standards'], queryFn: () => CatalogApi.standards() });
 
   const [form, setForm] = useState<AuditRequest>({
     farmId: 0,

@@ -9,6 +9,8 @@ import com.agriaudit.catalog.infrastructure.persistence.AuditStandardRepository;
 import com.agriaudit.catalog.infrastructure.persistence.ControlPointRepository;
 import com.agriaudit.catalog.infrastructure.persistence.RegulationRepository;
 import com.agriaudit.catalog.CatalogDtos.*;
+import com.agriaudit.catalog.infrastructure.persistence.HiddenStandardRepository;
+import com.agriaudit.identity.SecurityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,32 +29,51 @@ public class CatalogService implements CatalogLookup {
     private final AuditStandardRepository standards;
     private final ControlPointRepository controlPoints;
     private final RegulationRepository regulations;
+    private final HiddenStandardRepository hidden;
 
     public CatalogService(AuditStandardRepository standards,
                           ControlPointRepository controlPoints,
-                          RegulationRepository regulations) {
+                          RegulationRepository regulations,
+                          HiddenStandardRepository hidden) {
+        this.hidden = hidden;
         this.standards = standards;
         this.controlPoints = controlPoints;
         this.regulations = regulations;
     }
 
+    /** Estándares que usa la organización: sin los ocultos ni los archivados. */
     public List<StandardSummaryDto> listStandards() {
+        return listStandards(false);
+    }
+
+    /**
+     * Estándares comunes y propios de la organización. Con {@code all} se incluyen los ocultos y los archivados
+     * (para gestionarlos); sin él, solo los que se ofrecen al crear auditorías.
+     */
+    public List<StandardSummaryDto> listStandards(boolean all) {
+        Long orgId = SecurityUtils.currentOrganizationIdOrNull();
+        java.util.Set<Long> hiddenIds = hidden.hiddenBy(orgId);
         List<StandardSummaryDto> result = new ArrayList<>();
-        for (AuditStandard s : standards.findByActiveTrueOrderByName()) {
-            List<ControlPoint> cps = controlPoints.findByStandardCode(s.getCode());
+        for (AuditStandard s : standards.findVisible(orgId)) {
+            boolean isHidden = hiddenIds.contains(s.getId());
+            if (!all && (isHidden || s.isArchived())) {
+                continue;
+            }
+            List<ControlPoint> cps = controlPoints.findByStandardCode(s.getCode(), orgId);
             long chapters = cps.stream().map(cp -> cp.getChapter().getId()).distinct().count();
             result.add(new StandardSummaryDto(
                     s.getId(), s.getCode(), s.getVersion(), s.getName(), s.getOwnerBody(),
                     s.getCategory().name(), s.getDescription(), s.getOfficialUrl(),
-                    (int) chapters, cps.size()));
+                    (int) chapters, cps.size(), s.isCustom(), isHidden, s.isArchived()));
         }
         return result;
     }
 
     public StandardDetailDto getStandard(String code) {
-        AuditStandard s = standards.findByCode(code)
+        Long orgId = SecurityUtils.currentOrganizationIdOrNull();
+        AuditStandard s = standards.findVisibleByCode(code, orgId)
                 .orElseThrow(() -> new NotFoundException("Estándar no encontrado: " + code));
-        List<ControlPoint> cps = controlPoints.findByStandardCode(code);
+        List<ControlPoint> cps = controlPoints.findByStandardCode(code, orgId);
 
         Map<Long, List<ControlPoint>> byChapter = new LinkedHashMap<>();
         for (ControlPoint cp : cps) {
@@ -75,10 +96,11 @@ public class CatalogService implements CatalogLookup {
     }
 
     public List<ControlPointDto> listControlPoints(String code) {
-        if (standards.findByCode(code).isEmpty()) {
+        Long orgId = SecurityUtils.currentOrganizationIdOrNull();
+        if (standards.findVisibleByCode(code, orgId).isEmpty()) {
             throw new NotFoundException("Estándar no encontrado: " + code);
         }
-        return controlPoints.findByStandardCode(code).stream().map(this::toControlPointDto).toList();
+        return controlPoints.findByStandardCode(code, orgId).stream().map(this::toControlPointDto).toList();
     }
 
     public List<RegulationDto> listRegulations() {
@@ -94,7 +116,16 @@ public class CatalogService implements CatalogLookup {
 
     @Override
     public Optional<StandardView> findStandard(String code) {
-        return standards.findByCode(code).map(CatalogService::toView);
+        return standards.findVisibleByCode(code, SecurityUtils.currentOrganizationIdOrNull())
+                .map(CatalogService::toView);
+    }
+
+    @Override
+    public Optional<StandardView> findAvailableStandard(String code) {
+        Long orgId = SecurityUtils.currentOrganizationIdOrNull();
+        return standards.findVisibleByCode(code, orgId)
+                .filter(s -> s.isActive() && !s.isArchived() && !hidden.hiddenBy(orgId).contains(s.getId()))
+                .map(CatalogService::toView);
     }
 
     @Override
@@ -104,7 +135,8 @@ public class CatalogService implements CatalogLookup {
 
     @Override
     public List<ControlPointView> controlPointsOf(String standardCode) {
-        return controlPoints.findByStandardCode(standardCode).stream().map(CatalogService::toView).toList();
+        return controlPoints.findByStandardCode(standardCode, SecurityUtils.currentOrganizationIdOrNull()).stream()
+                .map(CatalogService::toView).toList();
     }
 
     @Override

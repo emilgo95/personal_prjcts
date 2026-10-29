@@ -11,6 +11,7 @@ public final class TraceEntity {
     public static final String DOCUMENT = "DOCUMENT";
     public static final String USER = "USER";
     public static final String FARM = "FARM";
+    public static final String STANDARD = "STANDARD";
 
     private TraceEntity() {
     }

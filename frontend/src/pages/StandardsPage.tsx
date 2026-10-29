@@ -1,28 +1,51 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Alert,
   Box,
+  Button,
   Card,
   CardActionArea,
   CardContent,
   Chip,
+  FormControlLabel,
   Grid,
   Link,
   Stack,
+  Switch,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { CatalogApi } from '../api/endpoints';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
+import StandardImportDialog from '../components/StandardImportDialog';
+import { useAuth } from '../auth/AuthContext';
+import { useToast } from '../utils/toast';
+import { extractErrorMessage } from '../api/client';
 import { label, levelLabels } from '../utils/labels';
 
 export default function StandardsPage() {
-  const standards = useQuery({ queryKey: ['standards'], queryFn: CatalogApi.standards });
+  const { hasRole } = useAuth();
+  const { notify } = useToast();
+  const queryClient = useQueryClient();
+  const canManage = hasRole('ADMIN', 'QUALITY');
+  const [showAll, setShowAll] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const standards = useQuery({
+    queryKey: ['standards', showAll],
+    queryFn: () => CatalogApi.standards(canManage && showAll),
+  });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['standards'] });
+  const toggle = useMutation({
+    mutationFn: (v: { code: string; custom: boolean; value: boolean }) =>
+      v.custom ? CatalogApi.setArchived(v.code, v.value) : CatalogApi.setHidden(v.code, v.value),
+    onSuccess: refresh,
+    onError: (e) => notify(extractErrorMessage(e), 'error'),
+  });
   const [selected, setSelected] = useState<string | null>(null);
   const detail = useQuery({
     queryKey: ['standard', selected],
@@ -35,6 +58,29 @@ export default function StandardsPage() {
       <PageHeader
         title="Estándares de auditoría"
         subtitle="Catálogo de estándares del sector agrícola y sus puntos de control (resumen divulgativo)"
+        action={
+          canManage && (
+            <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+              <FormControlLabel
+                control={<Switch checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />}
+                label="Mostrar ocultos y archivados"
+              />
+              <Button variant="contained" onClick={() => setImporting(true)}>
+                Importar listado propio
+              </Button>
+            </Stack>
+          )
+        }
+      />
+      <StandardImportDialog
+        open={importing}
+        onClose={() => setImporting(false)}
+        onImported={(code) => {
+          setImporting(false);
+          notify('Estándar importado', 'success');
+          refresh();
+          setSelected(code);
+        }}
       />
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -50,12 +96,34 @@ export default function StandardsPage() {
                     {s.ownerBody} · {s.version}
                   </Typography>
                   <Typography variant="body2">{s.description}</Typography>
-                  <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                  <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }} useFlexGap>
                     <Chip size="small" label={`${s.chapterCount} capítulos`} />
                     <Chip size="small" label={`${s.controlPointCount} puntos`} />
+                    <Chip
+                      size="small"
+                      color={s.custom ? 'primary' : 'default'}
+                      variant="outlined"
+                      label={s.custom ? 'Propio' : 'Demostración'}
+                    />
+                    {s.hidden && <Chip size="small" color="warning" label="Oculto" />}
+                    {s.archived && <Chip size="small" color="warning" label="Archivado" />}
                   </Stack>
                 </CardContent>
               </CardActionArea>
+              {canManage && (
+                <Box sx={{ px: 2, pb: 1 }}>
+                  <Button
+                    size="small"
+                    disabled={toggle.isPending}
+                    onClick={() => {
+                      const turnOn = !(s.custom ? s.archived : s.hidden);
+                      toggle.mutate({ code: s.code, custom: s.custom, value: turnOn });
+                    }}
+                  >
+                    {s.custom ? (s.archived ? 'Recuperar' : 'Archivar') : s.hidden ? 'Volver a mostrar' : 'Ocultar'}
+                  </Button>
+                </Box>
+              )}
             </Card>
           </Grid>
         ))}

@@ -68,9 +68,31 @@ export interface StandardSummary {
   officialUrl: string | null;
   chapterCount: number;
   controlPointCount: number;
+  /** Estándar propio de la organización (importado); si no, es de demostración. */
+  custom: boolean;
+  hidden: boolean;
+  archived: boolean;
 }
 
-export interface StandardDetail extends Omit<StandardSummary, 'chapterCount' | 'controlPointCount'> {
+export interface ImportIssue {
+  row: number;
+  column: string;
+  message: string;
+}
+
+export interface ImportPreview {
+  valid: boolean;
+  storedCode: string;
+  chapterCount: number;
+  pointCount: number;
+  levelCounts: Record<string, number>;
+  issues: ImportIssue[];
+  totalIssues: number;
+  sample: { row: number; chapterCode: string; ref: string; title: string; level: string }[];
+}
+
+export interface StandardDetail
+  extends Omit<StandardSummary, 'chapterCount' | 'controlPointCount' | 'custom' | 'hidden' | 'archived'> {
   scoringRule: string | null;
   chapters: Chapter[];
 }

@@ -17,8 +17,8 @@ public class CatalogController {
     }
 
     @GetMapping("/standards")
-    public List<StandardSummaryDto> standards() {
-        return catalogService.listStandards();
+    public List<StandardSummaryDto> standards(@org.springframework.web.bind.annotation.RequestParam(defaultValue = "false") boolean all) {
+        return catalogService.listStandards(all);
     }
 
     @GetMapping("/standards/{code}")

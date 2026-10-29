@@ -15,6 +15,10 @@ cada campo), encadenado con SHA-512 y firmado con HMAC-SHA-512, con verificació
 descargables y exportación a CSV. Visible para administración y calidad (toda la organización) y para cada auditora
 (sus auditorías). Roles: administrador, auditor, **calidad** y lector.
 
+**Listados propios:** cada organización importa los listados de su estándar desde Excel o CSV (plantilla
+descargable, validación fila a fila y previsualización); son privados de la organización, las versiones nuevas no
+alteran las auditorías ya hechas y los estándares de demostración se pueden ocultar.
+
 Estándares implementados end-to-end: **GLOBALG.A.P. IFA v6**, **GRASP v2** y **SMETA 6.1 (4 pilares)**.
 El esquema soporta añadir más estándares como datos semilla.
 

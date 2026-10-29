@@ -149,7 +149,7 @@ public class AuditService implements AuditLookup {
     public AuditDetailDto create(AuditRequest request) {
         Long orgId = SecurityUtils.currentOrganizationId();
         FarmDto farm = requireFarm(orgId, request.farmId());
-        StandardView standard = catalog.findStandard(request.standardCode())
+        StandardView standard = catalog.findAvailableStandard(request.standardCode())
                 .orElseThrow(() -> new NotFoundException("Estándar no encontrado: " + request.standardCode()));
 
         Audit audit = new Audit();

@@ -15,10 +15,10 @@ public interface ControlPointRepository extends JpaRepository<ControlPoint, Long
             select cp from ControlPoint cp
             join fetch cp.chapter ch
             join fetch ch.standard s
-            where s.code = :standardCode
+            where s.code = :standardCode and (s.organizationId is null or s.organizationId = :orgId)
             order by ch.sortOrder asc, cp.sortOrder asc
             """)
-    List<ControlPoint> findByStandardCode(@Param("standardCode") String standardCode);
+    List<ControlPoint> findByStandardCode(@Param("standardCode") String standardCode, @Param("orgId") Long organizationId);
 
     @Query("""
             select cp from ControlPoint cp

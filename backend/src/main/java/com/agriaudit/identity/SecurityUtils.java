@@ -17,6 +17,12 @@ public final class SecurityUtils {
         return principal;
     }
 
+    /** Organización del usuario autenticado, o {@code null} si no hay usuario (procesos internos y arranque). */
+    public static Long currentOrganizationIdOrNull() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getPrincipal() instanceof AppUserPrincipal p ? p.getOrganizationId() : null;
+    }
+
     public static Long currentOrganizationId() {
         return currentPrincipal().getOrganizationId();
     }

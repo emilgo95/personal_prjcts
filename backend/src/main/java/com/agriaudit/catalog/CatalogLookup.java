@@ -18,6 +18,9 @@ public interface CatalogLookup {
 
     Optional<StandardView> findStandard(Long id);
 
+    /** Estándar que se puede usar para una auditoría nueva: visible para la organización, no oculto ni archivado. */
+    Optional<StandardView> findAvailableStandard(String code);
+
     /** Puntos de control del estándar, ordenados por capítulo y posición. */
     List<ControlPointView> controlPointsOf(String standardCode);
 

@@ -54,7 +54,10 @@ public final class CatalogDtos {
             String description,
             String officialUrl,
             int chapterCount,
-            int controlPointCount) {
+            int controlPointCount,
+            boolean custom,
+            boolean hidden,
+            boolean archived) {
     }
 
     public record StandardDetailDto(

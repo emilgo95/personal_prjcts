@@ -5,6 +5,7 @@ import type {
   AuditItemResult,
   AuditRequest,
   AuditPage,
+  ImportPreview,
   IntegrityReport,
   TracePage,
   TraceQuery,
@@ -36,8 +37,30 @@ export const AuthApi = {
   me: () => api.get<UserDto>('/auth/me').then((r) => r.data),
 };
 
+/** Descarga un fichero protegido (con el token) y lo guarda desde el navegador. */
+async function saveBlob(url: string, params: object, fileName: string) {
+  const res = await api.get<Blob>(url, { params, responseType: 'blob' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(res.data);
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 export const CatalogApi = {
-  standards: () => api.get<StandardSummary[]>('/standards').then((r) => r.data),
+  /** Con {@code all} incluye los ocultos y archivados (para gestionarlos). */
+  standards: (all = false) => api.get<StandardSummary[]>('/standards', { params: { all } }).then((r) => r.data),
+  previewImport: (form: FormData) => api
+      .post<ImportPreview>('/standards/import/preview', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data),
+  importStandard: (form: FormData) => api
+      .post<StandardSummary>('/standards/import', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data),
+  downloadTemplate: () => saveBlob('/standards/import/template', {}, 'plantilla-listado.xlsx'),
+  setArchived: (code: string, value: boolean) =>
+    api.put(`/standards/${code}/archived`, null, { params: { value } }).then(() => undefined),
+  setHidden: (code: string, value: boolean) =>
+    api.put(`/standards/${code}/hidden`, null, { params: { value } }).then(() => undefined),
   standard: (code: string) => api.get<StandardDetail>(`/standards/${code}`).then((r) => r.data),
   regulations: () => api.get<Regulation[]>('/regulations').then((r) => r.data),
 };
@@ -91,16 +114,6 @@ export const FindingApi = {
 };
 
 const clean = (q: TraceQuery) => Object.fromEntries(Object.entries(q).filter(([, v]) => v !== '' && v != null));
-
-/** Descarga un fichero protegido (con el token) y lo guarda desde el navegador. */
-async function saveBlob(url: string, params: object, fileName: string) {
-  const res = await api.get<Blob>(url, { params, responseType: 'blob' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(res.data);
-  link.download = fileName;
-  link.click();
-  URL.revokeObjectURL(link.href);
-}
 
 export const TraceApi = {
   search: (q: TraceQuery) => api.get<TracePage>('/trace', { params: clean(q) }).then((r) => r.data),

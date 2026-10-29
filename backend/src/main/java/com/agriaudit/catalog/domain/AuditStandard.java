@@ -15,7 +15,7 @@ public class AuditStandard {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String code;
 
     private String version;
@@ -41,6 +41,19 @@ public class AuditStandard {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    /** {@code null} = estándar común (demostración); con valor, privado de esa organización. */
+    @Column(name = "organization_id")
+    private Long organizationId;
+
+    @Column(nullable = false)
+    private boolean archived = false;
+
+    @Column(name = "imported_at")
+    private Instant importedAt;
+
+    @Column(name = "imported_by")
+    private String importedBy;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -70,6 +83,15 @@ public class AuditStandard {
     public void setOfficialUrl(String officialUrl) { this.officialUrl = officialUrl; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+    public Long getOrganizationId() { return organizationId; }
+    public void setOrganizationId(Long organizationId) { this.organizationId = organizationId; }
+    public boolean isArchived() { return archived; }
+    public void setArchived(boolean archived) { this.archived = archived; }
+    public Instant getImportedAt() { return importedAt; }
+    public void setImportedAt(Instant importedAt) { this.importedAt = importedAt; }
+    public String getImportedBy() { return importedBy; }
+    public void setImportedBy(String importedBy) { this.importedBy = importedBy; }
+    public boolean isCustom() { return organizationId != null; }
     public Instant getCreatedAt() { return createdAt; }
     public List<StandardChapter> getChapters() { return chapters; }
 }
