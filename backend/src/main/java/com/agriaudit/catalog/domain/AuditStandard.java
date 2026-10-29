@@ -52,6 +52,19 @@ public class AuditStandard {
     @Column(name = "imported_at")
     private Instant importedAt;
 
+    /** Plazo de cierre de NC por gravedad, en días desde la auditoría (RF-308); {@code null} = sin plazo. */
+    @Column(name = "closure_days_critical")
+    private Integer closureDaysCritical = 28;
+
+    @Column(name = "closure_days_major")
+    private Integer closureDaysMajor = 28;
+
+    @Column(name = "closure_days_minor")
+    private Integer closureDaysMinor = 28;
+
+    @Column(name = "closure_days_observation")
+    private Integer closureDaysObservation;
+
     @Column(name = "imported_by")
     private String importedBy;
 
@@ -92,6 +105,14 @@ public class AuditStandard {
     public String getImportedBy() { return importedBy; }
     public void setImportedBy(String importedBy) { this.importedBy = importedBy; }
     public boolean isCustom() { return organizationId != null; }
+    public Integer getClosureDaysCritical() { return closureDaysCritical; }
+    public void setClosureDaysCritical(Integer days) { this.closureDaysCritical = days; }
+    public Integer getClosureDaysMajor() { return closureDaysMajor; }
+    public void setClosureDaysMajor(Integer days) { this.closureDaysMajor = days; }
+    public Integer getClosureDaysMinor() { return closureDaysMinor; }
+    public void setClosureDaysMinor(Integer days) { this.closureDaysMinor = days; }
+    public Integer getClosureDaysObservation() { return closureDaysObservation; }
+    public void setClosureDaysObservation(Integer days) { this.closureDaysObservation = days; }
     public Instant getCreatedAt() { return createdAt; }
     public List<StandardChapter> getChapters() { return chapters; }
 }

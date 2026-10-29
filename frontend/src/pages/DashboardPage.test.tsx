@@ -11,6 +11,10 @@ const dashboard = {
   openFindings: 5,
   overdueFindings: 2,
   dueSoonFindings: 0,
+  dueIn2Findings: 0,
+  dueIn14Findings: 3,
+  closedWithDeadlineFindings: 20,
+  closedOnTimeFindings: 18,
   documentsGenerated: 30,
   upcomingDeadlines: [
     {
@@ -70,7 +74,9 @@ describe('DashboardPage', () => {
     expect(screen.getByLabelText('12 Auditorías')).toBeInTheDocument();
     expect(screen.getByLabelText('5 No conformidades abiertas')).toBeInTheDocument();
     expect(screen.getByLabelText('2 No conformidades vencidas')).toBeInTheDocument();
-    expect(screen.getByLabelText('30 Documentos generados')).toBeInTheDocument();
+    expect(screen.getByLabelText('90% Cerradas en plazo')).toBeInTheDocument();
+    expect(screen.getByText('18 de 20 en 12 meses')).toBeInTheDocument();
+    expect(screen.getByText('3 vencen en 14 días')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/, Ana$/);
     // El color no va solo: cada alerta lleva su texto.
     expect(screen.getByText('Requieren atención')).toBeInTheDocument();

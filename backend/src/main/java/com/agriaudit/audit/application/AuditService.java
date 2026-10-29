@@ -434,7 +434,7 @@ public class AuditService implements AuditLookup {
 
     private AuditRef toRef(Audit a) {
         return new AuditRef(a.getId(), a.getOrganizationId(), a.getReference(), standardOf(a).code(),
-                a.getStatus(), a.getPlannedStartDate(), a.getLeadAuditor());
+                a.getStatus(), a.getPlannedStartDate(), a.getLeadAuditor(), a.getActualDate());
     }
 
     private AuditDetailDto toDetail(Audit a) {

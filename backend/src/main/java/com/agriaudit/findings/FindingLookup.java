@@ -11,20 +11,20 @@ public interface FindingLookup {
     /** NC de una auditoría de la organización del usuario, con acciones correctivas y adjuntos. */
     List<FindingDto> listByAudit(Long auditId);
 
-    /** NC no cerradas ni verificadas de la organización. */
-    long countOpen(Long organizationId);
-
-    /** NC no cerradas ni verificadas cuya fecha límite es anterior a {@code today}. */
-    long countOverdue(Long organizationId, LocalDate today);
-
-    /** NC no cerradas ni verificadas con fecha límite entre {@code from} y {@code to}, ambas incluidas. */
-    long countDueBetween(Long organizationId, LocalDate from, LocalDate to);
+    /**
+     * Estado del reloj de cierre de la organización en una sola lectura (RF-301): NC abiertas, vencidas y que vencen
+     * en 2, 7 y 14 días; NC cerradas en los últimos 12 meses con plazo y cuántas a tiempo; y los {@code limit}
+     * plazos más urgentes.
+     */
+    DeadlineSummary deadlineSummary(Long organizationId, LocalDate today, int limit);
 
     /**
-     * Plazos de las NC no cerradas ni verificadas con fecha límite, de la más urgente (vencida) a la menos,
-     * hasta {@code limit}.
+     * Resumen del reloj. Los recuentos «vencen en N días» son acumulados e incluyen las que vencen hoy;
+     * {@code closedOnTime} de {@code closedWithDeadline} es el indicador de NC cerradas en plazo.
      */
-    List<FindingDeadline> nextDeadlines(Long organizationId, int limit);
+    record DeadlineSummary(long open, long overdue, long dueIn2, long dueIn7, long dueIn14,
+                           long closedWithDeadline, long closedOnTime, List<FindingDeadline> next) {
+    }
 
     /** Una NC abierta con su fecha límite, para el panel de vencimientos. */
     record FindingDeadline(Long findingId, Long auditId, String reference, String title, String classification,

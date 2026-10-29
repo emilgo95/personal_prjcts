@@ -70,6 +70,15 @@ public final class CatalogDtos {
             String description,
             String scoringRule,
             String officialUrl,
-            List<ChapterDto> chapters) {
+            List<ChapterDto> chapters,
+            ClosureRule closureRule) {
+
+        /** Con el plazo de cierre por defecto (28 días). */
+        public StandardDetailDto(Long id, String code, String version, String name, String ownerBody,
+                                 String category, String description, String scoringRule, String officialUrl,
+                                 List<ChapterDto> chapters) {
+            this(id, code, version, name, ownerBody, category, description, scoringRule, officialUrl, chapters,
+                    ClosureRule.DEFAULT);
+        }
     }
 }

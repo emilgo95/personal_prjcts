@@ -153,7 +153,7 @@ class AuditDemoSeeder {
 
         List<Long> nonCompliant = seedResults(a, cps, p, date, seq);
         events.publishEvent(new DemoAuditSeeded(new AuditRef(a.getId(), orgId, a.getReference(), p.standard(),
-                p.status(), date, p.lead()), nonCompliant));
+                p.status(), date, p.lead(), a.getActualDate()), nonCompliant));
     }
 
     /**

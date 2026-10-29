@@ -7,6 +7,7 @@ import com.agriaudit.common.NotFoundException;
 import com.agriaudit.audit.AuditLookup;
 import com.agriaudit.audit.AuditRef;
 import com.agriaudit.catalog.ControlPointView;
+import com.agriaudit.findings.ClosureClock;
 import com.agriaudit.findings.domain.CorrectiveAction;
 import com.agriaudit.findings.domain.Finding;
 import com.agriaudit.storage.AttachmentEntityType;
@@ -63,6 +64,7 @@ public class FindingService implements FindingLookup {
         finding.setAuditId(audit.id());
         applyControlPoint(finding, request.controlPointId(), audit);
         applyRequest(finding, request);
+        applyDefaultDueDate(finding, audit);
         validateManualStatus(finding, null, List.of());
         finding.setReference(nextReference(auditId));
         Finding saved = findings.save(finding);
@@ -77,6 +79,7 @@ public class FindingService implements FindingLookup {
         FindingTrace.FindingSnap before = FindingTrace.snapshot(finding);
         applyControlPoint(finding, request.controlPointId(), audit);
         applyRequest(finding, request);
+        applyDefaultDueDate(finding, audit);
         validateManualStatus(finding, previous, correctiveActions.findByFindingIdOrderByIdAsc(finding.getId()));
         Finding saved = findings.save(finding);
         trace.updated(before, saved);
@@ -172,39 +175,45 @@ public class FindingService implements FindingLookup {
 
     @Override
     @Transactional(readOnly = true)
-    public long countOpen(Long organizationId) {
-        return organizationFindings(organizationId).stream().filter(FindingService::isOpen).count();
+    public DeadlineSummary deadlineSummary(Long organizationId, LocalDate today, int limit) {
+        return summarize(organizationFindings(organizationId), today, limit);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public long countOverdue(Long organizationId, LocalDate today) {
-        return organizationFindings(organizationId).stream()
-                .filter(FindingService::isOpen)
-                .filter(f -> f.getDueDate() != null && f.getDueDate().isBefore(today))
-                .count();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public long countDueBetween(Long organizationId, LocalDate from, LocalDate to) {
-        return organizationFindings(organizationId).stream()
-                .filter(FindingService::isOpen)
-                .filter(f -> f.getDueDate() != null && !f.getDueDate().isBefore(from) && !f.getDueDate().isAfter(to))
-                .count();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<FindingDeadline> nextDeadlines(Long organizationId, int limit) {
-        return organizationFindings(organizationId).stream()
-                .filter(FindingService::isOpen)
-                .filter(f -> f.getDueDate() != null)
+    /** Recorre las NC una sola vez (antes el panel las cargaba cuatro veces). */
+    static DeadlineSummary summarize(List<Finding> all, LocalDate today, int limit) {
+        long open = 0, overdue = 0, dueIn2 = 0, dueIn7 = 0, dueIn14 = 0, closedWithDeadline = 0, closedOnTime = 0;
+        java.time.Instant closedSince = today.minusYears(1).atStartOfDay(ClosureClock.ZONE).toInstant();
+        List<Finding> pending = new java.util.ArrayList<>();
+        for (Finding f : all) {
+            LocalDate due = f.getDueDate();
+            if (isOpen(f)) {
+                open++;
+                if (due == null) {
+                    continue;
+                }
+                pending.add(f);
+                long days = java.time.temporal.ChronoUnit.DAYS.between(today, due);
+                if (days < 0) {
+                    overdue++;
+                } else {
+                    if (days <= ClosureClock.WARN_2) dueIn2++;
+                    if (days <= ClosureClock.WARN_7) dueIn7++;
+                    if (days <= ClosureClock.WARN_14) dueIn14++;
+                }
+            } else if (due != null && f.getClosedAt() != null && !f.getClosedAt().isBefore(closedSince)) {
+                closedWithDeadline++;
+                if (ClosureClock.closedOnTime(f.getClosedAt(), due)) {
+                    closedOnTime++;
+                }
+            }
+        }
+        List<FindingDeadline> next = pending.stream()
                 .sorted(java.util.Comparator.comparing(Finding::getDueDate).thenComparing(Finding::getId))
                 .limit(limit)
                 .map(f -> new FindingDeadline(f.getId(), f.getAuditId(), f.getReference(), f.getTitle(),
                         f.getClassification().name(), f.getStatus().name(), f.getDueDate()))
                 .toList();
+        return new DeadlineSummary(open, overdue, dueIn2, dueIn7, dueIn14, closedWithDeadline, closedOnTime, next);
     }
 
     // ---- helpers ----
@@ -263,6 +272,20 @@ public class FindingService implements FindingLookup {
     private Finding requireFinding(Long auditId, Long findingId) {
         return findings.findByIdAndAuditId(findingId, auditId)
                 .orElseThrow(() -> new NotFoundException("Hallazgo no encontrado: " + findingId));
+    }
+
+    /**
+     * Sin fecha límite indicada, se calcula con el plazo del estándar para su gravedad, contado desde la fecha de la
+     * auditoría (RF-301, RF-308). Una fecha indicada a mano (p. ej. la que fije el organismo de certificación) se respeta.
+     */
+    private void applyDefaultDueDate(Finding finding, AuditRef audit) {
+        if (finding.getDueDate() != null) {
+            return;
+        }
+        Integer days = catalog.findStandard(audit.standardCode())
+                .map(s -> s.closureRule().daysFor(finding.getClassification().name()))
+                .orElse(null);
+        finding.setDueDate(ClosureClock.dueDate(audit.auditDate(), days, ClosureClock.today()));
     }
 
     private void applyControlPoint(Finding finding, Long controlPointId, AuditRef audit) {
@@ -364,7 +387,7 @@ public class FindingService implements FindingLookup {
                 cp == null ? null : cp.title(),
                 f.getReference(), f.getClassification().name(), f.getTitle(), f.getDescription(),
                 f.getArea(), f.getDueDate(), f.getStatus().name(), f.getRaisedAt(), actions,
-                attachmentLookup.byEntity(AttachmentEntityType.FINDING, f.getId()));
+                attachmentLookup.byEntity(AttachmentEntityType.FINDING, f.getId()), f.getClosedAt());
     }
 
     private CorrectiveActionDto toDto(CorrectiveAction a) {

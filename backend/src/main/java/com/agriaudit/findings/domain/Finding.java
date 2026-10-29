@@ -46,6 +46,10 @@ public class Finding {
     @Column(name = "raised_at", nullable = false, updatable = false)
     private Instant raisedAt;
 
+    /** Momento en que quedó cerrada o verificada; {@code null} mientras está abierta (RF-301). */
+    @Column(name = "closed_at")
+    private Instant closedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -73,7 +77,27 @@ public class Finding {
     public LocalDate getDueDate() { return dueDate; }
     public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
     public FindingStatus getStatus() { return status; }
-    public void setStatus(FindingStatus status) { this.status = status; }
+    /**
+     * Cambia el estado y mantiene la fecha de cierre: se fija al pasar a cerrada o verificada y se borra si la NC
+     * se reabre.
+     */
+    public void setStatus(FindingStatus status) {
+        boolean wasClosed = isClosed(this.status);
+        boolean closes = isClosed(status);
+        if (closes && !wasClosed) {
+            this.closedAt = Instant.now();
+        } else if (!closes) {
+            this.closedAt = null;
+        }
+        this.status = status;
+    }
+
+    public Instant getClosedAt() { return closedAt; }
+    public void setClosedAt(Instant closedAt) { this.closedAt = closedAt; }
+
+    private static boolean isClosed(FindingStatus s) {
+        return s == FindingStatus.CLOSED || s == FindingStatus.VERIFIED;
+    }
     public Instant getRaisedAt() { return raisedAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

@@ -13,6 +13,10 @@ public record DashboardDto(
         long openFindings,
         long overdueFindings,
         long dueSoonFindings,
+        long dueIn2Findings,
+        long dueIn14Findings,
+        long closedWithDeadlineFindings,
+        long closedOnTimeFindings,
         long documentsGenerated,
         List<DeadlineDto> upcomingDeadlines,
         List<AuditSummaryDto> recentAudits) {

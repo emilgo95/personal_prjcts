@@ -10,5 +10,11 @@ public record AuditRef(
         String standardCode,
         AuditStatus status,
         LocalDate plannedStartDate,
-        String leadAuditor) {
+        String leadAuditor,
+        LocalDate actualDate) {
+
+    /** Fecha en que se hizo la auditoría (la real o, si aún no consta, la prevista); de ella cuenta el plazo de las NC. */
+    public LocalDate auditDate() {
+        return actualDate != null ? actualDate : plannedStartDate;
+    }
 }

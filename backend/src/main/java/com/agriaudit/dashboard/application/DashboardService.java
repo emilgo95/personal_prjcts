@@ -6,6 +6,7 @@ import com.agriaudit.dashboard.application.DashboardDto.DeadlineDto;
 import com.agriaudit.documents.DocumentLookup;
 import com.agriaudit.fieldbook.FarmDirectory;
 import com.agriaudit.findings.FindingLookup;
+import com.agriaudit.findings.ClosureClock;
 import com.agriaudit.identity.SecurityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,8 +20,6 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class DashboardService {
 
-    /** Una NC «vence pronto» si su fecha límite cae en los próximos 7 días. */
-    static final int DUE_SOON_DAYS = 7;
     static final int DEADLINES_SHOWN = 6;
 
     private final AuditLookup auditService;
@@ -38,14 +37,14 @@ public class DashboardService {
 
     public DashboardDto load() {
         Long orgId = SecurityUtils.currentOrganizationId();
-        LocalDate today = LocalDate.now();
+        LocalDate today = ClosureClock.today();
         Map<String, Long> byStatus = auditService.countByStatus();
         long totalAudits = byStatus.values().stream().mapToLong(Long::longValue).sum();
 
-        var upcoming = findings.nextDeadlines(orgId, DEADLINES_SHOWN);
+        FindingLookup.DeadlineSummary clock = findings.deadlineSummary(orgId, today, DEADLINES_SHOWN);
         Map<Long, AuditSummaryDto> auditsById = auditService.summaries(
-                upcoming.stream().map(d -> d.auditId()).distinct().toList());
-        List<DeadlineDto> deadlines = upcoming.stream()
+                clock.next().stream().map(d -> d.auditId()).distinct().toList());
+        List<DeadlineDto> deadlines = clock.next().stream()
                 .map(d -> {
                     AuditSummaryDto audit = auditsById.get(d.auditId());
                     return new DeadlineDto(d.findingId(), d.auditId(),
@@ -60,9 +59,13 @@ public class DashboardService {
                 farms.countFarms(orgId),
                 totalAudits,
                 byStatus,
-                findings.countOpen(orgId),
-                findings.countOverdue(orgId, today),
-                findings.countDueBetween(orgId, today, today.plusDays(DUE_SOON_DAYS)),
+                clock.open(),
+                clock.overdue(),
+                clock.dueIn7(),
+                clock.dueIn2(),
+                clock.dueIn14(),
+                clock.closedWithDeadline(),
+                clock.closedOnTime(),
                 documents.countGenerated(orgId),
                 deadlines,
                 auditService.recent(5));

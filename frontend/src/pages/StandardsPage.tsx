@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { CatalogApi } from '../api/endpoints';
+import type { ClosureRule } from '../api/types';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
 import StandardImportDialog from '../components/StandardImportDialog';
@@ -141,6 +142,11 @@ export default function StandardsPage() {
                   </Link>
                 )}
               </Stack>
+              {detail.data.closureRule && (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Plazo de cierre de no conformidades desde la auditoría: {closureRuleText(detail.data.closureRule)}
+                </Typography>
+              )}
               {detail.data.chapters.map((ch) => (
                 <Accordion key={ch.id}>
                   <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -204,4 +210,15 @@ export default function StandardsPage() {
       )}
     </Box>
   );
+}
+
+/** «críticas 28 días · mayores 28 días · menores 28 días · observaciones sin plazo». */
+function closureRuleText(rule: ClosureRule): string {
+  const part = (label: string, days: number | null) => `${label} ${days == null ? 'sin plazo' : `${days} días`}`;
+  return [
+    part('críticas', rule.criticalDays),
+    part('mayores', rule.majorDays),
+    part('menores', rule.minorDays),
+    part('observaciones', rule.observationDays),
+  ].join(' · ');
 }

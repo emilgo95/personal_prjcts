@@ -243,6 +243,7 @@ function FindingForm({
             fullWidth
             type="date"
             label="Fecha límite"
+            helperText="Vacía: plazo de la norma (28 días desde la auditoría; las observaciones no tienen plazo)"
             slotProps={{ inputLabel: { shrink: true } }}
             value={form.dueDate ?? ''}
             onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
@@ -388,6 +389,7 @@ function FindingCard({
                 <DeadlineChip
                   dueDate={finding.dueDate}
                   closed={finding.status === 'CLOSED' || finding.status === 'VERIFIED'}
+                  closedAt={finding.closedAt}
                 />
               )}
               {canVerify && finding.status !== 'CLOSED' && (

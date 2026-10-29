@@ -8,7 +8,6 @@ import FactCheckIcon from '@mui/icons-material/FactCheck';
 import AssignmentLateIcon from '@mui/icons-material/AssignmentLate';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
-import DescriptionIcon from '@mui/icons-material/Description';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -67,6 +66,8 @@ function KpiTile({
   tone = 'neutral',
   to,
   index,
+  suffix = '',
+  empty = false,
 }: {
   value: number;
   title: string;
@@ -75,6 +76,10 @@ function KpiTile({
   tone?: Tone;
   to?: string;
   index: number;
+  /** Unidad tras la cifra (p. ej. «%»). */
+  suffix?: string;
+  /** Sin datos todavía: muestra «—» en lugar de la cifra. */
+  empty?: boolean;
 }) {
   const shown = useCountUp(value);
   const accent = toneAccent[tone];
@@ -119,7 +124,7 @@ function KpiTile({
       <Box>
         <Typography
           component="p"
-          aria-label={`${value} ${title}`}
+          aria-label={empty ? `${title}: sin datos` : `${value}${suffix} ${title}`}
           sx={{
             fontSize: { xs: '2.6rem', md: 'clamp(3rem, 5.4vw, 4.4rem)' },
             fontWeight: 800,
@@ -129,7 +134,10 @@ function KpiTile({
             textShadow: '0 2px 18px rgba(0,0,0,0.3)',
           }}
         >
-          <span aria-hidden>{shown.toLocaleString('es-ES')}</span>
+          <span aria-hidden>
+            {empty ? '—' : shown.toLocaleString('es-ES')}
+            {!empty && suffix && <Box component="span" sx={{ fontSize: '0.55em', ml: 0.25 }}>{suffix}</Box>}
+          </span>
         </Typography>
         <Typography sx={{ mt: 0.75, fontWeight: 600, fontSize: { xs: '0.9rem', md: '1rem' }, lineHeight: 1.25 }}>
           {title}
@@ -197,6 +205,11 @@ export default function DashboardPage() {
   const now = useMemo(() => new Date(), []);
   const scene = sceneForDate(now);
   const firstName = (user?.fullName || '').trim().split(/\s+/)[0];
+  // Indicador del piloto: % de NC cerradas dentro de su plazo en los últimos 12 meses (null si aún no hay ninguna).
+  const onTimePct =
+    data && data.closedWithDeadlineFindings > 0
+      ? Math.round((100 * data.closedOnTimeFindings) / data.closedWithDeadlineFindings)
+      : null;
 
   return (
     <Box
@@ -327,6 +340,7 @@ export default function DashboardPage() {
                 index={2}
                 value={data.openFindings}
                 title="No conformidades abiertas"
+                note={data.dueIn14Findings > 0 ? `${data.dueIn14Findings} vencen en 14 días` : undefined}
                 icon={<AssignmentLateIcon />}
                 tone="info"
               />
@@ -342,16 +356,29 @@ export default function DashboardPage() {
                 index={4}
                 value={data.dueSoonFindings}
                 title="Vencen en 7 días"
-                note={data.dueSoonFindings > 0 ? 'Prioridad esta semana' : 'Sin urgencias'}
+                note={
+                  data.dueIn2Findings > 0
+                    ? `${data.dueIn2Findings} en 2 días o menos`
+                    : data.dueSoonFindings > 0
+                      ? 'Prioridad esta semana'
+                      : 'Sin urgencias'
+                }
                 icon={<EventBusyIcon />}
-                tone={data.dueSoonFindings > 0 ? 'warn' : 'ok'}
+                tone={data.dueIn2Findings > 0 ? 'alert' : data.dueSoonFindings > 0 ? 'warn' : 'ok'}
               />
               <KpiTile
                 index={5}
-                value={data.documentsGenerated}
-                title="Documentos generados"
-                icon={<DescriptionIcon />}
-                to="/documents"
+                value={onTimePct ?? 0}
+                empty={onTimePct === null}
+                suffix="%"
+                title="Cerradas en plazo"
+                note={
+                  onTimePct === null
+                    ? 'Aún no hay NC cerradas'
+                    : `${data.closedOnTimeFindings} de ${data.closedWithDeadlineFindings} en 12 meses`
+                }
+                icon={<TaskAltIcon />}
+                tone={onTimePct === null ? 'neutral' : onTimePct >= 90 ? 'ok' : onTimePct >= 70 ? 'warn' : 'alert'}
               />
             </Box>
           )}

@@ -92,7 +92,8 @@ public class CatalogService implements CatalogLookup {
                 });
 
         return new StandardDetailDto(s.getId(), s.getCode(), s.getVersion(), s.getName(), s.getOwnerBody(),
-                s.getCategory().name(), s.getDescription(), s.getScoringRule(), s.getOfficialUrl(), chapterDtos);
+                s.getCategory().name(), s.getDescription(), s.getScoringRule(), s.getOfficialUrl(), chapterDtos,
+                closureRule(s));
     }
 
     public List<ControlPointDto> listControlPoints(String code) {
@@ -157,7 +158,13 @@ public class CatalogService implements CatalogLookup {
     }
 
     private static StandardView toView(AuditStandard s) {
-        return new StandardView(s.getId(), s.getCode(), s.getVersion(), s.getName(), s.getScoringRule());
+        return new StandardView(s.getId(), s.getCode(), s.getVersion(), s.getName(), s.getScoringRule(),
+                closureRule(s));
+    }
+
+    private static ClosureRule closureRule(AuditStandard s) {
+        return new ClosureRule(s.getClosureDaysCritical(), s.getClosureDaysMajor(), s.getClosureDaysMinor(),
+                s.getClosureDaysObservation());
     }
 
     private static ControlPointView toView(ControlPoint cp) {

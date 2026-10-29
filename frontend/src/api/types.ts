@@ -124,6 +124,15 @@ export interface StandardDetail
   extends Omit<StandardSummary, 'chapterCount' | 'controlPointCount' | 'custom' | 'hidden' | 'archived'> {
   scoringRule: string | null;
   chapters: Chapter[];
+  closureRule: ClosureRule | null;
+}
+
+/** Plazo de cierre de NC por gravedad, en días desde la auditoría; null = sin plazo automático. */
+export interface ClosureRule {
+  criticalDays: number | null;
+  majorDays: number | null;
+  minorDays: number | null;
+  observationDays: number | null;
 }
 
 export interface Farm {
@@ -354,6 +363,8 @@ export interface Finding {
   raisedAt: string;
   correctiveActions: CorrectiveAction[];
   attachments: Attachment[];
+  /** Momento en que quedó cerrada o verificada (reloj de cierre). */
+  closedAt: string | null;
 }
 
 export interface FindingRequest {
@@ -482,7 +493,15 @@ export interface Dashboard {
   auditsByStatus: Record<string, number>;
   openFindings: number;
   overdueFindings: number;
+  /** Vencen en 7 días o menos (incluye hoy). */
   dueSoonFindings: number;
+  /** Vencen en 2 días o menos (incluye hoy). */
+  dueIn2Findings: number;
+  /** Vencen en 14 días o menos (incluye hoy). */
+  dueIn14Findings: number;
+  /** NC cerradas en los últimos 12 meses que tenían fecha límite, y cuántas a tiempo. */
+  closedWithDeadlineFindings: number;
+  closedOnTimeFindings: number;
   documentsGenerated: number;
   upcomingDeadlines: Deadline[];
   recentAudits: AuditSummary[];

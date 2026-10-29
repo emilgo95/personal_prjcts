@@ -33,7 +33,11 @@ export function daysUntil(iso: string, today: Date = new Date()): number {
   return Math.round(ms / 86_400_000);
 }
 
-export type DeadlineTone = 'overdue' | 'soon' | 'ok' | 'done';
+/**
+ * Estado del reloj de cierre de una NC (RF-301): vencida; avisos a 2, 7 y 14 días; con margen; y, ya cerrada,
+ * en plazo o con retraso (`done` si se desconoce la fecha de cierre).
+ */
+export type DeadlineTone = 'overdue' | 'urgent' | 'soon' | 'watch' | 'ok' | 'onTime' | 'late' | 'done';
 
 export interface DeadlineInfo {
   tone: DeadlineTone;
@@ -41,26 +45,41 @@ export interface DeadlineInfo {
   days: number;
 }
 
-/** Días a partir de los cuales una fecha límite deja de considerarse «a punto de vencer». */
+/** Avisos del reloj de cierre: días que faltan para el vencimiento (T-2, T-7, T-14). */
+export const DUE_URGENT_DAYS = 2;
 export const DUE_SOON_DAYS = 7;
+export const DUE_WATCH_DAYS = 14;
 
 function plural(n: number, one: string, many: string): string {
   return n === 1 ? one : many;
 }
 
 /**
- * Estado de una fecha límite: vencida, a punto de vencer (≤ 7 días) o con margen. Si la NC ya está cerrada
- * o verificada (`closed`) solo se muestra la fecha, sin alarma.
+ * Estado de una fecha límite (reloj de cierre de NC): vencida, avisos a 2, 7 y 14 días, o con margen. Si la NC ya
+ * está cerrada o verificada (`closed`), indica si se cerró en plazo según `closedAt`; sin esa fecha solo muestra el
+ * límite.
  */
-export function deadlineInfo(dueDate: string, closed = false, today: Date = new Date()): DeadlineInfo {
+export function deadlineInfo(
+  dueDate: string,
+  closed = false,
+  today: Date = new Date(),
+  closedAt?: string | null,
+): DeadlineInfo {
   const days = daysUntil(dueDate, today);
-  if (closed) return { tone: 'done', label: `Límite ${formatDate(dueDate)}`, days };
+  if (closed) {
+    if (!closedAt) return { tone: 'done', label: `Límite ${formatDate(dueDate)}`, days };
+    const late = -daysUntil(dueDate, new Date(closedAt));
+    if (late <= 0) return { tone: 'onTime', label: 'Cerrada en plazo', days };
+    return { tone: 'late', label: `Cerrada con ${late} ${plural(late, 'día', 'días')} de retraso`, days };
+  }
   if (days < 0) {
     const n = -days;
     return { tone: 'overdue', label: `Vencida hace ${n} ${plural(n, 'día', 'días')}`, days };
   }
-  if (days === 0) return { tone: 'soon', label: 'Vence hoy', days };
-  if (days === 1) return { tone: 'soon', label: 'Vence mañana', days };
+  if (days === 0) return { tone: 'urgent', label: 'Vence hoy', days };
+  if (days === 1) return { tone: 'urgent', label: 'Vence mañana', days };
+  if (days <= DUE_URGENT_DAYS) return { tone: 'urgent', label: `Vence en ${days} días`, days };
   if (days <= DUE_SOON_DAYS) return { tone: 'soon', label: `Vence en ${days} días`, days };
+  if (days <= DUE_WATCH_DAYS) return { tone: 'watch', label: `Vence en ${days} días`, days };
   return { tone: 'ok', label: `Vence en ${days} días`, days };
 }

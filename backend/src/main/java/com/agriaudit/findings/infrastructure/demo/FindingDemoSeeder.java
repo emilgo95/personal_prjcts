@@ -8,6 +8,7 @@ import com.agriaudit.catalog.ControlPointView;
 import com.agriaudit.findings.domain.CorrectiveAction;
 import com.agriaudit.findings.domain.CorrectiveActionStatus;
 import com.agriaudit.findings.domain.Finding;
+import com.agriaudit.findings.ClosureClock;
 import com.agriaudit.findings.domain.FindingClassification;
 import com.agriaudit.findings.domain.FindingStatus;
 import com.agriaudit.findings.infrastructure.persistence.CorrectiveActionRepository;
@@ -252,8 +253,18 @@ class FindingDemoSeeder {
         finding.setTitle(tpl.title());
         finding.setDescription(tpl.description());
         finding.setArea(cp.chapterTitle());
-        finding.setDueDate(due);
+        // Las observaciones no tienen plazo de cierre (ClosureRule.DEFAULT).
+        finding.setDueDate(classification == FindingClassification.OBSERVATION ? null : due);
         finding.setStatus(findingStatus);
+        if (findingStatus == FindingStatus.CLOSED || findingStatus == FindingStatus.VERIFIED) {
+            // Cerrada a las dos semanas de la auditoría; una de cada cinco, con retraso, para que el indicador
+            // de NC cerradas en plazo sea realista.
+            LocalDate closed = seq % 5 == 3 ? due.plusDays(6) : date.plusDays(14);
+            if (closed.isAfter(today)) {
+                closed = today;
+            }
+            finding.setClosedAt(closed.atTime(12, 0).atZone(ClosureClock.ZONE).toInstant());
+        }
         finding = findings.save(finding);
 
         if (actionStatus != null) {

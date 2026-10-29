@@ -29,14 +29,33 @@ describe('plazo de una no conformidad', () => {
     expect(deadlineInfo('2026-09-20', false, today).label).toBe('Vence mañana');
   });
 
-  it('avisa cuando quedan siete días o menos', () => {
+  it('avisa a 2, 7 y 14 días del vencimiento', () => {
+    expect(deadlineInfo('2026-09-19', false, today).tone).toBe('urgent');
+    expect(deadlineInfo('2026-09-21', false, today)).toMatchObject({ tone: 'urgent', label: 'Vence en 2 días' });
+    expect(deadlineInfo('2026-09-22', false, today).tone).toBe('soon');
     expect(deadlineInfo('2026-09-26', false, today)).toMatchObject({ tone: 'soon', label: 'Vence en 7 días' });
-    expect(deadlineInfo('2026-09-27', false, today).tone).toBe('ok');
+    expect(deadlineInfo('2026-09-27', false, today).tone).toBe('watch');
+    expect(deadlineInfo('2026-10-03', false, today).tone).toBe('watch');
+    expect(deadlineInfo('2026-10-04', false, today).tone).toBe('ok');
   });
 
   it('no alarma si la no conformidad ya está cerrada', () => {
     const d = deadlineInfo('2026-07-13', true, today);
     expect(d.tone).toBe('done');
     expect(d.label).toBe('Límite 13/07/2026');
+  });
+
+  it('indica si se cerró en plazo o con retraso', () => {
+    expect(deadlineInfo('2026-09-10', true, today, '2026-09-10T18:00:00')).toMatchObject({
+      tone: 'onTime',
+      label: 'Cerrada en plazo',
+    });
+    expect(deadlineInfo('2026-09-10', true, today, '2026-09-11T09:00:00')).toMatchObject({
+      tone: 'late',
+      label: 'Cerrada con 1 día de retraso',
+    });
+    expect(deadlineInfo('2026-09-10', true, today, '2026-09-15T09:00:00').label).toBe(
+      'Cerrada con 5 días de retraso',
+    );
   });
 });
