@@ -7,7 +7,6 @@ import {
   CardContent,
   Chip,
   Grid,
-  LinearProgress,
   Stack,
   Step,
   StepLabel,
@@ -23,6 +22,7 @@ import {
 import { AuditApi } from '../api/endpoints';
 import type { AuditDetail } from '../api/types';
 import QueryBoundary from '../components/QueryBoundary';
+import ProgressMeter from '../components/ProgressMeter';
 import { useAuth } from '../auth/AuthContext';
 import { useToast } from '../utils/toast';
 import { formatDate } from '../utils/dates';
@@ -170,13 +170,11 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
                   />
                 </Stack>
                 <Box sx={{ maxWidth: 420 }}>
-                  <Typography variant="body2" gutterBottom>
-                    Progreso de la evaluación: {score.data.progressPct}%
-                  </Typography>
-                  <LinearProgress
-                    variant="determinate"
+                  <ProgressMeter
                     value={score.data.progressPct}
-                    aria-label="Progreso de la evaluación"
+                    assessed={score.data.assessedCount}
+                    total={score.data.totalControlPoints}
+                    label="Progreso de la evaluación"
                   />
                 </Box>
                 <Stack component="ul" sx={{ mt: 1, pl: 2 }} spacing={0.5}>

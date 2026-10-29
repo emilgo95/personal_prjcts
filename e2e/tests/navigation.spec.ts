@@ -7,7 +7,7 @@ test.beforeEach(async ({ page, request }) => {
 
 test.describe('Navegación y catálogo', () => {
   test('el panel muestra los bloques de indicadores', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Indicadores principales' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Auditorías por estado' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Auditorías recientes' })).toBeVisible();
   });

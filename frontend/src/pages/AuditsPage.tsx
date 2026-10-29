@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Button, Chip, LinearProgress, Box } from '@mui/material';
+import { Button } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import { AuditApi } from '../api/endpoints';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
+import ProgressMeter from '../components/ProgressMeter';
 import { useAuth } from '../auth/AuthContext';
-import { auditStatusColors, auditStatusLabels, auditTypeLabels, label, standardShort } from '../utils/labels';
+import AuditStatusChip from '../components/AuditStatusChip';
+import { auditTypeLabels, label, standardShort } from '../utils/labels';
 
 export default function AuditsPage() {
   const navigate = useNavigate();
@@ -40,23 +42,19 @@ export default function AuditsPage() {
       field: 'status',
       headerName: 'Estado',
       width: 130,
-      renderCell: (params) => (
-        <Chip
-          size="small"
-          color={auditStatusColors[params.value as string] ?? 'default'}
-          label={label(auditStatusLabels, params.value as string)}
-        />
-      ),
+      renderCell: (params) => <AuditStatusChip status={params.value as string} />,
     },
     {
       field: 'progressPct',
       headerName: 'Progreso',
-      width: 150,
+      width: 190,
       renderCell: (params) => (
-        <Box sx={{ width: '100%' }}>
-          <LinearProgress variant="determinate" value={params.value as number} aria-label="Progreso de evaluación" />
-          <span style={{ fontSize: 11 }}>{params.value as number}%</span>
-        </Box>
+        <ProgressMeter
+          compact
+          value={params.value as number}
+          assessed={params.row.assessedCount}
+          total={params.row.totalControlPoints}
+        />
       ),
     },
     { field: 'findingsCount', headerName: 'NC', width: 70, type: 'number' },

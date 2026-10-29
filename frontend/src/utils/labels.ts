@@ -75,12 +75,16 @@ export const auditStatusLabels: Record<string, string> = {
   CLOSED: 'Cerrada',
 };
 
-export const auditStatusColors: Record<string, 'default' | 'info' | 'warning' | 'primary' | 'success'> = {
-  DRAFT: 'default',
-  IN_PROGRESS: 'info',
-  CLOSING: 'warning',
-  SUBMITTED: 'primary',
-  CLOSED: 'success',
+/**
+ * Colores del estado de la auditoría: solo tonos fríos y neutros (gris, azul, índigo, violeta, pizarra). El rojo, el
+ * naranja y el verde quedan reservados al progreso, para que un mismo color no signifique dos cosas en la misma pantalla.
+ */
+export const auditStatusStyle: Record<string, { bg: string; fg: string; solid: string }> = {
+  DRAFT: { bg: '#eceff1', fg: '#455a64', solid: '#90a4ae' },
+  IN_PROGRESS: { bg: '#e3f2fd', fg: '#0d47a1', solid: '#1e88e5' },
+  CLOSING: { bg: '#e8eaf6', fg: '#283593', solid: '#5c6bc0' },
+  SUBMITTED: { bg: '#f3e5f5', fg: '#6a1b9a', solid: '#ab47bc' },
+  CLOSED: { bg: '#455a64', fg: '#ffffff', solid: '#455a64' },
 };
 
 export const roleLabels: Record<string, string> = {

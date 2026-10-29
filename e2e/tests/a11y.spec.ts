@@ -36,6 +36,6 @@ test('la pantalla de login no tiene violaciones críticas de accesibilidad', asy
 
 test('el panel no tiene violaciones críticas de accesibilidad', async ({ page, request }) => {
   await loginViaApi(page, request);
-  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Indicadores principales' })).toBeVisible();
   await checkA11y(page);
 });

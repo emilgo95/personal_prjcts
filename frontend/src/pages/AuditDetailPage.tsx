@@ -5,7 +5,8 @@ import { Alert, Box, Chip, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { AuditApi } from '../api/endpoints';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
-import { auditStatusColors, auditStatusLabels, auditTypeLabels, label } from '../utils/labels';
+import AuditStatusChip from '../components/AuditStatusChip';
+import { auditTypeLabels, label } from '../utils/labels';
 import SummaryTab from '../audit/SummaryTab';
 import ChecklistTab from '../audit/ChecklistTab';
 import FindingsTab from '../audit/FindingsTab';
@@ -45,7 +46,7 @@ export default function AuditDetailPage() {
               action={
                 <Stack direction="row" spacing={1}>
                   <Chip label={label(auditTypeLabels, data.auditType)} variant="outlined" />
-                  <Chip color={auditStatusColors[data.status] ?? 'default'} label={label(auditStatusLabels, data.status)} />
+                  <AuditStatusChip status={data.status} size="medium" />
                 </Stack>
               }
             />

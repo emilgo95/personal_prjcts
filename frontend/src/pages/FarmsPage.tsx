@@ -1,8 +1,11 @@
+import { useDeferredValue, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@mui/material';
+import { Box, Button, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import { GridActionsCellItem } from '@mui/x-data-grid';
 import { FarmApi } from '../api/endpoints';
@@ -11,6 +14,7 @@ import QueryBoundary from '../components/QueryBoundary';
 import { useAuth } from '../auth/AuthContext';
 import { useToast } from '../utils/toast';
 import { extractErrorMessage } from '../api/client';
+import { filterFarms } from '../utils/search';
 
 export default function FarmsPage() {
   const navigate = useNavigate();
@@ -18,6 +22,11 @@ export default function FarmsPage() {
   const { hasRole } = useAuth();
   const { notify } = useToast();
   const { data, isLoading, error } = useQuery({ queryKey: ['farms'], queryFn: FarmApi.list });
+  const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
+  const farms = useMemo(() => data ?? [], [data]);
+  const visibleFarms = useMemo(() => filterFarms(farms, deferredSearch), [farms, deferredSearch]);
+  const searching = deferredSearch.trim() !== '';
 
   const remove = useMutation({
     mutationFn: (id: number) => FarmApi.remove(id),
@@ -75,10 +84,50 @@ export default function FarmsPage() {
         }
       />
       <QueryBoundary isLoading={isLoading} error={error}>
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <TextField
+            size="small"
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setSearch('');
+            }}
+            placeholder="Buscar por nombre, GGN, localidad, región o cultivo…"
+            sx={{ flex: '1 1 320px', maxWidth: 520, bgcolor: 'background.paper' }}
+            slotProps={{
+              htmlInput: { 'aria-label': 'Buscar explotaciones' },
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+                endAdornment: search ? (
+                  <InputAdornment position="end">
+                    <IconButton size="small" aria-label="Borrar búsqueda" onClick={() => setSearch('')}>
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              },
+            }}
+          />
+          <Typography variant="body2" color="text.secondary" role="status" aria-live="polite">
+            {searching
+              ? `${visibleFarms.length} de ${farms.length} explotaciones`
+              : `${farms.length} ${farms.length === 1 ? 'explotación' : 'explotaciones'}`}
+          </Typography>
+        </Box>
         <div style={{ width: '100%' }}>
           <DataGrid
             autoHeight
-            rows={data ?? []}
+            rows={visibleFarms}
+            localeText={{
+              noRowsLabel: searching
+                ? `Ninguna explotación coincide con «${deferredSearch.trim()}»`
+                : 'Todavía no hay explotaciones',
+            }}
             columns={columns}
             disableRowSelectionOnClick
             onRowClick={(p) => navigate(`/farms/${p.id}`)}

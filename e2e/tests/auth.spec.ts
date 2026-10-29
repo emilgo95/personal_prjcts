@@ -19,7 +19,7 @@ test.describe('Autenticación', () => {
 
   test('credenciales válidas llevan al panel', async ({ page }) => {
     await loginViaForm(page);
-    await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Indicadores principales' })).toBeVisible();
     await expect(page).not.toHaveURL(/\/login$/);
     // El menú lateral con las secciones principales está disponible.
     await expect(page.getByRole('link', { name: 'Auditorías', exact: true })).toBeVisible();
@@ -27,7 +27,7 @@ test.describe('Autenticación', () => {
 
   test('cerrar sesión vuelve al login', async ({ page }) => {
     await loginViaForm(page);
-    await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Indicadores principales' })).toBeVisible();
     await page.getByRole('button', { name: 'Cerrar sesión' }).click();
     await expect(page).toHaveURL(/\/login$/);
   });

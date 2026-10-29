@@ -38,7 +38,7 @@ export async function loginViaApi(page: Page, request: APIRequestContext): Promi
     { tokens, keys: { access: ACCESS_TOKEN_KEY, refresh: REFRESH_TOKEN_KEY } },
   );
   await page.goto(BASE_URL);
-  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Indicadores principales' })).toBeVisible();
 }
 
 /** Inicia sesión rellenando el formulario real (para los tests de login). */
