@@ -125,7 +125,7 @@ public class DocxDocumentRenderer implements DocumentRenderer {
                     f.controlPointId() == null ? "-" : levelForControl(m, f.controlPointId()),
                     DocLabels.classification(f.classification()),
                     buildFindingText(f),
-                    f.dueDate() == null ? "-" : f.dueDate().toString(),
+                    DocLabels.dueWithJustification(f),
                     DocLabels.findingStatus(f.status()));
             i++;
         }
@@ -224,7 +224,7 @@ public class DocxDocumentRenderer implements DocumentRenderer {
                         f.controlPointRef() == null ? "-" : f.controlPointRef(),
                         DocLabels.classification(f.classification()),
                         buildFindingText(f),
-                        f.dueDate() == null ? "-" : f.dueDate().toString(),
+                        DocLabels.dueWithJustification(f),
                         DocLabels.findingStatus(f.status()));
                 i++;
             }

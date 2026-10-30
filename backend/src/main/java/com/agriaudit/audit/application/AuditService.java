@@ -229,6 +229,20 @@ public class AuditService implements AuditLookup {
      * y cerrar la auditoría exige que no queden no conformidades sin cerrar ni verificar.
      */
     public AuditDetailDto transition(Long id, String status) {
+        return transition(id, status, null);
+    }
+
+    /** Lo que impide (NC por revisar) o condiciona (NC vencidas sin justificar) el envío de la auditoría. */
+    @Transactional(readOnly = true)
+    public FindingsCounter.SubmissionCheck submissionCheck(Long id) {
+        return findings.submissionCheck(requireAuditEntity(id).getId());
+    }
+
+    /**
+     * Como {@link #transition(Long, String)}; al enviar, {@code lateJustifications} justifica las NC vencidas
+     * (id de la NC → motivo).
+     */
+    public AuditDetailDto transition(Long id, String status, java.util.Map<Long, String> lateJustifications) {
         Audit audit = requireAuditEntity(id);
         AuditStatus target;
         try {
@@ -261,6 +275,7 @@ public class AuditService implements AuditLookup {
         }
         if (target == AuditStatus.SUBMITTED) {
             requireFindingForEveryNonCompliance(audit);
+            requireReviewedAndJustifiedFindings(audit, lateJustifications);
         }
         if (target == AuditStatus.CLOSED) {
             long open = findings.countOpenByAudit(audit.getId());
@@ -274,6 +289,39 @@ public class AuditService implements AuditLookup {
         Audit saved = audits.save(audit);
         trace.transitioned(saved, current, target);
         return toDetail(saved);
+    }
+
+    /**
+     * Para enviar, ninguna NC puede estar pendiente de verificar (acción completada o marcada como resuelta), y
+     * cada NC vencida y sin cerrar necesita una justificación del retraso, que se guarda en la NC.
+     */
+    private void requireReviewedAndJustifiedFindings(Audit audit, java.util.Map<Long, String> lateJustifications) {
+        FindingsCounter.SubmissionCheck check = findings.submissionCheck(audit.getId());
+        if (!check.toReview().isEmpty()) {
+            int n = check.toReview().size();
+            throw new ConflictException("No se puede enviar la auditoría: " + (n == 1
+                    ? "hay 1 no conformidad por revisar (" : "hay " + n + " no conformidades por revisar (")
+                    + references(check.toReview()) + "): su acción correctiva está completada pero falta "
+                    + "verificarla en «Hallazgos y CAPA».");
+        }
+        if (lateJustifications != null && !lateJustifications.isEmpty()) {
+            findings.justifyLate(audit.getId(), lateJustifications);
+            check = findings.submissionCheck(audit.getId());
+        }
+        List<FindingsCounter.PendingFinding> unjustified = check.overdue().stream()
+                .filter(f -> f.lateJustification() == null || f.lateJustification().isBlank()).toList();
+        if (!unjustified.isEmpty()) {
+            int n = unjustified.size();
+            throw new ConflictException("No se puede enviar la auditoría: " + (n == 1
+                    ? "hay 1 no conformidad vencida sin justificar (" : "hay " + n
+                    + " no conformidades vencidas sin justificar (") + references(unjustified)
+                    + "). Indica el motivo del retraso de cada una.");
+        }
+    }
+
+    private static String references(List<FindingsCounter.PendingFinding> list) {
+        return list.stream().map(FindingsCounter.PendingFinding::reference)
+                .collect(java.util.stream.Collectors.joining(", "));
     }
 
     /** Un punto evaluado como no conforme debe tener su no conformidad registrada antes de enviar la auditoría. */

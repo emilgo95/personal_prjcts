@@ -50,6 +50,13 @@ public class Finding {
     @Column(name = "closed_at")
     private Instant closedAt;
 
+    /** Justificación del retraso, si la auditoría se envió con esta NC vencida y sin cerrar. */
+    @Column(name = "late_justification", length = 2000)
+    private String lateJustification;
+
+    @Column(name = "late_justified_at")
+    private Instant lateJustifiedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -94,6 +101,15 @@ public class Finding {
 
     public Instant getClosedAt() { return closedAt; }
     public void setClosedAt(Instant closedAt) { this.closedAt = closedAt; }
+
+    public String getLateJustification() { return lateJustification; }
+    public Instant getLateJustifiedAt() { return lateJustifiedAt; }
+
+    /** Motivo por el que se envía la auditoría con esta NC vencida y sin cerrar. */
+    public void justifyLate(String justification, Instant at) {
+        this.lateJustification = justification;
+        this.lateJustifiedAt = at;
+    }
 
     private static boolean isClosed(FindingStatus s) {
         return s == FindingStatus.CLOSED || s == FindingStatus.VERIFIED;

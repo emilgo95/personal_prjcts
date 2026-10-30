@@ -387,7 +387,8 @@ public class FindingService implements FindingLookup {
                 cp == null ? null : cp.title(),
                 f.getReference(), f.getClassification().name(), f.getTitle(), f.getDescription(),
                 f.getArea(), f.getDueDate(), f.getStatus().name(), f.getRaisedAt(), actions,
-                attachmentLookup.byEntity(AttachmentEntityType.FINDING, f.getId()), f.getClosedAt());
+                attachmentLookup.byEntity(AttachmentEntityType.FINDING, f.getId()), f.getClosedAt(),
+                f.getLateJustification());
     }
 
     private CorrectiveActionDto toDto(CorrectiveAction a) {

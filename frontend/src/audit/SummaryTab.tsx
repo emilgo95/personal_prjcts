@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
@@ -20,7 +21,8 @@ import {
   Typography,
 } from '@mui/material';
 import { AuditApi } from '../api/endpoints';
-import type { AuditDetail } from '../api/types';
+import type { AuditDetail, SubmissionCheck } from '../api/types';
+import SubmitAuditDialog from './SubmitAuditDialog';
 import QueryBoundary from '../components/QueryBoundary';
 import ProgressMeter from '../components/ProgressMeter';
 import { useAuth } from '../auth/AuthContext';
@@ -53,9 +55,14 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
   const currentStep = statusFlow.indexOf(audit.status);
   const score = useQuery({ queryKey: ['audit', auditId, 'score'], queryFn: () => AuditApi.score(auditId) });
 
+  // Lo que falta para enviar (NC por revisar o vencidas); null si no hay que preguntar nada.
+  const [pending, setPending] = useState<SubmissionCheck | null>(null);
+
   const transition = useMutation({
-    mutationFn: (status: string) => AuditApi.transition(auditId, status),
+    mutationFn: (v: { status: string; lateJustifications?: Record<number, string> }) =>
+      AuditApi.transition(auditId, v.status, v.lateJustifications),
     onSuccess: () => {
+      setPending(null);
       notify('Estado actualizado', 'success');
       queryClient.invalidateQueries({ queryKey: ['audit', auditId] });
       queryClient.invalidateQueries({ queryKey: ['audits'] });
@@ -63,6 +70,21 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
     },
     onError: (e) => notify(extractErrorMessage(e), 'error'),
   });
+
+  /** Antes de enviar se comprueba qué falta: si no falta nada, se envía sin preguntar. */
+  const start = async (next: string) => {
+    if (next !== 'SUBMITTED') {
+      transition.mutate({ status: next });
+      return;
+    }
+    try {
+      const check = await AuditApi.submissionCheck(auditId);
+      if (check.toReview.length === 0 && check.overdue.length === 0) transition.mutate({ status: next });
+      else setPending(check);
+    } catch (e) {
+      notify(extractErrorMessage(e), 'error');
+    }
+  };
 
   return (
     <Stack spacing={2}>
@@ -87,7 +109,7 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
                     key={next}
                     variant={forward ? 'contained' : 'outlined'}
                     disabled={transition.isPending}
-                    onClick={() => transition.mutate(next)}
+                    onClick={() => start(next)}
                   >
                     {forward
                       ? `Pasar a «${label(auditStatusLabels, next)}»`
@@ -110,6 +132,13 @@ export default function SummaryTab({ auditId, audit }: { auditId: number; audit:
           )}
         </CardContent>
       </Card>
+
+      <SubmitAuditDialog
+        check={pending}
+        submitting={transition.isPending}
+        onClose={() => setPending(null)}
+        onSubmit={(lateJustifications) => transition.mutate({ status: 'SUBMITTED', lateJustifications })}
+      />
 
       <Card>
         <CardContent>

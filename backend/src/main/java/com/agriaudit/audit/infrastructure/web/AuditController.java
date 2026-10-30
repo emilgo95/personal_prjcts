@@ -44,10 +44,16 @@ public class AuditController {
         return auditService.update(id, request);
     }
 
+    /** Qué impide o condiciona el envío: NC por revisar (bloquean) y NC vencidas (piden justificación). */
+    @GetMapping("/{id}/submission-check")
+    public com.agriaudit.audit.FindingsCounter.SubmissionCheck submissionCheck(@PathVariable Long id) {
+        return auditService.submissionCheck(id);
+    }
+
     @PostMapping("/{id}/transition")
     @PreAuthorize("hasAnyRole('ADMIN','AUDITOR','QUALITY')")
     public AuditDetailDto transition(@PathVariable Long id, @Valid @RequestBody TransitionRequest request) {
-        return auditService.transition(id, request.status());
+        return auditService.transition(id, request.status(), request.lateJustifications());
     }
 
     @GetMapping("/{id}/results")

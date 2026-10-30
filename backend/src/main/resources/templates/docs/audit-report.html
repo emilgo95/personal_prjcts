@@ -79,7 +79,10 @@
             <span th:if="${f.description}" th:text="${(f.title != null ? ' — ' : '') + f.description}"></span>
             <div th:replace="~{docs/_common :: evidence(${m.evidenceByFinding.get(f.id)})}"></div>
         </td>
-        <td th:text="${f.dueDate} ?: '-'"></td>
+        <td>
+            <span th:text="${f.dueDate} ?: '-'"></span>
+            <div th:if="${f.lateJustification}" class="muted"><b>Retraso justificado:</b> <span th:text="${f.lateJustification}"></span></div>
+        </td>
         <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).findingStatus(f.status)}"></td>
     </tr>
 </table>

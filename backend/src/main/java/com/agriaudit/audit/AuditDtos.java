@@ -108,6 +108,10 @@ public final class AuditDtos {
     public record ResultsUpdateRequest(@NotNull List<@Valid ResultUpdate> results) {
     }
 
-    public record TransitionRequest(@NotBlank String status) {
+    /**
+     * Cambio de estado. Al enviar, {@code lateJustifications} (id de la NC → motivo) justifica las NC vencidas y sin
+     * cerrar: sin ella, no se puede enviar.
+     */
+    public record TransitionRequest(@NotBlank String status, java.util.Map<Long, String> lateJustifications) {
     }
 }

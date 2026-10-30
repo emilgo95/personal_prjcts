@@ -67,14 +67,16 @@ public final class FindingDtos {
             Instant raisedAt,
             List<CorrectiveActionDto> correctiveActions,
             List<AttachmentDto> attachments,
-            Instant closedAt) {
+            Instant closedAt,
+            /** Motivo del retraso si la auditoría se envió con esta NC vencida (null si no hizo falta). */
+            String lateJustification) {
 
         public FindingDto(Long id, Long auditId, Long controlPointId, String controlPointRef, String controlPointTitle,
                           String reference, String classification, String title, String description, String area,
                           LocalDate dueDate, String status, Instant raisedAt,
                           List<CorrectiveActionDto> correctiveActions, List<AttachmentDto> attachments) {
             this(id, auditId, controlPointId, controlPointRef, controlPointTitle, reference, classification, title,
-                    description, area, dueDate, status, raisedAt, correctiveActions, attachments, null);
+                    description, area, dueDate, status, raisedAt, correctiveActions, attachments, null, null);
         }
     }
 }

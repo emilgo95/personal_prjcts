@@ -39,6 +39,7 @@ import type {
   EvidenceMatrixEntry,
   EvidenceCoverage,
   EvidenceMap,
+  SubmissionCheck,
   EvidenceHealth,
   BlockedUser,
   PersonalDataItem,
@@ -131,8 +132,12 @@ export const AuditApi = {
   get: (id: number) => api.get<AuditDetail>(`/audits/${id}`).then((r) => r.data),
   create: (body: AuditRequest) => api.post<AuditDetail>('/audits', body).then((r) => r.data),
   update: (id: number, body: AuditRequest) => api.put<AuditDetail>(`/audits/${id}`, body).then((r) => r.data),
-  transition: (id: number, status: string) =>
-    api.post<AuditDetail>(`/audits/${id}/transition`, { status }).then((r) => r.data),
+  /** Al enviar, `lateJustifications` (id de la NC → motivo) justifica las NC vencidas. */
+  transition: (id: number, status: string, lateJustifications?: Record<number, string>) =>
+    api.post<AuditDetail>(`/audits/${id}/transition`, { status, lateJustifications }).then((r) => r.data),
+  /** Lo que impide (NC por revisar) o condiciona (NC vencidas) el envío. */
+  submissionCheck: (id: number) =>
+    api.get<SubmissionCheck>(`/audits/${id}/submission-check`).then((r) => r.data),
   results: (id: number) => api.get<AuditItemResult[]>(`/audits/${id}/results`).then((r) => r.data),
   updateResults: (id: number, results: ResultUpdate[]) =>
     api.put<AuditItemResult[]>(`/audits/${id}/results`, { results }).then((r) => r.data),

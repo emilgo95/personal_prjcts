@@ -86,6 +86,14 @@ class FindingTrace {
                 Changes.create().track("status", "Estado", status(before), status(f.getStatus())).list()));
     }
 
+    void lateJustified(Finding f, String before) {
+        trace.record(ChangeEntry.of(TraceEntity.FINDING, f.getId(), f.getReference(), f.getAuditId(),
+                TraceAction.UPDATE, "Justificó el retraso de la no conformidad " + f.getReference()
+                        + " al enviar la auditoría",
+                Changes.create().track("lateJustification", "Justificación del retraso", before,
+                        f.getLateJustification()).list()));
+    }
+
     void deleted(Finding f) {
         trace.record(ChangeEntry.of(TraceEntity.FINDING, f.getId(), f.getReference(), f.getAuditId(),
                 TraceAction.DELETE, "Eliminó la no conformidad " + f.getReference() + " «" + f.getTitle() + "»",

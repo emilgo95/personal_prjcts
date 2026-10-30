@@ -137,7 +137,7 @@ public class XlsxDocumentRenderer implements DocumentRenderer {
         put(row, c++, DocLabels.classification(f.classification()), wrap);
         put(row, c++, safe(f.controlPointRef()), wrap);
         put(row, c++, findingText(f), wrap);
-        put(row, c++, f.dueDate() == null ? "" : f.dueDate().toString(), wrap);
+        put(row, c++, DocLabels.dueWithJustification(f), wrap);
         put(row, c++, ca == null ? "" : safe(ca.rootCause()), wrap);
         put(row, c++, ca == null ? "" : safe(ca.correction()), wrap);
         put(row, c++, ca == null ? "" : safe(ca.preventiveAction()), wrap);

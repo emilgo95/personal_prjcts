@@ -530,6 +530,22 @@ export interface CorrectiveAction {
   updatedAt: string;
 }
 
+/** Una NC que impide (por revisar) o condiciona (vencida) el envío de la auditoría. */
+export interface PendingFinding {
+  id: number;
+  reference: string;
+  title: string | null;
+  dueDate: string | null;
+  lateJustification: string | null;
+}
+
+export interface SubmissionCheck {
+  /** Acción correctiva completada (o NC marcada como resuelta) sin verificar: impiden enviar. */
+  toReview: PendingFinding[];
+  /** Vencidas y sin cerrar: piden el motivo del retraso. */
+  overdue: PendingFinding[];
+}
+
 export interface Finding {
   id: number;
   auditId: number;
@@ -548,6 +564,8 @@ export interface Finding {
   attachments: Attachment[];
   /** Momento en que quedó cerrada o verificada (reloj de cierre). */
   closedAt: string | null;
+  /** Motivo del retraso si la auditoría se envió con esta NC vencida. */
+  lateJustification?: string | null;
 }
 
 export interface FindingRequest {

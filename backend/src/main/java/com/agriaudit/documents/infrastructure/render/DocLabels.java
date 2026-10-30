@@ -99,4 +99,13 @@ public final class DocLabels {
             default -> value;
         };
     }
+
+    /** Fecha límite de la NC y, si se envió vencida, el motivo del retraso (para las celdas de los documentos). */
+    public static String dueWithJustification(com.agriaudit.findings.FindingDtos.FindingDto f) {
+        String due = f.dueDate() == null ? "-" : f.dueDate().toString();
+        if (f.lateJustification() == null || f.lateJustification().isBlank()) {
+            return due;
+        }
+        return due + " · Retraso justificado: " + f.lateJustification();
+    }
 }

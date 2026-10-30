@@ -4,6 +4,7 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Alert,
   Box,
   Button,
   Card,
@@ -373,6 +374,11 @@ function FindingCard({
                 <Typography variant="body2" color="text.secondary">
                   {finding.description}
                 </Typography>
+              )}
+              {finding.lateJustification && (
+                <Alert severity="warning" sx={{ mt: 1, py: 0 }}>
+                  <b>Enviada fuera de plazo.</b> Motivo: {finding.lateJustification}
+                </Alert>
               )}
             </Box>
             <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: "center", flexWrap: "wrap", flexShrink: 0 }}>
