@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import KeyIcon from '@mui/icons-material/Key';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardIcon from '@mui/icons-material/SpaceDashboard';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
@@ -113,11 +114,20 @@ export default function Layout({ children }: { children: ReactNode }) {
           </Box>
           <IconButton
             color="inherit"
+            onClick={() => navigate('/account/password')}
+            title="Cambiar contraseña"
+            aria-label="Cambiar contraseña"
+          >
+            <KeyIcon />
+          </IconButton>
+          <IconButton
+            color="inherit"
             onClick={() => {
               logout();
               navigate('/login');
             }}
             title="Cerrar sesión"
+            aria-label="Cerrar sesión"
           >
             <LogoutIcon />
           </IconButton>

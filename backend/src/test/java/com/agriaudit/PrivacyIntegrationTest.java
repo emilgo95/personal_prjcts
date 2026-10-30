@@ -1,6 +1,7 @@
 package com.agriaudit;
 
 import com.agriaudit.identity.application.BlockedIdentityDestroyer;
+import com.agriaudit.support.FirstLogin;
 import com.agriaudit.support.TestPostgres;
 import com.agriaudit.trace.application.TraceCrypto;
 import com.agriaudit.trace.infrastructure.persistence.StoredEntry;
@@ -137,7 +138,7 @@ class PrivacyIntegrationTest {
         String email = role.toLowerCase() + "." + unique() + "@demo.test";
         long uid = id(call(admin, HttpMethod.POST, "/api/users",
                 Map.of("email", email, "fullName", fullName, "role", role, "password", "Abcd1234!")));
-        return new Person(uid, email, fullName, login(email, "Abcd1234!"));
+        return new Person(uid, email, fullName, FirstLogin.withTemporaryPassword(rest, email, "Abcd1234!"));
     }
 
     private ResponseEntity<JsonNode> uploadPng(String token, String path) {

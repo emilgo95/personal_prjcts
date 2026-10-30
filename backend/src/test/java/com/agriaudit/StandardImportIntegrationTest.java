@@ -1,5 +1,6 @@
 package com.agriaudit;
 
+import com.agriaudit.support.FirstLogin;
 import com.agriaudit.support.TestPostgres;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -105,7 +106,7 @@ class StandardImportIntegrationTest {
         String email = role.toLowerCase() + "." + unique() + "@demo.test";
         call(admin, HttpMethod.POST, "/api/users", Map.of("email", email, "fullName", role, "role", role,
                 "password", "Abcd1234!"));
-        return login(email, "Abcd1234!");
+        return FirstLogin.withTemporaryPassword(rest, email, "Abcd1234!");
     }
 
     private ResponseEntity<JsonNode> upload(String token, String path, String code, String version, String csv) {

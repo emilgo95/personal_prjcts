@@ -9,3 +9,8 @@ springdoc:
 logging:
   level:
     com.agriaudit: INFO
+
+agriaudit:
+  admin:
+    # La contraseña inicial (ADMIN_PASSWORD) la conoce quien instala: el administrador debe cambiarla al entrar.
+    force-password-change: true

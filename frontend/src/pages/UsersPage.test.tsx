@@ -8,14 +8,14 @@ import { UserApi } from '../api/endpoints';
 import type { UserDto } from '../api/types';
 
 const users: UserDto[] = [
-  { id: 1, email: 'admin@demo.test', fullName: 'Admin', role: 'ADMIN', organizationId: 1, organizationName: 'Org', active: true, blocked: false },
-  { id: 2, email: 'baja@demo.test', fullName: 'Baja', role: 'VIEWER', organizationId: 1, organizationName: 'Org', active: false, blocked: false },
-  { id: 3, email: 'ana@demo.test', fullName: 'Ana', role: 'AUDITOR', organizationId: 1, organizationName: 'Org', active: true, blocked: false },
-  { id: 4, email: null, fullName: 'Usuario bloqueado', role: 'VIEWER', organizationId: 1, organizationName: 'Org', active: false, blocked: true },
+  { id: 1, email: 'admin@demo.test', fullName: 'Admin', role: 'ADMIN', organizationId: 1, organizationName: 'Org', active: true, blocked: false, mustChangePassword: false },
+  { id: 2, email: 'baja@demo.test', fullName: 'Baja', role: 'VIEWER', organizationId: 1, organizationName: 'Org', active: false, blocked: false, mustChangePassword: true },
+  { id: 3, email: 'ana@demo.test', fullName: 'Ana', role: 'AUDITOR', organizationId: 1, organizationName: 'Org', active: true, blocked: false, mustChangePassword: false },
+  { id: 4, email: null, fullName: 'Usuario bloqueado', role: 'VIEWER', organizationId: 1, organizationName: 'Org', active: false, blocked: true, mustChangePassword: false },
 ];
 
 vi.mock('../api/endpoints', () => ({
-  UserApi: { list: () => Promise.resolve(users), create: vi.fn(), update: vi.fn(), block: vi.fn(), dataExport: vi.fn() },
+  UserApi: { list: () => Promise.resolve(users), create: vi.fn(), update: vi.fn(), block: vi.fn(), dataExport: vi.fn(), resetPassword: vi.fn() },
   downloadBlob: vi.fn(),
 }));
 vi.mock('../auth/AuthContext', () => ({
@@ -95,6 +95,34 @@ describe('UsersPage', () => {
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Bloquear datos' }));
     await waitFor(() => expect(UserApi.block).toHaveBeenCalledWith(3));
     expect(confirmSpy).not.toHaveBeenCalled();
+  });
+
+  it('marca a quien aún tiene la contraseña temporal', async () => {
+    renderPage();
+    await screen.findByText('Desactivado');
+
+    expect(screen.getAllByText('Contraseña temporal')).toHaveLength(1);
+  });
+
+  it('restablece la contraseña de otro usuario y muestra la temporal una sola vez', async () => {
+    vi.mocked(UserApi.resetPassword).mockResolvedValue({ temporaryPassword: 'aaaa-bbbb-cccc' });
+    renderPage();
+    await screen.findByText('Desactivado');
+
+    const buttons = screen.getAllByRole('button', { name: 'Restablecer contraseña' });
+    expect(buttons[0]).toBeDisabled(); // la propia se cambia con «Cambiar contraseña»
+    expect(buttons[3]).toBeDisabled(); // bloqueado
+    fireEvent.click(buttons[2]); // Ana
+
+    const confirmDialog = await screen.findByRole('dialog');
+    expect(within(confirmDialog).getByText('¿Restablecer la contraseña de Ana?')).toBeInTheDocument();
+    fireEvent.click(within(confirmDialog).getByRole('button', { name: 'Restablecer' }));
+
+    expect(await screen.findByText('aaaa-bbbb-cccc')).toBeInTheDocument();
+    expect(UserApi.resetPassword).toHaveBeenCalledWith(3);
+    expect(screen.getByText(/Solo se muestra ahora/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Hecho' }));
+    await waitFor(() => expect(screen.queryByText('aaaa-bbbb-cccc')).not.toBeInTheDocument());
   });
 
   it('permite exportar los datos de una persona salvo si están bloqueados', async () => {

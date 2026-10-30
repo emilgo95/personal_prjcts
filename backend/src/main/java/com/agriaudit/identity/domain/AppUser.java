@@ -39,6 +39,14 @@ public class AppUser {
     @Column(nullable = false)
     private boolean blocked = false;
 
+    /** Contraseña temporal (puesta por un administrador): hay que cambiarla antes de usar la aplicación. */
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword = false;
+
+    /** Último cambio de contraseña: los tokens emitidos antes dejan de valer (se cierran las demás sesiones). */
+    @Column(name = "password_changed_at")
+    private Instant passwordChangedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -66,4 +74,15 @@ public class AppUser {
 
     public boolean isBlocked() { return blocked; }
     public void setBlocked(boolean blocked) { this.blocked = blocked; }
+
+    public boolean isMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
+    public Instant getPasswordChangedAt() { return passwordChangedAt; }
+
+    /** Pone una contraseña nueva (ya cifrada) y deja sin validez las sesiones abiertas con la anterior. */
+    public void changePassword(String passwordHash, boolean temporary, Instant now) {
+        this.passwordHash = passwordHash;
+        this.mustChangePassword = temporary;
+        this.passwordChangedAt = now;
+    }
 }

@@ -30,19 +30,22 @@ public class AdminInitializer implements CommandLineRunner {
     private final String adminEmail;
     private final String adminPassword;
     private final String adminOrgName;
+    private final boolean forcePasswordChange;
 
     public AdminInitializer(OrganizationRepository organizations,
                            AppUserRepository users,
                            PasswordEncoder passwordEncoder,
                            @Value("${agriaudit.admin.email}") String adminEmail,
                            @Value("${agriaudit.admin.password}") String adminPassword,
-                           @Value("${agriaudit.admin.org-name}") String adminOrgName) {
+                           @Value("${agriaudit.admin.org-name}") String adminOrgName,
+                           @Value("${agriaudit.admin.force-password-change:false}") boolean forcePasswordChange) {
         this.organizations = organizations;
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.adminEmail = adminEmail;
         this.adminPassword = adminPassword;
         this.adminOrgName = adminOrgName;
+        this.forcePasswordChange = forcePasswordChange;
     }
 
     @Override
@@ -65,7 +68,8 @@ public class AdminInitializer implements CommandLineRunner {
             admin.setFullName("Administrador");
             admin.setRole(Role.ADMIN);
             admin.setActive(true);
-            admin.setPasswordHash(passwordEncoder.encode(adminPassword));
+            // En producción la contraseña inicial la conoce quien instala: el administrador debe cambiarla al entrar.
+            admin.changePassword(passwordEncoder.encode(adminPassword), forcePasswordChange, java.time.Instant.now());
             users.save(admin);
             log.info("Usuario administrador '{}' creado", adminEmail);
         });

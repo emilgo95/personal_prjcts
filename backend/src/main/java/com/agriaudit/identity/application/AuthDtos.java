@@ -16,6 +16,9 @@ public final class AuthDtos {
     public record RefreshRequest(@NotBlank String refreshToken) {
     }
 
+    public record ChangePasswordRequest(@NotBlank String currentPassword, @NotBlank String newPassword) {
+    }
+
     public record UserDto(
             Long id,
             String email,
@@ -24,7 +27,9 @@ public final class AuthDtos {
             Long organizationId,
             String organizationName,
             boolean active,
-            boolean blocked) {
+            boolean blocked,
+            /** Tiene una contraseña temporal: debe cambiarla antes de usar la aplicación. */
+            boolean mustChangePassword) {
     }
 
     public record TokenResponse(

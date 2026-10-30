@@ -8,6 +8,8 @@ export interface UserDto {
   organizationName: string;
   active: boolean;
   blocked: boolean;
+  /** Tiene una contraseña temporal (puesta por un administrador): debe cambiarla antes de usar la aplicación. */
+  mustChangePassword: boolean;
 }
 
 export interface PrivacySettings {

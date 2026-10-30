@@ -3,6 +3,7 @@ package com.agriaudit.identity.infrastructure.web;
 import com.agriaudit.identity.application.UserDataExportService;
 import com.agriaudit.identity.application.UserService;
 import com.agriaudit.identity.application.AuthDtos.UserDto;
+import com.agriaudit.identity.application.UserDtos.TemporaryPasswordResponse;
 import com.agriaudit.identity.application.UserDtos.UserCreateRequest;
 import com.agriaudit.identity.application.UserDtos.UserUpdateRequest;
 import jakarta.validation.Valid;
@@ -38,6 +39,12 @@ public class UserController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserDto create(@Valid @RequestBody UserCreateRequest request) {
         return userService.create(request);
+    }
+
+    /** Genera una contraseña temporal para otro usuario; solo se devuelve en esta respuesta. */
+    @PostMapping("/{id}/reset-password")
+    public TemporaryPasswordResponse resetPassword(@PathVariable Long id) {
+        return userService.resetPassword(id);
     }
 
     @org.springframework.web.bind.annotation.PostMapping("/{id}/block")

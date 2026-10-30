@@ -9,6 +9,8 @@ interface AuthContextValue {
   user: UserDto | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  /** Cambia la contraseña propia y sigue en esta sesión con los tokens nuevos. */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   logout: () => void;
   hasRole: (...roles: Array<UserDto['role']>) => boolean;
 }
@@ -57,14 +59,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   }, []);
 
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    const res = await AuthApi.renewLogin(currentPassword, newPassword);
+    localStorage.setItem(ACCESS_TOKEN_KEY, res.accessToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, res.refreshToken);
+    setUser(res.user);
+  }, []);
+
   const hasRole = useCallback(
     (...roles: Array<UserDto['role']>) => (user ? roles.includes(user.role) : false),
     [user],
   );
 
   const value = useMemo(
-    () => ({ user, loading, login, logout, hasRole }),
-    [user, loading, login, logout, hasRole],
+    () => ({ user, loading, login, logout, changePassword, hasRole }),
+    [user, loading, login, logout, changePassword, hasRole],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

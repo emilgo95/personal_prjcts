@@ -1,5 +1,6 @@
 package com.agriaudit;
 
+import com.agriaudit.support.FirstLogin;
 import com.agriaudit.support.TestPostgres;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -106,7 +107,7 @@ class TraceIntegrationTest {
         String email = role.toLowerCase() + "." + unique() + "@demo.test";
         id(call(admin, HttpMethod.POST, "/api/users",
                 Map.of("email", email, "fullName", fullName, "role", role, "password", "Abcd1234!")));
-        return login(email, "Abcd1234!");
+        return FirstLogin.withTemporaryPassword(rest, email, "Abcd1234!");
     }
 
     private long newFarm(String token) {

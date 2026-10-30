@@ -505,15 +505,20 @@ class StabilizationIntegrationTest {
     @Test
     void theAdministratorKeepsTheirPasswordAcrossRestarts() {
         long myId = call(HttpMethod.GET, "/api/auth/me", null).getBody().get("id").asLong();
+        // La propia no se cambia editando el usuario, sino con «Cambiar contraseña» (pide la actual).
         assertThat(call(HttpMethod.PUT, "/api/users/" + myId,
                 Map.of("fullName", "Administrador", "role", "ADMIN", "active", true, "password", "NuevaClave123!"))
-                .getStatusCode()).isEqualTo(HttpStatus.OK);
+                .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        ResponseEntity<JsonNode> changed = call(HttpMethod.POST, "/api/auth/password",
+                Map.of("currentPassword", "Admin123!", "newPassword", "NuevaClave123!"));
+        assertThat(changed.getStatusCode()).isEqualTo(HttpStatus.OK);
+        token = changed.getBody().get("accessToken").asText();
         try {
             adminInitializer.run();
             assertThat(login("admin@demo.test", "NuevaClave123!")).isNotBlank();
         } finally {
-            call(HttpMethod.PUT, "/api/users/" + myId,
-                    Map.of("fullName", "Administrador", "role", "ADMIN", "active", true, "password", "Admin123!"));
+            call(HttpMethod.POST, "/api/auth/password",
+                    Map.of("currentPassword", "NuevaClave123!", "newPassword", "Admin123!"));
         }
     }
 }

@@ -16,6 +16,7 @@ import DocumentCenterPage from './pages/DocumentCenterPage';
 import TracePage from './pages/TracePage';
 import UsersPage from './pages/UsersPage';
 import PrivacyPage from './pages/PrivacyPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 
 function FullscreenLoader() {
   return (
@@ -40,6 +41,9 @@ export default function App() {
     );
   }
 
+  // Con una contraseña temporal solo se puede cambiarla: el resto de la aplicación no está disponible.
+  if (user.mustChangePassword) return <ChangePasswordPage forced />;
+
   return (
     <Layout>
       <ErrorBoundary resetKey={location.pathname}>
@@ -57,6 +61,7 @@ export default function App() {
           <Route path="/trace" element={hasRole('ADMIN', 'QUALITY') ? <TracePage /> : <Navigate to="/" replace />} />
           <Route path="/users" element={hasRole('ADMIN') ? <UsersPage /> : <Navigate to="/" replace />} />
           <Route path="/privacy" element={hasRole('ADMIN') ? <PrivacyPage /> : <Navigate to="/" replace />} />
+          <Route path="/account/password" element={<ChangePasswordPage />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

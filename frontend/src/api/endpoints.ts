@@ -38,6 +38,12 @@ export const AuthApi = {
   login: (email: string, password: string) =>
     api.post<TokenResponse>('/auth/login', { email, password }).then((r) => r.data),
   me: () => api.get<UserDto>('/auth/me').then((r) => r.data),
+  /**
+   * Cambia la contraseña propia y abre una sesión nueva: devuelve tokens nuevos (las demás sesiones quedan cerradas).
+   * Lo que devuelve son tokens de sesión, como el login, no la contraseña.
+   */
+  renewLogin: (currentPassword: string, newPassword: string) =>
+    api.post<TokenResponse>('/auth/password', { currentPassword, newPassword }).then((r) => r.data),
 };
 
 /** Descarga un fichero protegido (con el token) y lo guarda desde el navegador. */
@@ -202,6 +208,9 @@ export const UserApi = {
     body: { fullName?: string; role: string; active?: boolean; password?: string },
   ) => api.put<UserDto>(`/users/${id}`, body).then((r) => r.data),
   block: (id: number) => api.post<UserDto>(`/users/${id}/block`).then((r) => r.data),
+  /** Genera una contraseña temporal para otro usuario; solo se recibe en esta respuesta. */
+  resetPassword: (id: number) =>
+    api.post<{ temporaryPassword: string }>(`/users/${id}/reset-password`).then((r) => r.data),
   dataExport: (id: number) =>
     api.get(`/users/${id}/data-export`, { responseType: 'blob' }).then((r) => r.data as Blob),
 };

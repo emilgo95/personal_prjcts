@@ -16,6 +16,10 @@ public final class UserDtos {
             @NotBlank @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres") String password) {
     }
 
+    /** Contraseña temporal que el administrador comunica a la persona; solo se muestra una vez. */
+    public record TemporaryPasswordResponse(String temporaryPassword) {
+    }
+
     public record UserUpdateRequest(
             @Size(max = 200) String fullName,
             @NotBlank String role,

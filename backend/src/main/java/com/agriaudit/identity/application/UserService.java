@@ -10,6 +10,7 @@ import com.agriaudit.identity.infrastructure.persistence.AppUserRepository;
 import com.agriaudit.identity.infrastructure.persistence.OrganizationRepository;
 import com.agriaudit.identity.SecurityUtils;
 import com.agriaudit.identity.application.AuthDtos.UserDto;
+import com.agriaudit.identity.application.UserDtos.TemporaryPasswordResponse;
 import com.agriaudit.identity.application.UserDtos.UserCreateRequest;
 import com.agriaudit.identity.application.UserDtos.UserUpdateRequest;
 import com.agriaudit.trace.ChangeEntry;
@@ -69,7 +70,9 @@ public class UserService {
         user.setFullName(request.fullName());
         user.setRole(parseRole(request.role()));
         user.setActive(true);
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        PasswordPolicy.requireValid(request.password());
+        // La pone el administrador: es temporal y la persona tendrá que cambiarla al entrar.
+        user.changePassword(passwordEncoder.encode(request.password()), true, java.time.Instant.now());
         AppUser saved = users.save(user);
         // La traza es inalterable: no guarda el nombre ni el correo, solo el código del usuario.
         trace.record(ChangeEntry.of(TraceEntity.USER, saved.getId(), "usuario " + saved.getId(), null,
@@ -99,7 +102,12 @@ public class UserService {
         user.setActive(newActive);
         boolean passwordChanged = request.password() != null && !request.password().isBlank();
         if (passwordChanged) {
-            user.setPasswordHash(passwordEncoder.encode(request.password()));
+            // La propia se cambia con «Cambiar contraseña», que pide la actual; aquí solo se pone una temporal a otro.
+            if (user.getId().equals(SecurityUtils.currentUserId())) {
+                throw new ConflictException("Para tu propia cuenta usa «Cambiar contraseña».");
+            }
+            PasswordPolicy.requireValid(request.password());
+            user.changePassword(passwordEncoder.encode(request.password()), true, java.time.Instant.now());
         }
         AppUser saved = users.save(user);
         Changes c = Changes.create()
@@ -115,6 +123,30 @@ public class UserService {
                     TraceAction.UPDATE, "Modificó el usuario n.º " + saved.getId(), c.list()));
         }
         return toDto(saved);
+    }
+
+    /**
+     * Restablece la contraseña de otro usuario de la organización: genera una temporal, que se devuelve una sola vez
+     * para que el administrador se la comunique, cierra sus sesiones abiertas y le obliga a cambiarla al entrar.
+     */
+    public TemporaryPasswordResponse resetPassword(Long id) {
+        AppUser user = users.findById(id)
+                .filter(u -> u.getOrganization().getId().equals(SecurityUtils.currentOrganizationId()))
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado: " + id));
+        if (user.isBlocked()) {
+            throw new ConflictException("Los datos de este usuario están bloqueados: la cuenta no se puede modificar.");
+        }
+        if (user.getId().equals(SecurityUtils.currentUserId())) {
+            throw new ConflictException("Para tu propia cuenta usa «Cambiar contraseña».");
+        }
+        String temporary = PasswordPolicy.temporary();
+        user.changePassword(passwordEncoder.encode(temporary), true, java.time.Instant.now());
+        users.save(user);
+        trace.record(ChangeEntry.of(TraceEntity.USER, id, "usuario " + id, null, TraceAction.UPDATE,
+                "Restableció la contraseña del usuario n.º " + id,
+                Changes.create().track("password", "Contraseña", "(anterior)", "(temporal, hay que cambiarla al entrar)")
+                        .list()));
+        return new TemporaryPasswordResponse(temporary);
     }
 
     /**
@@ -195,6 +227,7 @@ public class UserService {
     /** El correo de un usuario bloqueado no se muestra: el que queda guardado es un marcador interno, no su correo. */
     private UserDto toDto(AppUser u) {
         return new UserDto(u.getId(), u.isBlocked() ? null : u.getEmail(), u.getFullName(), u.getRole().name(),
-                u.getOrganization().getId(), u.getOrganization().getName(), u.isActive(), u.isBlocked());
+                u.getOrganization().getId(), u.getOrganization().getName(), u.isActive(), u.isBlocked(),
+                u.isMustChangePassword());
     }
 }
