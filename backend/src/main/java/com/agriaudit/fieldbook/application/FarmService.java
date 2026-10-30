@@ -92,6 +92,12 @@ public class FarmService implements FarmDirectory {
 
     @Override
     @Transactional(readOnly = true)
+    public List<FarmDto> listFarms(Long organizationId) {
+        return farms.findByOrganization(organizationId).stream().map(FarmService::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public long countFarms(Long organizationId) {
         return farms.countByOrganization(organizationId);
     }

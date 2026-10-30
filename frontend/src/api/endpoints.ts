@@ -30,6 +30,15 @@ import type {
   TokenResponse,
   UserDto,
   PrivacySettings,
+  EvidenceType,
+  EvidenceRecord,
+  EvidenceRecordRequest,
+  EvidenceRecordDetail,
+  EvidenceRecordChange,
+  EvidenceMatrix,
+  EvidenceMatrixEntry,
+  EvidenceCoverage,
+  EvidenceHealth,
   BlockedUser,
   PersonalDataItem,
 } from './types';
@@ -72,6 +81,36 @@ export const CatalogApi = {
     api.put(`/standards/${code}/hidden`, null, { params: { value } }).then(() => undefined),
   standard: (code: string) => api.get<StandardDetail>(`/standards/${code}`).then((r) => r.data),
   regulations: () => api.get<Regulation[]>('/regulations').then((r) => r.data),
+};
+
+export const EvidenceApi = {
+  types: () => api.get<EvidenceType[]>('/evidence/types').then((r) => r.data),
+  records: (params: { farmId?: number; typeCode?: string } = {}) =>
+    api.get<EvidenceRecord[]>('/evidence/records', { params }).then((r) => r.data),
+  record: (id: number) => api.get<EvidenceRecordDetail>(`/evidence/records/${id}`).then((r) => r.data),
+  create: (body: EvidenceRecordRequest) => api.post<EvidenceRecordChange>('/evidence/records', body).then((r) => r.data),
+  update: (id: number, body: EvidenceRecordRequest) =>
+    api.put<EvidenceRecordChange>(`/evidence/records/${id}`, body).then((r) => r.data),
+  remove: (id: number) => api.delete(`/evidence/records/${id}`).then(() => undefined),
+  upload: (id: number, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api
+      .post<Attachment>(`/evidence/records/${id}/attachments`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data);
+  },
+  health: () => api.get<EvidenceHealth>('/evidence/health').then((r) => r.data),
+  matrix: () => api.get<EvidenceMatrix>('/evidence/matrix').then((r) => r.data),
+  addEquivalence: (body: { typeCode: string; standardCode: string; controlRef: string }) =>
+    api.post<EvidenceMatrixEntry>('/evidence/matrix', body).then((r) => r.data),
+  validateEquivalence: (id: number, validated: boolean) =>
+    api.put<EvidenceMatrixEntry>(`/evidence/matrix/${id}/validation`, { validated }).then((r) => r.data),
+  removeEquivalence: (id: number) => api.delete(`/evidence/matrix/${id}`).then(() => undefined),
+  coverage: (auditId: number) => api.get<EvidenceCoverage>(`/audits/${auditId}/evidence-coverage`).then((r) => r.data),
+  link: (auditId: number, controlPointId: number, recordId: number) =>
+    api.post<EvidenceCoverage>(`/audits/${auditId}/evidence-links`, { controlPointId, recordId }).then((r) => r.data),
+  unlink: (auditId: number, linkId: number) =>
+    api.delete<EvidenceCoverage>(`/audits/${auditId}/evidence-links/${linkId}`).then((r) => r.data),
 };
 
 export const FarmApi = {

@@ -17,6 +17,7 @@ import TracePage from './pages/TracePage';
 import UsersPage from './pages/UsersPage';
 import PrivacyPage from './pages/PrivacyPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
+import EvidencePage from './pages/EvidencePage';
 
 function FullscreenLoader() {
   return (
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/documents" element={<DocumentCenterPage />} />
           <Route path="/standards" element={<StandardsPage />} />
           <Route path="/regulations" element={<RegulationsPage />} />
+          <Route path="/evidence" element={<EvidencePage />} />
           <Route path="/trace" element={hasRole('ADMIN', 'QUALITY') ? <TracePage /> : <Navigate to="/" replace />} />
           <Route path="/users" element={hasRole('ADMIN') ? <UsersPage /> : <Navigate to="/" replace />} />
           <Route path="/privacy" element={hasRole('ADMIN') ? <PrivacyPage /> : <Navigate to="/" replace />} />

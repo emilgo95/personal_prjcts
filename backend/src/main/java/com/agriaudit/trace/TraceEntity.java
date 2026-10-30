@@ -13,6 +13,9 @@ public final class TraceEntity {
     public static final String FARM = "FARM";
     public static final String STANDARD = "STANDARD";
     public static final String ORGANIZATION = "ORGANIZATION";
+    public static final String EVIDENCE_RECORD = "EVIDENCE_RECORD";
+    public static final String EVIDENCE_LINK = "EVIDENCE_LINK";
+    public static final String EVIDENCE_MATRIX = "EVIDENCE_MATRIX";
 
     private TraceEntity() {
     }

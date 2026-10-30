@@ -22,6 +22,141 @@ export interface PrivacySettings {
   nextDestruction: string | null;
 }
 
+/** Tipo de evidencia reutilizable (análisis de agua, evaluación de riesgos…). */
+export interface EvidenceType {
+  code: string;
+  name: string;
+  description: string | null;
+  personalDataNotice: string | null;
+}
+
+export type EvidenceStatus = 'CURRENT' | 'DUE_SOON' | 'EXPIRED';
+export type EvidenceHealthStatus = EvidenceStatus | 'UNFAVORABLE' | 'MISSING';
+export type EvidenceOutcome = 'FAVORABLE' | 'UNFAVORABLE' | 'UNRATED';
+
+export interface EvidenceRecord {
+  id: number;
+  farmId: number;
+  farmName: string | null;
+  typeCode: string;
+  typeName: string;
+  title: string;
+  issuedOn: string;
+  validUntil: string | null;
+  outcome: EvidenceOutcome;
+  notes: string | null;
+  containsPersonalData: boolean;
+  status: EvidenceStatus;
+  documents: number;
+  usedIn: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EvidenceRecordRequest {
+  farmId: number;
+  typeCode: string;
+  title: string;
+  issuedOn: string;
+  validUntil: string | null;
+  outcome: EvidenceOutcome;
+  notes: string | null;
+  containsPersonalData: boolean;
+}
+
+export interface EvidenceUse {
+  linkId: number;
+  auditId: number;
+  auditReference: string;
+  auditStatus: string;
+  controlPointId: number;
+  controlRef: string | null;
+  standardCode: string | null;
+}
+
+export interface EvidenceRecordDetail {
+  record: EvidenceRecord;
+  attachments: Attachment[];
+  uses: EvidenceUse[];
+}
+
+export interface EvidenceRecordChange {
+  record: EvidenceRecord;
+  affectedAudits: number;
+}
+
+export interface EvidenceMatrixEntry {
+  id: number;
+  typeCode: string;
+  typeName: string;
+  standardCode: string;
+  standardName: string | null;
+  controlRef: string;
+  controlTitle: string | null;
+  status: 'DRAFT' | 'VALIDATED';
+}
+
+export interface EvidenceMatrix {
+  types: EvidenceType[];
+  entries: EvidenceMatrixEntry[];
+}
+
+export interface EvidenceCoverageRecord {
+  id: number;
+  title: string;
+  issuedOn: string;
+  validUntil: string | null;
+  status: EvidenceStatus;
+  outcome: EvidenceOutcome;
+  documents: number;
+  linkId: number | null;
+  linkable: boolean;
+  notLinkableReason: string | null;
+}
+
+export interface EvidenceTypeCoverage {
+  typeCode: string;
+  typeName: string;
+  matrixStatus: 'DRAFT' | 'VALIDATED';
+  health: EvidenceHealthStatus;
+  records: EvidenceCoverageRecord[];
+}
+
+export interface EvidenceCoverageItem {
+  controlPointId: number;
+  controlRef: string;
+  controlTitle: string;
+  types: EvidenceTypeCoverage[];
+  covered: boolean;
+  alert: boolean;
+}
+
+export interface EvidenceCoverage {
+  auditId: number;
+  farmId: number;
+  locked: boolean;
+  items: EvidenceCoverageItem[];
+}
+
+export interface EvidenceHealthCell {
+  status: EvidenceHealthStatus;
+  recordId: number | null;
+  validUntil: string | null;
+}
+
+export interface EvidenceFarmHealth {
+  farmId: number;
+  farmName: string;
+  cells: Record<string, EvidenceHealthCell>;
+}
+
+export interface EvidenceHealth {
+  types: EvidenceType[];
+  farms: EvidenceFarmHealth[];
+  summary: Record<EvidenceHealthStatus, number>;
+  renewalWindowDays: number;
+}
+
 export interface BlockedUser {
   userId: number;
   role: string | null;

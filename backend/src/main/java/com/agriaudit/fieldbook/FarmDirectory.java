@@ -18,6 +18,9 @@ public interface FarmDirectory {
     /** Explotaciones de la organización por id; los ids ajenos o inexistentes no aparecen. */
     Map<Long, FarmDto> findFarms(Long organizationId, Collection<Long> farmIds);
 
+    /** Todas las explotaciones de la organización, por razón social. */
+    java.util.List<FarmDto> listFarms(Long organizationId);
+
     long countFarms(Long organizationId);
 
     boolean anyFarmExists();

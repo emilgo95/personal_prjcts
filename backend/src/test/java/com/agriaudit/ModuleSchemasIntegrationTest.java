@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ModuleSchemasIntegrationTest {
 
     static final List<String> MODULE_SCHEMAS =
-            List.of("identity", "catalog", "fieldbook", "storage", "audit", "findings", "documents", "ai", "trace");
+            List.of("identity", "catalog", "fieldbook", "storage", "audit", "findings", "documents", "ai", "trace", "evidence");
 
     @Container
     static PostgreSQLContainer<?> postgres = TestPostgres.container();

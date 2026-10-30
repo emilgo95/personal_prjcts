@@ -148,4 +148,30 @@ export const traceEntityLabels: Record<string, string> = {
   DOCUMENT: 'Documento',
   USER: 'Usuario',
   FARM: 'Explotación',
+  EVIDENCE_RECORD: 'Evidencia reutilizable',
+  EVIDENCE_LINK: 'Vínculo de evidencia',
+  EVIDENCE_MATRIX: 'Matriz de equivalencias',
+};
+
+/** Estado de una evidencia reutilizable: vigencia (y, en el panel de salud, también «desfavorable» y «falta»). */
+export const evidenceStatusLabels: Record<string, string> = {
+  CURRENT: 'Vigente',
+  DUE_SOON: 'Por renovar',
+  EXPIRED: 'Vencida',
+  UNFAVORABLE: 'Desfavorable',
+  MISSING: 'Falta',
+};
+
+export const evidenceStatusColors: Record<string, 'success' | 'warning' | 'error' | 'default'> = {
+  CURRENT: 'success',
+  DUE_SOON: 'warning',
+  EXPIRED: 'error',
+  UNFAVORABLE: 'error',
+  MISSING: 'default',
+};
+
+export const evidenceOutcomeLabels: Record<string, string> = {
+  FAVORABLE: 'Favorable',
+  UNFAVORABLE: 'Desfavorable',
+  UNRATED: 'Sin valorar',
 };

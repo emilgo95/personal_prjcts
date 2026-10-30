@@ -25,6 +25,7 @@ import GavelIcon from '@mui/icons-material/Gavel';
 import HistoryIcon from '@mui/icons-material/History';
 import GroupIcon from '@mui/icons-material/Group';
 import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
+import FolderSpecialIcon from '@mui/icons-material/FolderSpecial';
 import { useAuth } from '../auth/AuthContext';
 import { label, roleLabels } from '../utils/labels';
 
@@ -44,6 +45,7 @@ const navItems: NavItem[] = [
   { to: '/farms', label: 'Explotaciones', icon: <AgricultureIcon /> },
   { to: '/audits', label: 'Auditorías', icon: <FactCheckIcon /> },
   { to: '/documents', label: 'Centro de documentos', icon: <DescriptionIcon /> },
+  { to: '/evidence', label: 'Evidencias', icon: <FolderSpecialIcon /> },
   { to: '/standards', label: 'Estándares', icon: <MenuBookIcon /> },
   { to: '/regulations', label: 'Normativa', icon: <GavelIcon /> },
   { to: '/trace', label: 'Trazabilidad', icon: <HistoryIcon />, roles: ['ADMIN', 'QUALITY'] },

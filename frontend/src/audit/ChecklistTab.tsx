@@ -18,10 +18,11 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SaveIcon from '@mui/icons-material/Save';
-import { AttachmentApi, AuditApi, FindingApi } from '../api/endpoints';
+import { AttachmentApi, AuditApi, EvidenceApi, FindingApi } from '../api/endpoints';
 import type { AuditItemResult, ComplianceValue, ResultUpdate } from '../api/types';
 import QueryBoundary from '../components/QueryBoundary';
 import AttachmentPanel from '../components/AttachmentPanel';
+import EvidenceCoverage from './EvidenceCoverage';
 import { useToast } from '../utils/toast';
 import { extractErrorMessage } from '../api/client';
 import { complianceLabels, levelLabels, label } from '../utils/labels';
@@ -56,6 +57,17 @@ export default function ChecklistTab({
     queryKey: ['audit', auditId, 'results'],
     queryFn: () => AuditApi.results(auditId),
   });
+
+  // Sugerencias de evidencias ya registradas; si fallan, el checklist sigue funcionando sin ellas.
+  const coverage = useQuery({
+    queryKey: ['evidence-coverage', auditId],
+    queryFn: () => EvidenceApi.coverage(auditId),
+    retry: false,
+  });
+  const coverageByPoint = useMemo(
+    () => new Map((coverage.data?.items ?? []).map((i) => [i.controlPointId, i])),
+    [coverage.data],
+  );
 
   const [draft, setDraft] = useState<Draft>({});
   // snapshot del servidor por punto de control, para saber qué se ha editado en local
@@ -274,6 +286,13 @@ export default function ChecklistTab({
                               onChange={(e) => update(item.controlPointId, { auditorComment: e.target.value })}
                             />
                           </Stack>
+                          {coverageByPoint.get(item.controlPointId) && (
+                            <EvidenceCoverage
+                              auditId={auditId}
+                              item={coverageByPoint.get(item.controlPointId)!}
+                              canEdit={!readOnly}
+                            />
+                          )}
                           <AttachmentPanel
                             attachments={item.attachments}
                             canEdit={!readOnly}

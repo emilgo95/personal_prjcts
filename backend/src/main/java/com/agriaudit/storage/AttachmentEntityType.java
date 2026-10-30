@@ -4,5 +4,6 @@ package com.agriaudit.storage;
 public enum AttachmentEntityType {
     AUDIT,
     AUDIT_ITEM_RESULT,
-    FINDING
+    FINDING,
+    EVIDENCE_RECORD
 }
