@@ -96,6 +96,33 @@ public final class EvidenceDtos {
     public record CoverageDto(Long auditId, Long farmId, boolean locked, List<CoverageItemDto> items) {
     }
 
+    // ---- mapa de evidencias de una auditoría (cobertura + adjuntos + equivalencias con otras normas)
+
+    public record StandardRefDto(String code, String name) {
+    }
+
+    /** Una evidencia vinculada al punto ({@code linked}) o, si aún no hay ninguna, una candidata por confirmar. */
+    public record MapEvidenceDto(Long recordId, String title, String typeName, String status, String outcome,
+                                 LocalDate validUntil, boolean linked) {
+    }
+
+    /**
+     * Un punto de control de la auditoría con lo que lo justifica. {@code state}: COVERED (evidencia vinculada y
+     * vigente), DUE_SOON (vinculada pero caduca pronto), ALERT (vinculada pero vencida o desfavorable), SUGGESTED (hay
+     * una evidencia registrada por confirmar), ATTACHMENT (solo adjuntos en el checklist) o MISSING (falta evidencia).
+     * {@code equivalences}: por código de otra norma, los puntos de esa norma para los que vale la misma evidencia.
+     */
+    public record MapRowDto(Long controlPointId, String controlRef, String controlTitle, String chapterCode,
+                            String level, String compliance, List<String> evidenceTypes, List<MapEvidenceDto> evidence,
+                            int attachments, java.util.Map<String, List<String>> equivalences, String state) {
+    }
+
+    /** {@code summary}: nº de puntos por estado, más {@code POINTS} (puntos de la norma) y {@code ATTACHMENTS}. */
+    public record EvidenceMapDto(Long auditId, Long farmId, String standardCode, String standardName, boolean locked,
+                                 List<StandardRefDto> otherStandards, List<MapRowDto> rows,
+                                 java.util.Map<String, Integer> summary) {
+    }
+
     // ---- salud del sistema de gestión
 
     /** {@code status}: CURRENT, DUE_SOON, EXPIRED, UNFAVORABLE o MISSING. */

@@ -414,4 +414,80 @@ class EvidenceIntegrationTest {
         }
         return names;
     }
+
+    // ---------------------------------------------------------------- mapa de evidencias de una auditoría
+
+    private JsonNode row(JsonNode map, String ref) {
+        for (JsonNode r : map.get("rows")) {
+            if (ref.equals(r.get("controlRef").asText())) {
+                return r;
+            }
+        }
+        return null;
+    }
+
+    @Test
+    void theAuditEvidenceMapShowsWhatJustifiesEachPointAndWhereElseTheEvidenceCounts() {
+        long farm = farm();
+        long ifa = audit(farm, "GLOBALGAP_IFA_V6");
+        long water = id(call(admin, HttpMethod.POST, "/api/evidence/records", record(farm, "WATER_ANALYSIS", 20, 365, "FAVORABLE")));
+
+        // Sin vincular: la evidencia registrada se sugiere y se ve en qué puntos de otras normas vale.
+        JsonNode map = call(admin, HttpMethod.GET, "/api/audits/" + ifa + "/evidence-map", null).getBody();
+        assertThat(map.get("standardCode").asText()).isEqualTo("GLOBALGAP_IFA_V6");
+        JsonNode fv93 = row(map, "FV 9.3");
+        assertThat(fv93.get("state").asText()).isEqualTo("SUGGESTED");
+        assertThat(fv93.get("evidence").get(0).get("recordId").asLong()).isEqualTo(water);
+        assertThat(fv93.get("evidence").get(0).get("linked").asBoolean()).isFalse();
+        assertThat(fv93.get("equivalences").get("SMETA_6_1").toString()).contains("3.D");
+        List<String> others = new java.util.ArrayList<>();
+        map.get("otherStandards").forEach(o -> others.add(o.get("code").asText()));
+        assertThat(others).contains("SMETA_6_1").doesNotContain("GLOBALGAP_IFA_V6");
+        // Los puntos que piden un tipo de evidencia que la explotación no tiene, faltan.
+        assertThat(map.get("summary").get("MISSING").asInt()).isPositive();
+        int byState = 0;
+        for (String s : List.of("COVERED", "DUE_SOON", "ALERT", "SUGGESTED", "ATTACHMENT", "MISSING")) {
+            byState += map.get("summary").get(s).asInt();
+        }
+        assertThat(byState).isEqualTo(map.get("rows").size());
+
+        // Vinculada y vigente: cubierto. Si caduca pronto, se avisa.
+        long cp = controlPointId(ifa, "FV 9.3");
+        call(admin, HttpMethod.POST, "/api/audits/" + ifa + "/evidence-links", Map.of("controlPointId", cp, "recordId", water));
+        assertThat(row(call(admin, HttpMethod.GET, "/api/audits/" + ifa + "/evidence-map", null).getBody(), "FV 9.3")
+                .get("state").asText()).isEqualTo("COVERED");
+        Map<String, Object> change = record(farm, "WATER_ANALYSIS", 20, 40, "FAVORABLE");
+        change.put("title", "Análisis de agua " + unique());
+        call(admin, HttpMethod.PUT, "/api/evidence/records/" + water, change);
+        JsonNode dueSoon = row(call(admin, HttpMethod.GET, "/api/audits/" + ifa + "/evidence-map", null).getBody(), "FV 9.3");
+        assertThat(dueSoon.get("state").asText()).isEqualTo("DUE_SOON");
+        assertThat(dueSoon.get("evidence").get(0).get("linked").asBoolean()).isTrue();
+
+        // Un punto que la matriz no relaciona con ninguna evidencia aparece si tiene un adjunto en el checklist.
+        long other = controlPointId(ifa, "AF 2.1");
+        LinkedMultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        parts.add("file", new ByteArrayResource(PNG) {
+            @Override
+            public String getFilename() {
+                return "foto.png";
+            }
+        });
+        HttpHeaders h = new HttpHeaders();
+        h.setContentType(MediaType.MULTIPART_FORM_DATA);
+        h.setBearerAuth(admin);
+        assertThat(rest.exchange("/api/audits/" + ifa + "/results/" + other + "/attachments", HttpMethod.POST,
+                new HttpEntity<>(parts, h), JsonNode.class).getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        JsonNode withAttachment = call(admin, HttpMethod.GET, "/api/audits/" + ifa + "/evidence-map", null).getBody();
+        JsonNode af21 = row(withAttachment, "AF 2.1");
+        assertThat(af21.get("attachments").asInt()).isEqualTo(1);
+        assertThat(af21.get("state").asText()).isIn("ATTACHMENT", "SUGGESTED");
+        assertThat(withAttachment.get("summary").get("ATTACHMENTS").asInt()).isEqualTo(1);
+
+        // Cualquier rol puede consultarlo; la auditoría de otra organización no existe para él.
+        String viewer = token("VIEWER");
+        assertThat(call(viewer, HttpMethod.GET, "/api/audits/" + ifa + "/evidence-map", null).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(call(admin, HttpMethod.GET, "/api/audits/999999/evidence-map", null).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
 }

@@ -131,6 +131,51 @@ export interface EvidenceCoverageItem {
   alert: boolean;
 }
 
+/**
+ * Estado de un punto en el mapa de evidencias: COVERED (vinculada y vigente), DUE_SOON (vinculada, por renovar),
+ * ALERT (vinculada pero vencida o desfavorable), SUGGESTED (registrada, por confirmar), ATTACHMENT (solo adjuntos
+ * del checklist) o MISSING (falta evidencia).
+ */
+export type EvidenceMapState = 'COVERED' | 'DUE_SOON' | 'ALERT' | 'SUGGESTED' | 'ATTACHMENT' | 'MISSING';
+
+export interface EvidenceMapEvidence {
+  recordId: number;
+  title: string;
+  typeName: string;
+  status: EvidenceStatus;
+  outcome: EvidenceOutcome;
+  validUntil: string | null;
+  /** true si está vinculada al punto; false si es una candidata por confirmar. */
+  linked: boolean;
+}
+
+export interface EvidenceMapRow {
+  controlPointId: number;
+  controlRef: string;
+  controlTitle: string;
+  chapterCode: string | null;
+  level: string | null;
+  compliance: string | null;
+  evidenceTypes: string[];
+  evidence: EvidenceMapEvidence[];
+  attachments: number;
+  /** Por código de otra norma, los puntos de esa norma donde vale la misma evidencia. */
+  equivalences: Record<string, string[]>;
+  state: EvidenceMapState;
+}
+
+export interface EvidenceMap {
+  auditId: number;
+  farmId: number;
+  standardCode: string;
+  standardName: string;
+  locked: boolean;
+  otherStandards: Array<{ code: string; name: string }>;
+  rows: EvidenceMapRow[];
+  /** Puntos por estado, más POINTS (puntos de la norma) y ATTACHMENTS (adjuntos del checklist). */
+  summary: Record<string, number>;
+}
+
 export interface EvidenceCoverage {
   auditId: number;
   farmId: number;

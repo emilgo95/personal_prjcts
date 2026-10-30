@@ -6,9 +6,16 @@ test.beforeEach(async ({ page, request }) => {
   await loginViaApi(page, request);
 });
 
-test.describe('Evidencias reutilizables', () => {
-  test('la sección muestra los registros, la salud del sistema y las equivalencias entre normas', async ({ page }) => {
+async function expectNoCriticalA11yViolations(page: import('@playwright/test').Page) {
+  const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  const critical = violations.filter((v) => v.impact === 'critical');
+  expect(critical, JSON.stringify(critical.map((v) => ({ id: v.id, help: v.help })), null, 2)).toEqual([]);
+}
+
+test.describe('Evidencias reutilizables (dentro de Auditorías)', () => {
+  test('Auditorías › Evidencias muestra los registros y la salud del sistema; las equivalencias tienen su página', async ({ page }) => {
     await page.getByRole('link', { name: 'Evidencias', exact: true }).click();
+    await expect(page).toHaveURL(/\/audits\/evidence$/);
     await expect(page.getByRole('heading', { name: 'Evidencias', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Nueva evidencia' })).toBeVisible();
     // El juego de datos de demostración trae registros de evidencia.
@@ -17,15 +24,30 @@ test.describe('Evidencias reutilizables', () => {
     await page.getByRole('tab', { name: 'Salud del sistema' }).click();
     await expect(page.getByRole('table', { name: 'Salud del sistema de gestión' })).toBeVisible();
 
-    await page.getByRole('tab', { name: 'Equivalencias entre normas' }).click();
+    await page.getByRole('link', { name: 'Equivalencias entre normas', exact: true }).click();
+    await expect(page).toHaveURL(/\/audits\/equivalences$/);
     await expect(page.getByText(/borrador a validar/)).toBeVisible();
+  });
+
+  test('la dirección antigua /evidence lleva a Auditorías › Evidencias', async ({ page }) => {
+    await page.goto('/evidence');
+    await expect(page).toHaveURL(/\/audits\/evidence$/);
+  });
+
+  test('cada auditoría tiene su pestaña Evidencias con el mapa de equivalencias', async ({ page }) => {
+    await page.getByRole('link', { name: 'Auditorías', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Auditorías', exact: true })).toBeVisible();
+    await page.getByRole('row').nth(1).click();
+
+    await page.getByRole('tab', { name: 'Evidencias' }).click();
+    await expect(page.getByRole('heading', { name: 'Evidencias de la auditoría' })).toBeVisible();
+    await expect(page.getByRole('table', { name: /Mapa de equivalencias de/ })).toBeVisible();
+    await expectNoCriticalA11yViolations(page);
   });
 
   test('la pantalla de evidencias no tiene violaciones críticas de accesibilidad', async ({ page }) => {
     await page.getByRole('link', { name: 'Evidencias', exact: true }).click();
     await expect(page.getByRole('table', { name: 'Evidencias registradas' })).toBeVisible();
-    const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
-    const critical = violations.filter((v) => v.impact === 'critical');
-    expect(critical, JSON.stringify(critical.map((v) => ({ id: v.id, help: v.help })), null, 2)).toEqual([]);
+    await expectNoCriticalA11yViolations(page);
   });
 });

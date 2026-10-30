@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { Fragment, useState, type ReactNode } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -26,6 +26,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import GroupIcon from '@mui/icons-material/Group';
 import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 import FolderSpecialIcon from '@mui/icons-material/FolderSpecial';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { useAuth } from '../auth/AuthContext';
 import { label, roleLabels } from '../utils/labels';
 
@@ -38,14 +39,23 @@ interface NavItem {
   adminOnly?: boolean;
   /** Si se indica, solo estos roles ven la entrada. */
   roles?: Array<'ADMIN' | 'AUDITOR' | 'QUALITY' | 'VIEWER'>;
+  /** Entradas que cuelgan de esta (se muestran debajo, con sangría). */
+  children?: Array<{ to: string; label: string; icon: ReactNode }>;
 }
 
 const navItems: NavItem[] = [
   { to: '/', label: 'Panel', icon: <DashboardIcon /> },
   { to: '/farms', label: 'Explotaciones', icon: <AgricultureIcon /> },
-  { to: '/audits', label: 'Auditorías', icon: <FactCheckIcon /> },
+  {
+    to: '/audits',
+    label: 'Auditorías',
+    icon: <FactCheckIcon />,
+    children: [
+      { to: '/audits/evidence', label: 'Evidencias', icon: <FolderSpecialIcon fontSize="small" /> },
+      { to: '/audits/equivalences', label: 'Equivalencias entre normas', icon: <CompareArrowsIcon fontSize="small" /> },
+    ],
+  },
   { to: '/documents', label: 'Centro de documentos', icon: <DescriptionIcon /> },
-  { to: '/evidence', label: 'Evidencias', icon: <FolderSpecialIcon /> },
   { to: '/standards', label: 'Estándares', icon: <MenuBookIcon /> },
   { to: '/regulations', label: 'Normativa', icon: <GavelIcon /> },
   { to: '/trace', label: 'Trazabilidad', icon: <HistoryIcon />, roles: ['ADMIN', 'QUALITY'] },
@@ -72,19 +82,34 @@ export default function Layout({ children }: { children: ReactNode }) {
           .filter((item) => !item.adminOnly || hasRole('ADMIN'))
           .filter((item) => !item.roles || hasRole(...item.roles))
           .map((item) => {
+            const inChild = item.children?.some((c) => location.pathname.startsWith(c.to)) ?? false;
             const selected =
-              item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
+              item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to) && !inChild;
             return (
-              <ListItemButton
-                key={item.to}
-                component={RouterLink}
-                to={item.to}
-                selected={selected}
-                onClick={() => setMobileOpen(false)}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} />
-              </ListItemButton>
+              <Fragment key={item.to}>
+                <ListItemButton
+                  component={RouterLink}
+                  to={item.to}
+                  selected={selected}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.label} />
+                </ListItemButton>
+                {item.children?.map((child) => (
+                  <ListItemButton
+                    key={child.to}
+                    component={RouterLink}
+                    to={child.to}
+                    selected={location.pathname.startsWith(child.to)}
+                    onClick={() => setMobileOpen(false)}
+                    sx={{ pl: 4.5, py: 0.5 }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>{child.icon}</ListItemIcon>
+                    <ListItemText primary={child.label} slotProps={{ primary: { variant: 'body2' } }} />
+                  </ListItemButton>
+                ))}
+              </Fragment>
             );
           })}
       </List>

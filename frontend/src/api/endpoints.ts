@@ -38,6 +38,7 @@ import type {
   EvidenceMatrix,
   EvidenceMatrixEntry,
   EvidenceCoverage,
+  EvidenceMap,
   EvidenceHealth,
   BlockedUser,
   PersonalDataItem,
@@ -107,6 +108,8 @@ export const EvidenceApi = {
     api.put<EvidenceMatrixEntry>(`/evidence/matrix/${id}/validation`, { validated }).then((r) => r.data),
   removeEquivalence: (id: number) => api.delete(`/evidence/matrix/${id}`).then(() => undefined),
   coverage: (auditId: number) => api.get<EvidenceCoverage>(`/audits/${auditId}/evidence-coverage`).then((r) => r.data),
+  /** Mapa de la auditoría: qué justifica cada punto y en qué puntos de otras normas vale la misma evidencia. */
+  map: (auditId: number) => api.get<EvidenceMap>(`/audits/${auditId}/evidence-map`).then((r) => r.data),
   link: (auditId: number, controlPointId: number, recordId: number) =>
     api.post<EvidenceCoverage>(`/audits/${auditId}/evidence-links`, { controlPointId, recordId }).then((r) => r.data),
   unlink: (auditId: number, linkId: number) =>

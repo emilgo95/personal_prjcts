@@ -18,6 +18,7 @@ import UsersPage from './pages/UsersPage';
 import PrivacyPage from './pages/PrivacyPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import EvidencePage from './pages/EvidencePage';
+import EquivalencesPage from './pages/EquivalencesPage';
 
 function FullscreenLoader() {
   return (
@@ -55,11 +56,14 @@ export default function App() {
           <Route path="/farms/:id" element={<FarmFormPage />} />
           <Route path="/audits" element={<AuditsPage />} />
           <Route path="/audits/new" element={hasRole('ADMIN', 'AUDITOR') ? <AuditWizardPage /> : <Navigate to="/audits" replace />} />
+          <Route path="/audits/evidence" element={<EvidencePage />} />
+          <Route path="/audits/equivalences" element={<EquivalencesPage />} />
           <Route path="/audits/:id" element={<AuditDetailPage />} />
           <Route path="/documents" element={<DocumentCenterPage />} />
           <Route path="/standards" element={<StandardsPage />} />
           <Route path="/regulations" element={<RegulationsPage />} />
-          <Route path="/evidence" element={<EvidencePage />} />
+          {/* Evidencias pasó a colgar de Auditorías: se conserva la dirección antigua. */}
+          <Route path="/evidence" element={<Navigate to="/audits/evidence" replace />} />
           <Route path="/trace" element={hasRole('ADMIN', 'QUALITY') ? <TracePage /> : <Navigate to="/" replace />} />
           <Route path="/users" element={hasRole('ADMIN') ? <UsersPage /> : <Navigate to="/" replace />} />
           <Route path="/privacy" element={hasRole('ADMIN') ? <PrivacyPage /> : <Navigate to="/" replace />} />

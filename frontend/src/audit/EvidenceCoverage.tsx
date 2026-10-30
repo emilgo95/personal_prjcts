@@ -30,6 +30,7 @@ export default function EvidenceCoverage({
   const onDone = (message: string) => () => {
     notify(message, 'success');
     queryClient.invalidateQueries({ queryKey: ['evidence-coverage', auditId] });
+    queryClient.invalidateQueries({ queryKey: ['evidence-map', auditId] });
     queryClient.invalidateQueries({ queryKey: ['evidence-records'] });
     queryClient.invalidateQueries({ queryKey: ['audit', auditId, 'trace'] });
   };
@@ -76,7 +77,7 @@ export default function EvidenceCoverage({
             {t.records.length === 0 ? (
               <Typography variant="caption" color="text.secondary">
                 No hay ningún registro de este tipo para la explotación.{' '}
-                <Link component={RouterLink} to="/evidence">
+                <Link component={RouterLink} to="/audits/evidence">
                   Registrarlo
                 </Link>
               </Typography>

@@ -95,6 +95,16 @@ function renderPage() {
 }
 
 describe('EvidencePage', () => {
+  it('ya no tiene la pestaña de equivalencias, que ahora es una página propia', async () => {
+    renderPage();
+    expect(await screen.findByRole('tab', { name: 'Registros' })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Equivalencias entre normas' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ver las equivalencias entre normas' })).toHaveAttribute(
+      'href',
+      '/audits/equivalences',
+    );
+  });
+
   it('lista los registros con su vigencia y dónde se usan', async () => {
     renderPage();
 
@@ -120,16 +130,5 @@ describe('EvidencePage', () => {
     expect(await screen.findByText('Nueva evidencia', { selector: 'h2' })).toBeInTheDocument();
     // El aviso de datos personales del tipo aparece al elegirlo (viene preseleccionado)
     expect(await screen.findByText('Si incluye nombres, márcalo.')).toBeInTheDocument();
-  });
-
-  it('las equivalencias se muestran como borrador a validar', async () => {
-    renderPage();
-    fireEvent.click(await screen.findByRole('tab', { name: 'Equivalencias entre normas' }));
-
-    expect(await screen.findByText(/borrador a validar/)).toBeInTheDocument();
-    const table = await screen.findByRole('table', { name: 'Equivalencias de Análisis de agua' });
-    expect(within(table).getByText('Borrador')).toBeInTheDocument();
-    expect(within(table).getByText('FV 9.3')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Validar todas' })).toBeEnabled();
   });
 });

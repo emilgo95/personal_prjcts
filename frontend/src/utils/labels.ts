@@ -170,6 +170,25 @@ export const evidenceStatusColors: Record<string, 'success' | 'warning' | 'error
   MISSING: 'default',
 };
 
+/** Estado de un punto en el mapa de evidencias de una auditoría. */
+export const evidenceMapStateLabels: Record<string, string> = {
+  COVERED: 'Cubierto',
+  DUE_SOON: 'Por renovar',
+  ALERT: 'Revisar',
+  SUGGESTED: 'Por confirmar',
+  ATTACHMENT: 'Solo adjuntos',
+  MISSING: 'Falta evidencia',
+};
+
+export const evidenceMapStateColors: Record<string, 'success' | 'warning' | 'error' | 'info' | 'default'> = {
+  COVERED: 'success',
+  DUE_SOON: 'warning',
+  ALERT: 'error',
+  SUGGESTED: 'info',
+  ATTACHMENT: 'default',
+  MISSING: 'default',
+};
+
 export const evidenceOutcomeLabels: Record<string, string> = {
   FAVORABLE: 'Favorable',
   UNFAVORABLE: 'Desfavorable',

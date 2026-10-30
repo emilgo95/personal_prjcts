@@ -9,6 +9,7 @@ import AuditStatusChip from '../components/AuditStatusChip';
 import { auditTypeLabels, label } from '../utils/labels';
 import SummaryTab from '../audit/SummaryTab';
 import ChecklistTab from '../audit/ChecklistTab';
+import AuditEvidenceTab from '../audit/AuditEvidenceTab';
 import FindingsTab from '../audit/FindingsTab';
 import DocumentsTab from '../audit/DocumentsTab';
 import HistoryTab from '../audit/HistoryTab';
@@ -65,6 +66,7 @@ export default function AuditDetailPage() {
             >
               <Tab label="Resumen" />
               <Tab label="Checklist" />
+              <Tab label="Evidencias" />
               <Tab label="Hallazgos y CAPA" />
               <Tab label="Documentos" />
               {canSeeHistory && <Tab label="Historial" />}
@@ -81,6 +83,7 @@ export default function AuditDetailPage() {
             {[
               <SummaryTab key="summary" auditId={auditId} audit={data} />,
               <ChecklistTab key="checklist" auditId={auditId} standardCode={data.standardCode} locked={locked} />,
+              <AuditEvidenceTab key="evidence" auditId={auditId} />,
               <FindingsTab key="findings" auditId={auditId} standardCode={data.standardCode} locked={locked} />,
               <DocumentsTab key="documents" auditId={auditId} />,
               canSeeHistory ? <HistoryTab key="history" auditId={auditId} /> : <Box key="history" />,
