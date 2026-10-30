@@ -11,8 +11,11 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
+  Tooltip,
   Typography,
 } from '@mui/material';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import MenuIcon from '@mui/icons-material/Menu';
 import KeyIcon from '@mui/icons-material/Key';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -31,6 +34,26 @@ import { useAuth } from '../auth/AuthContext';
 import { label, roleLabels } from '../utils/labels';
 
 const drawerWidth = 248;
+/** Ancho del menú contraído: solo iconos. */
+const collapsedWidth = 72;
+const COLLAPSED_KEY = 'agriaudit.navCollapsed';
+
+/** Preferencia del menú contraído, guardada en este navegador (si el almacenamiento no está disponible, abierto). */
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function saveCollapsed(value: boolean) {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, String(value));
+  } catch {
+    // Sin almacenamiento (modo privado o bloqueado): la preferencia dura solo esta visita.
+  }
+}
 
 interface NavItem {
   to: string;
@@ -65,16 +88,38 @@ const navItems: NavItem[] = [
 
 export default function Layout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(readCollapsed);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, hasRole } = useAuth();
+  const width = collapsed ? collapsedWidth : drawerWidth;
 
-  const drawer = (
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      saveCollapsed(!c);
+      return !c;
+    });
+  };
+
+  /** Contenido del menú; contraído, solo iconos con el nombre en una etiqueta flotante. */
+  const renderDrawer = (compact: boolean) => (
     <div>
-      <Toolbar>
-        <Typography variant="h6" color="primary" sx={{ fontWeight: 800 }}>
-          AgriAudit Docs
-        </Typography>
+      <Toolbar sx={{ justifyContent: compact ? 'center' : 'space-between', px: compact ? 1 : 2 }}>
+        {!compact && (
+          <Typography variant="h6" color="primary" sx={{ fontWeight: 800 }}>
+            AgriAudit Docs
+          </Typography>
+        )}
+        <IconButton
+          onClick={toggleCollapsed}
+          aria-label={compact ? 'Expandir el menú' : 'Contraer el menú'}
+          aria-expanded={!compact}
+          title={compact ? 'Expandir el menú' : 'Contraer el menú'}
+          size="small"
+          sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+        >
+          {compact ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+        </IconButton>
       </Toolbar>
       <Divider />
       <List component="div">
@@ -87,27 +132,35 @@ export default function Layout({ children }: { children: ReactNode }) {
               item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to) && !inChild;
             return (
               <Fragment key={item.to}>
-                <ListItemButton
-                  component={RouterLink}
-                  to={item.to}
-                  selected={selected}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.label} />
-                </ListItemButton>
-                {item.children?.map((child) => (
+                <Tooltip title={compact ? item.label : ''} placement="right">
                   <ListItemButton
-                    key={child.to}
                     component={RouterLink}
-                    to={child.to}
-                    selected={location.pathname.startsWith(child.to)}
+                    to={item.to}
+                    selected={selected}
                     onClick={() => setMobileOpen(false)}
-                    sx={{ pl: 4.5, py: 0.5 }}
+                    aria-label={compact ? item.label : undefined}
+                    sx={compact ? { justifyContent: 'center', px: 1 } : undefined}
                   >
-                    <ListItemIcon sx={{ minWidth: 36 }}>{child.icon}</ListItemIcon>
-                    <ListItemText primary={child.label} slotProps={{ primary: { variant: 'body2' } }} />
+                    <ListItemIcon sx={compact ? { minWidth: 0 } : undefined}>{item.icon}</ListItemIcon>
+                    {!compact && <ListItemText primary={item.label} />}
                   </ListItemButton>
+                </Tooltip>
+                {item.children?.map((child) => (
+                  <Tooltip key={child.to} title={compact ? child.label : ''} placement="right">
+                    <ListItemButton
+                      component={RouterLink}
+                      to={child.to}
+                      selected={location.pathname.startsWith(child.to)}
+                      onClick={() => setMobileOpen(false)}
+                      aria-label={compact ? child.label : undefined}
+                      sx={compact ? { justifyContent: 'center', px: 1, py: 0.5 } : { pl: 4.5, py: 0.5 }}
+                    >
+                      <ListItemIcon sx={{ minWidth: compact ? 0 : 36 }}>{child.icon}</ListItemIcon>
+                      {!compact && (
+                        <ListItemText primary={child.label} slotProps={{ primary: { variant: 'body2' } }} />
+                      )}
+                    </ListItemButton>
+                  </Tooltip>
                 ))}
               </Fragment>
             );
@@ -120,13 +173,18 @@ export default function Layout({ children }: { children: ReactNode }) {
     <Box sx={{ display: 'flex' }}>
       <AppBar
         position="fixed"
-        sx={{ width: { sm: `calc(100% - ${drawerWidth}px)` }, ml: { sm: `${drawerWidth}px` } }}
+        sx={{
+          width: { sm: `calc(100% - ${width}px)` },
+          ml: { sm: `${width}px` },
+          transition: (t) => t.transitions.create(['width', 'margin'], { duration: t.transitions.duration.shorter }),
+        }}
       >
         <Toolbar>
           <IconButton
             color="inherit"
             edge="start"
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Abrir el menú"
             sx={{ mr: 2, display: { sm: 'none' } }}
           >
             <MenuIcon />
@@ -161,7 +219,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </Toolbar>
       </AppBar>
 
-      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
+      <Box component="nav" aria-label="Menú principal" sx={{ width: { sm: width }, flexShrink: { sm: 0 } }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -172,17 +230,22 @@ export default function Layout({ children }: { children: ReactNode }) {
             '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           }}
         >
-          {drawer}
+          {renderDrawer(false)}
         </Drawer>
         <Drawer
           variant="permanent"
           open
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width,
+              overflowX: 'hidden',
+              transition: (t) => t.transitions.create('width', { duration: t.transitions.duration.shorter }),
+            },
           }}
         >
-          {drawer}
+          {renderDrawer(collapsed)}
         </Drawer>
       </Box>
 
@@ -192,7 +255,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           flexGrow: 1,
           minWidth: 0, // sin esto, una tabla ancha estira la página en lugar de desplazarse dentro de su caja
           p: { xs: 2, md: 3 },
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          width: { sm: `calc(100% - ${width}px)` },
         }}
       >
         <Toolbar />
