@@ -27,6 +27,8 @@ import com.agriaudit.trace.TraceEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -205,6 +207,9 @@ public class StandardImportService {
         }
         if (trim(meta.officialUrl()).length() > 400) {
             meta_issues.add(new ImportIssue(0, "Enlace oficial", "Supera los 400 caracteres"));
+        } else if (!trim(meta.officialUrl()).isEmpty() && !isWebLink(trim(meta.officialUrl()))) {
+            meta_issues.add(new ImportIssue(0, "Enlace oficial", "Debe ser una dirección web que empiece por "
+                    + "http:// o https://"));
         }
         StandardCategory category = StandardCategory.GAP;
         if (!trim(meta.category()).isEmpty()) {
@@ -289,6 +294,18 @@ public class StandardImportService {
 
     private static String number(double d) {
         return d == Math.floor(d) ? String.valueOf((long) d) : String.valueOf(d);
+    }
+
+    /** Solo direcciones web completas: el enlace se muestra como «Fuente oficial» y no debe ejecutar nada. */
+    static boolean isWebLink(String url) {
+        try {
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
+            return scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
+                    && uri.getHost() != null;
+        } catch (URISyntaxException e) {
+            return false;
+        }
     }
 
     private static String trim(String s) {

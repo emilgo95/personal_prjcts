@@ -28,6 +28,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useToast } from '../utils/toast';
 import { extractErrorMessage } from '../api/client';
 import { label, levelLabels } from '../utils/labels';
+import { isWebLink } from '../utils/links';
 
 export default function StandardsPage() {
   const { hasRole } = useAuth();
@@ -136,8 +137,8 @@ export default function StandardsPage() {
             <Box>
               <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
                 <Typography variant="h5">{detail.data.name}</Typography>
-                {detail.data.officialUrl && (
-                  <Link href={detail.data.officialUrl} target="_blank" rel="noopener">
+                {isWebLink(detail.data.officialUrl) && (
+                  <Link href={detail.data.officialUrl ?? undefined} target="_blank" rel="noopener noreferrer">
                     Fuente oficial
                   </Link>
                 )}

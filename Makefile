@@ -24,7 +24,7 @@ up: init ## Levanta toda la aplicación (build + arranque)
 	$(COMPOSE) up --build -d
 	@echo ""
 	@echo "  Frontend : http://localhost:$${FRONTEND_PORT:-8080}"
-	@echo "  API/Swagger : http://localhost:$${BACKEND_PORT:-8081}/swagger-ui.html"
+	@echo "  API : http://localhost:$${BACKEND_PORT:-8081}/api (Swagger con AGRIAUDIT_API_DOCS=true)"
 	@echo "  Login demo : admin@demo.test / Admin123!"
 
 .PHONY: down

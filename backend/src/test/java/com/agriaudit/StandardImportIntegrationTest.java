@@ -109,7 +109,15 @@ class StandardImportIntegrationTest {
     }
 
     private ResponseEntity<JsonNode> upload(String token, String path, String code, String version, String csv) {
+        return upload(token, path, code, version, csv, null);
+    }
+
+    private ResponseEntity<JsonNode> upload(String token, String path, String code, String version, String csv,
+                                            String officialUrl) {
         LinkedMultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        if (officialUrl != null) {
+            parts.add("officialUrl", officialUrl);
+        }
         parts.add("file", new ByteArrayResource(csv.getBytes(StandardCharsets.UTF_8)) {
             @Override
             public String getFilename() {
@@ -204,6 +212,19 @@ class StandardImportIntegrationTest {
         JsonNode body = preview(admin, "GLOBALGAP_IFA", "6", CSV).getBody();
         assertThat(body.get("valid").asBoolean()).isFalse();
         assertThat(body.get("issues").toString()).contains("demostración");
+    }
+
+    @Test
+    void theOfficialLinkMustBeAWebAddress() {
+        for (String bad : List.of("javascript:alert(1)", "data:text/html,hola", "www.globalgap.org", "https://")) {
+            JsonNode body = upload(admin, "/api/standards/import/preview", "URL" + unique(), "1", CSV, bad).getBody();
+            assertThat(body.get("valid").asBoolean()).as(bad).isFalse();
+            assertThat(body.get("issues").get(0).get("column").asText()).isEqualTo("Enlace oficial");
+        }
+
+        String code = "URL" + unique();
+        assertThat(upload(admin, "/api/standards/import", code, "1", CSV, "https://www.globalgap.org/es/")
+                .getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 
     // ---------------------------------------------------------------- importar y usar

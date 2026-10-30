@@ -81,4 +81,16 @@ describe('StandardImportDialog', () => {
 
     await waitFor(() => expect(onImported).toHaveBeenCalledWith('COOP_V1'));
   });
+
+  it('avisa si el enlace oficial no es una dirección web y no deja validar', () => {
+    const { input, file } = setup();
+    fireEvent.change(input, { target: { files: [file] } });
+
+    fireEvent.change(screen.getByLabelText('Enlace oficial'), { target: { value: 'javascript:alert(1)' } });
+    expect(screen.getByText('Debe empezar por http:// o https://')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Validar' })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Enlace oficial'), { target: { value: 'https://www.globalgap.org' } });
+    expect(screen.getByRole('button', { name: 'Validar' })).toBeEnabled();
+  });
 });

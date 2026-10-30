@@ -57,7 +57,7 @@ Servicios:
 |---|---|---|
 | Frontend | http://localhost:8080 | SPA de React servida por nginx |
 | Backend API | http://localhost:8081/api | REST + JWT |
-| Swagger UI | http://localhost:8081/swagger-ui.html | Documentación de la API |
+| Swagger UI | http://localhost:8081/swagger-ui.html | Apagado por defecto: arranca con `AGRIAUDIT_API_DOCS=true` en `.env` |
 | Adminer (opcional) | http://localhost:8090 | `docker compose --profile debug up` |
 
 **Usuario inicial** (creado/actualizado en cada arranque a partir de `.env`):

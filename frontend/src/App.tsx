@@ -1,7 +1,8 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from './auth/AuthContext';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import FarmsPage from './pages/FarmsPage';
@@ -26,6 +27,7 @@ function FullscreenLoader() {
 
 export default function App() {
   const { user, loading, hasRole } = useAuth();
+  const location = useLocation();
 
   if (loading) return <FullscreenLoader />;
 
@@ -40,23 +42,25 @@ export default function App() {
 
   return (
     <Layout>
-      <Routes>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/farms" element={<FarmsPage />} />
-        <Route path="/farms/new" element={hasRole('ADMIN', 'AUDITOR') ? <FarmFormPage /> : <Navigate to="/farms" replace />} />
-        <Route path="/farms/:id" element={<FarmFormPage />} />
-        <Route path="/audits" element={<AuditsPage />} />
-        <Route path="/audits/new" element={hasRole('ADMIN', 'AUDITOR') ? <AuditWizardPage /> : <Navigate to="/audits" replace />} />
-        <Route path="/audits/:id" element={<AuditDetailPage />} />
-        <Route path="/documents" element={<DocumentCenterPage />} />
-        <Route path="/standards" element={<StandardsPage />} />
-        <Route path="/regulations" element={<RegulationsPage />} />
-        <Route path="/trace" element={hasRole('ADMIN', 'QUALITY') ? <TracePage /> : <Navigate to="/" replace />} />
-        <Route path="/users" element={hasRole('ADMIN') ? <UsersPage /> : <Navigate to="/" replace />} />
-        <Route path="/privacy" element={hasRole('ADMIN') ? <PrivacyPage /> : <Navigate to="/" replace />} />
-        <Route path="/login" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <ErrorBoundary resetKey={location.pathname}>
+        <Routes>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/farms" element={<FarmsPage />} />
+          <Route path="/farms/new" element={hasRole('ADMIN', 'AUDITOR') ? <FarmFormPage /> : <Navigate to="/farms" replace />} />
+          <Route path="/farms/:id" element={<FarmFormPage />} />
+          <Route path="/audits" element={<AuditsPage />} />
+          <Route path="/audits/new" element={hasRole('ADMIN', 'AUDITOR') ? <AuditWizardPage /> : <Navigate to="/audits" replace />} />
+          <Route path="/audits/:id" element={<AuditDetailPage />} />
+          <Route path="/documents" element={<DocumentCenterPage />} />
+          <Route path="/standards" element={<StandardsPage />} />
+          <Route path="/regulations" element={<RegulationsPage />} />
+          <Route path="/trace" element={hasRole('ADMIN', 'QUALITY') ? <TracePage /> : <Navigate to="/" replace />} />
+          <Route path="/users" element={hasRole('ADMIN') ? <UsersPage /> : <Navigate to="/" replace />} />
+          <Route path="/privacy" element={hasRole('ADMIN') ? <PrivacyPage /> : <Navigate to="/" replace />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ErrorBoundary>
     </Layout>
   );
 }

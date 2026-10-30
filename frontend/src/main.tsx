@@ -7,6 +7,7 @@ import { theme } from './theme';
 import { AuthProvider } from './auth/AuthContext';
 import { ToastProvider } from './utils/toast';
 import App from './App';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,15 +19,17 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <BrowserRouter>
-            <AuthProvider>
-              <App />
-            </AuthProvider>
-          </BrowserRouter>
-        </ToastProvider>
-      </QueryClientProvider>
+      <ErrorBoundary fullPage>
+        <QueryClientProvider client={queryClient}>
+          <ToastProvider>
+            <BrowserRouter>
+              <AuthProvider>
+                <App />
+              </AuthProvider>
+            </BrowserRouter>
+          </ToastProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
     </ThemeProvider>
   </React.StrictMode>,
 );

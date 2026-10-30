@@ -24,6 +24,7 @@ import { CatalogApi } from '../api/endpoints';
 import type { ImportPreview } from '../api/types';
 import { extractErrorMessage } from '../api/client';
 import { levelLabels, label } from '../utils/labels';
+import { isWebLink } from '../utils/links';
 
 const scoringTypes = [
   { value: 'MAJOR_MINOR', label: 'Obligaciones mayores y menores (porcentaje mínimo de cada una)' },
@@ -119,7 +120,8 @@ export default function StandardImportDialog({
     onClose();
   };
 
-  const canValidate = Boolean(file && form.code.trim() && form.name.trim() && form.version.trim());
+  const badUrl = form.officialUrl.trim() !== '' && !isWebLink(form.officialUrl);
+  const canValidate = Boolean(file && form.code.trim() && form.name.trim() && form.version.trim() && !badUrl);
 
   return (
     <Dialog open={open} onClose={close} maxWidth="md" fullWidth>
@@ -160,7 +162,8 @@ export default function StandardImportDialog({
           </Grid>
           <Grid size={{ xs: 12, md: 4 }}>
             <TextField label="Enlace oficial" fullWidth size="small" value={form.officialUrl}
-              onChange={set('officialUrl')} />
+              onChange={set('officialUrl')} error={badUrl}
+              helperText={badUrl ? 'Debe empezar por http:// o https://' : undefined} />
           </Grid>
           <Grid size={{ xs: 12 }}>
             <TextField label="Descripción" fullWidth size="small" multiline minRows={2} value={form.description}

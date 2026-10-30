@@ -34,6 +34,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-agriaudit}
       JWT_SECRET: ${JWT_SECRET:-dev-only-secret-please-change-me-to-a-long-random-string}
       TRACE_HMAC_KEY: ${TRACE_HMAC_KEY:-dev-only-trace-hmac-key-change-me-in-production-0123456789abcdef}
+      # Swagger apagado por defecto: no se publica la documentación de la API en demos ni pilotos.
+      AGRIAUDIT_API_DOCS: ${AGRIAUDIT_API_DOCS:-false}
       AGRIAUDIT_BLOCKED_RETENTION_MONTHS: ${AGRIAUDIT_BLOCKED_RETENTION_MONTHS:-60}
       JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-120}
       JWT_REFRESH_EXPIRATION_DAYS: ${JWT_REFRESH_EXPIRATION_DAYS:-7}
@@ -78,8 +80,8 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: /api
-        # Precarga el usuario de demostración en el login; en producción debe ser false.
-        VITE_DEMO_PREFILL: ${VITE_DEMO_PREFILL:-true}
+        # Precarga un usuario de demostración en el login (solo para pruebas internas).
+        VITE_DEMO_PREFILL: ${VITE_DEMO_PREFILL:-false}
     container_name: agriaudit-frontend
     depends_on:
       - backend

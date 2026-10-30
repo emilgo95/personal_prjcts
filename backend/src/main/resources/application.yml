@@ -43,8 +43,12 @@ management:
       probes:
         enabled: true
 
+# Documentación de la API: activa al arrancar en local; con Docker solo si AGRIAUDIT_API_DOCS=true y nunca en prod.
 springdoc:
+  api-docs:
+    enabled: ${AGRIAUDIT_API_DOCS:true}
   swagger-ui:
+    enabled: ${AGRIAUDIT_API_DOCS:true}
     path: /swagger-ui.html
 
 agriaudit:
