@@ -16,6 +16,7 @@ import { useToast } from '../utils/toast';
 import { useConfirm } from '../utils/confirm';
 import { extractErrorMessage } from '../api/client';
 import { filterFarms } from '../utils/search';
+import { gridLocaleText } from '../utils/gridLocale';
 
 export default function FarmsPage() {
   const navigate = useNavigate();
@@ -137,11 +138,11 @@ export default function FarmsPage() {
           <DataGrid
             autoHeight
             rows={visibleFarms}
-            localeText={{
+            localeText={gridLocaleText({
               noRowsLabel: searching
                 ? `Ninguna explotación coincide con «${deferredSearch.trim()}»`
                 : 'Todavía no hay explotaciones',
-            }}
+            })}
             columns={columns}
             disableRowSelectionOnClick
             onRowClick={(p) => navigate(`/farms/${p.id}`)}

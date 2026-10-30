@@ -38,6 +38,8 @@ describe('FarmsPage: búsqueda', () => {
     renderPage();
     expect(await screen.findByText('Invernaderos del Poniente')).toBeInTheDocument();
     expect(screen.getByText('2 explotaciones')).toBeInTheDocument();
+    // La paginación sigue en español aunque la tabla tenga sus propios textos.
+    expect(screen.getByText('Filas por página:')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Buscar explotaciones'), { target: { value: 'aguilas' } });
 

@@ -1,6 +1,7 @@
 import { createTheme } from '@mui/material/styles';
 import { esES } from '@mui/material/locale';
 import { esES as dataGridEsES } from '@mui/x-data-grid/locales';
+import type {} from '@mui/x-data-grid/themeAugmentation';
 
 export const theme = createTheme(
   {
@@ -23,6 +24,16 @@ export const theme = createTheme(
     components: {
       MuiButton: { defaultProps: { disableElevation: true } },
       MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
+      // Paginación de las tablas («Filas por página» y páginas) a la izquierda, bajo la primera columna.
+      MuiDataGrid: {
+        styleOverrides: {
+          footerContainer: {
+            justifyContent: 'flex-start',
+            '& .MuiTablePagination-root': { marginLeft: 0 },
+            '& .MuiTablePagination-spacer': { display: 'none' },
+          },
+        },
+      },
     },
   },
   esES,

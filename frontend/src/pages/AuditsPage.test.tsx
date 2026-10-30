@@ -63,6 +63,7 @@ describe('AuditsPage: buscador', () => {
   it('busca en el servidor al escribir, vuelve a la primera página y dice cuántas hay', async () => {
     renderPage();
     expect(await screen.findByText('2 auditorías')).toBeInTheDocument();
+    expect(screen.getByText('Filas por página:')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Buscar auditorías'), { target: { value: '  fortuna ' } });
 

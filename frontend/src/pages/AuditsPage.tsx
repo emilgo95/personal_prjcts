@@ -13,6 +13,7 @@ import ProgressMeter from '../components/ProgressMeter';
 import { useAuth } from '../auth/AuthContext';
 import AuditStatusChip from '../components/AuditStatusChip';
 import { auditTypeLabels, label, standardShort } from '../utils/labels';
+import { gridLocaleText } from '../utils/gridLocale';
 
 export default function AuditsPage() {
   const navigate = useNavigate();
@@ -143,9 +144,9 @@ export default function AuditsPage() {
           autoHeight
           rows={data?.content ?? []}
           rowCount={total}
-          localeText={{
+          localeText={gridLocaleText({
             noRowsLabel: query ? `Ninguna auditoría coincide con «${query}»` : 'Todavía no hay auditorías',
-          }}
+          })}
           paginationMode="server"
           paginationModel={paging}
           onPaginationModelChange={(m) => setPaging({ page: m.page, pageSize: m.pageSize })}
