@@ -77,8 +77,9 @@ export const FarmApi = {
 };
 
 export const AuditApi = {
-  list: (page = 0, size = 25) =>
-    api.get<AuditPage>('/audits', { params: { page, size } }).then((r) => r.data),
+  /** Con `q`, solo las auditorías que contienen todas sus palabras (busca en el servidor, en todas las páginas). */
+  list: (page = 0, size = 25, q?: string) =>
+    api.get<AuditPage>('/audits', { params: { page, size, q: q || undefined } }).then((r) => r.data),
   get: (id: number) => api.get<AuditDetail>(`/audits/${id}`).then((r) => r.data),
   create: (body: AuditRequest) => api.post<AuditDetail>('/audits', body).then((r) => r.data),
   update: (id: number, body: AuditRequest) => api.put<AuditDetail>(`/audits/${id}`, body).then((r) => r.data),

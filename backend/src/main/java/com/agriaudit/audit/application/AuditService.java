@@ -73,13 +73,54 @@ public class AuditService implements AuditLookup {
     /** Una página de auditorías, de la más reciente a la más antigua. */
     @Transactional(readOnly = true)
     public AuditPage page(int page, int size) {
+        return page(page, size, null);
+    }
+
+    /**
+     * Página de auditorías de la organización, de la más reciente a la más antigua. Con {@code query}, solo las que
+     * contienen todas sus palabras en la referencia, la explotación (razón social, nombre comercial, n.º de registro,
+     * localidad o región), el estándar, el auditor líder, el tipo o el estado (ver {@link AuditSearch}).
+     */
+    @Transactional(readOnly = true)
+    public AuditPage page(int page, int size, String query) {
         int safeSize = Math.min(Math.max(size, 1), 100);
-        var result = audits.findByOrganizationId(SecurityUtils.currentOrganizationId(),
-                org.springframework.data.domain.PageRequest.of(Math.max(page, 0), safeSize,
-                        org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
-                                "createdAt", "id")));
+        Long orgId = SecurityUtils.currentOrganizationId();
+        var pageRequest = org.springframework.data.domain.PageRequest.of(Math.max(page, 0), safeSize,
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                        "createdAt", "id"));
+        List<String> terms = AuditSearch.terms(query);
+        org.springframework.data.domain.Page<Audit> result;
+        if (terms.isEmpty()) {
+            result = audits.findByOrganizationId(orgId, pageRequest);
+        } else {
+            List<Long> matching = matchingAuditIds(orgId, terms);
+            result = matching.isEmpty()
+                    ? org.springframework.data.domain.Page.empty(pageRequest)
+                    : audits.findByOrganizationIdAndIdIn(orgId, matching, pageRequest);
+        }
         return new AuditPage(summarize(result.getContent()), result.getNumber(), result.getSize(),
                 result.getTotalElements(), result.getTotalPages());
+    }
+
+    /** Ids de las auditorías de la organización que contienen todas las palabras buscadas. */
+    private List<Long> matchingAuditIds(Long orgId, List<String> terms) {
+        List<Audit> all = audits.findByOrganizationIdOrderByCreatedAtDesc(orgId);
+        Map<Long, FarmDto> farmsById = farms.findFarms(orgId, all.stream().map(Audit::getFarmId).distinct().toList());
+        Map<Long, StandardView> standards = new HashMap<>();
+        List<Long> out = new ArrayList<>();
+        for (Audit a : all) {
+            StandardView standard = standards.computeIfAbsent(a.getStandardId(), id -> standardOf(a));
+            FarmDto farm = farmsById.get(a.getFarmId());
+            String text = AuditSearch.text(a.getReference(), a.getLeadAuditor(), standard.code(), standard.name(),
+                    typeLabel(a.getAuditType()), stateLabel(a.getStatus()),
+                    farm == null ? null : farm.legalName(), farm == null ? null : farm.tradeName(),
+                    farm == null ? null : farm.registrationNumber(), farm == null ? null : farm.city(),
+                    farm == null ? null : farm.region());
+            if (AuditSearch.matches(text, terms)) {
+                out.add(a.getId());
+            }
+        }
+        return out;
     }
 
     @Override
@@ -267,6 +308,16 @@ public class AuditService implements AuditLookup {
             case CLOSING -> "Cierre";
             case SUBMITTED -> "Enviada";
             case CLOSED -> "Cerrada";
+        };
+    }
+
+    static String typeLabel(AuditType t) {
+        return switch (t) {
+            case SELF_ASSESSMENT -> "Autoevaluación";
+            case INTERNAL -> "Auditoría interna";
+            case CB_INITIAL -> "Certificación inicial";
+            case SURVEILLANCE -> "Seguimiento";
+            case RECERTIFICATION -> "Recertificación";
         };
     }
 

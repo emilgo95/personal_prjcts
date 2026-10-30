@@ -21,6 +21,7 @@ public interface AuditRepository extends JpaRepository<Audit, Long> {
     List<Long> findIdsOwnedBy(@Param("orgId") Long organizationId, @Param("userId") Long userId,
                               @Param("fullName") String fullName);
     Page<Audit> findByOrganizationId(Long organizationId, Pageable pageable);
+    Page<Audit> findByOrganizationIdAndIdIn(Long organizationId, java.util.Collection<Long> ids, Pageable pageable);
     List<Audit> findByIdInAndOrganizationId(java.util.Collection<Long> ids, Long organizationId);
 
     /** Pares [estado, nº de auditorías] de la organización. */

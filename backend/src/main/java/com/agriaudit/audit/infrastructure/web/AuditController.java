@@ -21,8 +21,9 @@ public class AuditController {
     }
 
     @GetMapping
-    public AuditPage list(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        return auditService.page(page, size);
+    public AuditPage list(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size,
+                          @RequestParam(required = false) String q) {
+        return auditService.page(page, size, q);
     }
 
     @GetMapping("/{id}")

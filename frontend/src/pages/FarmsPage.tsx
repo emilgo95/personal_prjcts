@@ -102,7 +102,13 @@ export default function FarmsPage() {
               if (e.key === 'Escape') setSearch('');
             }}
             placeholder="Buscar por nombre, GGN, localidad, región o cultivo…"
-            sx={{ flex: '1 1 320px', maxWidth: 520, bgcolor: 'background.paper' }}
+            sx={{
+              flex: '1 1 320px',
+              maxWidth: 520,
+              bgcolor: 'background.paper',
+              // Sin la «x» propia del navegador: ya hay un botón para borrar la búsqueda.
+              '& input::-webkit-search-cancel-button': { display: 'none' },
+            }}
             slotProps={{
               htmlInput: { 'aria-label': 'Buscar explotaciones' },
               input: {
