@@ -1,6 +1,7 @@
 export interface UserDto {
   id: number;
-  email: string;
+  /** null si los datos del usuario están bloqueados: su correo ya no se muestra. */
+  email: string | null;
   fullName: string | null;
   role: 'ADMIN' | 'AUDITOR' | 'QUALITY' | 'VIEWER';
   organizationId: number;

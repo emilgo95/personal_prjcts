@@ -206,7 +206,8 @@ class PrivacyIntegrationTest {
         assertThat(blocked.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(blocked.getBody().get("blocked").asBoolean()).isTrue();
         assertThat(blocked.getBody().get("fullName").asText()).isEqualTo("Usuario bloqueado");
-        assertThat(blocked.getBody().get("email").asText()).doesNotContain("ana").endsWith("@bloqueado.invalid");
+        // Su correo no se muestra (ni el real ni el marcador interno que lo sustituye).
+        assertThat(blocked.getBody().get("email").isNull()).isTrue();
         assertThat(call(admin, HttpMethod.POST, "/api/users/" + quality.id() + "/block", null).getStatusCode())
                 .isEqualTo(HttpStatus.OK);
 
@@ -245,7 +246,7 @@ class PrivacyIntegrationTest {
             if (!e.get("userId").isNull() && e.get("userId").asLong() == ana.id()) {
                 anyByAna = true;
                 assertThat(e.get("userFullName").asText()).isEqualTo("Usuario bloqueado");
-                assertThat(e.get("username").asText()).endsWith("@bloqueado.invalid");
+                assertThat(e.get("username").asText()).isEqualTo("usuario-" + ana.id());
             }
         }
         assertThat(anyByAna).isTrue();

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import AttachmentPanel from './AttachmentPanel';
 import { ToastProvider } from '../utils/toast';
+import { ConfirmProvider } from '../utils/confirm';
 import type { Attachment } from '../api/types';
 
 vi.mock('../api/endpoints', () => ({ AttachmentApi: { download: vi.fn() } }));
@@ -23,13 +24,15 @@ const pdf = (id: number, containsPersonalData: boolean | null): Attachment => ({
 function renderPanel(props: Partial<Parameters<typeof AttachmentPanel>[0]> = {}) {
   return render(
     <ToastProvider>
-      <AttachmentPanel
-        attachments={[]}
-        canEdit
-        onUpload={vi.fn().mockResolvedValue(undefined)}
-        onDelete={vi.fn()}
-        {...props}
-      />
+      <ConfirmProvider>
+        <AttachmentPanel
+          attachments={[]}
+          canEdit
+          onUpload={vi.fn().mockResolvedValue(undefined)}
+          onDelete={vi.fn()}
+          {...props}
+        />
+      </ConfirmProvider>
     </ToastProvider>,
   );
 }

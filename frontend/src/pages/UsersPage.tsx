@@ -21,6 +21,7 @@ import { UserApi, downloadBlob } from '../api/endpoints';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
 import { useToast } from '../utils/toast';
+import { useConfirm } from '../utils/confirm';
 import { extractErrorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 
@@ -34,6 +35,7 @@ const roles = [
 export default function UsersPage() {
   const queryClient = useQueryClient();
   const { notify } = useToast();
+  const confirm = useConfirm();
   const { user: me } = useAuth();
   const { data, isLoading, error } = useQuery({ queryKey: ['users'], queryFn: UserApi.list });
 
@@ -156,7 +158,15 @@ export default function UsersPage() {
               <TableBody>
                 {(data ?? []).map((u) => (
                   <TableRow key={u.id} sx={u.active && !u.blocked ? undefined : { opacity: 0.6 }}>
-                    <TableCell>{u.email}</TableCell>
+                    <TableCell>
+                      {u.blocked ? (
+                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                          Oculto (datos bloqueados)
+                        </Typography>
+                      ) : (
+                        u.email
+                      )}
+                    </TableCell>
                     <TableCell>{u.fullName || '—'}</TableCell>
                     <TableCell>
                       <TextField
@@ -186,8 +196,17 @@ export default function UsersPage() {
                         <Button
                           size="small"
                           disabled={u.blocked || u.id === me?.id}
-                          onClick={() => {
-                            if (u.active && !window.confirm(`¿Desactivar a ${u.email}? Dejará de poder iniciar sesión.`)) return;
+                          onClick={async () => {
+                            if (
+                              u.active &&
+                              !(await confirm({
+                                title: `¿Desactivar a ${u.fullName || u.email}?`,
+                                message: `${u.email} dejará de poder iniciar sesión. Podrás reactivarlo cuando quieras.`,
+                                confirmLabel: 'Desactivar',
+                                tone: 'warning',
+                              }))
+                            )
+                              return;
                             update.mutate({ id: u.id, role: u.role, active: !u.active, fullName: u.fullName ?? undefined });
                           }}
                         >
@@ -197,17 +216,34 @@ export default function UsersPage() {
                           size="small"
                           color="warning"
                           disabled={u.blocked || u.id === me?.id}
-                          onClick={() => {
-                            if (
-                              !window.confirm(
-                                `¿Bloquear los datos de ${u.email}? Su nombre y correo dejarán de mostrarse en toda la aplicación ` +
-                                  '(aparecerá «Usuario bloqueado»), no podrá volver a entrar y sus datos originales se ' +
-                                  'conservarán reservados hasta que venza el plazo de conservación, y después se destruirán. ' +
-                                  'Esta acción no se puede deshacer.',
-                              )
-                            )
-                              return;
-                            block.mutate(u.id);
+                          onClick={async () => {
+                            const ok = await confirm({
+                              title: `¿Bloquear los datos de ${u.fullName || u.email}?`,
+                              message: (
+                                <>
+                                  <Typography variant="body2" sx={{ mb: 1 }}>
+                                    Es lo que pide la protección de datos cuando una persona deja la organización:
+                                  </Typography>
+                                  <Box component="ul" sx={{ m: 0, pl: 2.5, '& li': { mb: 0.5 } }}>
+                                    <li>
+                                      Su nombre y su correo ({u.email}) dejarán de mostrarse en toda la aplicación;
+                                      aparecerá «Usuario bloqueado».
+                                    </li>
+                                    <li>No podrá volver a entrar.</li>
+                                    <li>
+                                      Sus datos originales se guardan aparte, sin acceso desde la aplicación, hasta que
+                                      venza el plazo de conservación; después se destruyen.
+                                    </li>
+                                  </Box>
+                                  <Typography variant="body2" sx={{ mt: 1.5, fontWeight: 600, color: 'warning.dark' }}>
+                                    No se puede deshacer.
+                                  </Typography>
+                                </>
+                              ),
+                              confirmLabel: 'Bloquear datos',
+                              tone: 'warning',
+                            });
+                            if (ok) block.mutate(u.id);
                           }}
                         >
                           Bloquear datos

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DashboardPage from './DashboardPage';
@@ -72,9 +72,12 @@ describe('DashboardPage', () => {
 
     expect(await screen.findByLabelText('8 Explotaciones')).toBeInTheDocument();
     expect(screen.getByLabelText('12 Auditorías')).toBeInTheDocument();
-    expect(screen.getByLabelText('5 No conformidades abiertas')).toBeInTheDocument();
-    expect(screen.getByLabelText('2 No conformidades vencidas')).toBeInTheDocument();
-    expect(screen.getByLabelText('90% Cerradas en plazo')).toBeInTheDocument();
+    // Todo lo de las no conformidades va junto en una sola tarjeta.
+    const nc = within(screen.getByRole('region', { name: 'No conformidades' }));
+    expect(nc.getByLabelText('5 No conformidades abiertas')).toBeInTheDocument();
+    expect(nc.getByLabelText('2 No conformidades vencidas')).toBeInTheDocument();
+    expect(nc.getByLabelText(/No conformidades que vencen en 7 días/)).toBeInTheDocument();
+    expect(nc.getByLabelText('90% Cerradas en plazo')).toBeInTheDocument();
     expect(screen.getByText('18 de 20 en 12 meses')).toBeInTheDocument();
     expect(screen.getByText('3 vencen en 14 días')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/, Ana$/);

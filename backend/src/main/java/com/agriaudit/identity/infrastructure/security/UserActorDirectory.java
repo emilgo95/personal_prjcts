@@ -23,7 +23,9 @@ class UserActorDirectory implements ActorDirectory {
     @Transactional(readOnly = true)
     public Map<Long, ActorName> names(Collection<Long> userIds) {
         Map<Long, ActorName> out = new HashMap<>();
-        users.findAllById(userIds).forEach(u -> out.put(u.getId(), new ActorName(u.getEmail(), u.getFullName())));
+        // De un usuario bloqueado solo se muestra su código, nunca el marcador interno que sustituye a su correo.
+        users.findAllById(userIds).forEach(u -> out.put(u.getId(),
+                new ActorName(u.isBlocked() ? "usuario-" + u.getId() : u.getEmail(), u.getFullName())));
         return out;
     }
 

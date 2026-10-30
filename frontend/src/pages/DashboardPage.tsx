@@ -12,6 +12,7 @@ import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { DashboardApi } from '../api/endpoints';
+import type { Dashboard } from '../api/types';
 import { extractErrorMessage } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { greetingForDate, sceneForDate } from '../auth/loginScenes';
@@ -147,6 +148,164 @@ function KpiTile({
             {note}
           </Typography>
         )}
+      </Box>
+    </Box>
+  );
+}
+
+/** Una cifra dentro de la tarjeta de no conformidades: mismo color de aviso que tenían las tarjetas sueltas. */
+function NcMetric({
+  value,
+  title,
+  ariaTitle,
+  note,
+  icon,
+  tone,
+  suffix = '',
+  empty = false,
+}: {
+  value: number;
+  title: string;
+  /** Nombre completo para lectores de pantalla (p. ej. «No conformidades vencidas»). */
+  ariaTitle: string;
+  note?: string;
+  icon: ReactNode;
+  tone: Tone;
+  suffix?: string;
+  empty?: boolean;
+}) {
+  const shown = useCountUp(value);
+  const accent = toneAccent[tone];
+  return (
+    <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', color: accent }}>
+        <Box aria-hidden sx={{ display: 'grid', '& svg': { fontSize: 20 } }}>
+          {icon}
+        </Box>
+        <Typography sx={{ fontWeight: 600, fontSize: { xs: '0.85rem', md: '0.95rem' }, color: 'common.white' }}>
+          {title}
+        </Typography>
+      </Stack>
+      <Typography
+        component="p"
+        aria-label={empty ? `${ariaTitle}: sin datos` : `${value}${suffix} ${ariaTitle}`}
+        sx={{
+          fontSize: { xs: '2.3rem', md: 'clamp(2.6rem, 4.4vw, 3.8rem)' },
+          fontWeight: 800,
+          lineHeight: 1,
+          letterSpacing: '-0.03em',
+          fontVariantNumeric: 'tabular-nums',
+          textShadow: '0 2px 18px rgba(0,0,0,0.3)',
+        }}
+      >
+        <span aria-hidden>
+          {empty ? '—' : shown.toLocaleString('es-ES')}
+          {!empty && suffix && <Box component="span" sx={{ fontSize: '0.55em', ml: 0.25 }}>{suffix}</Box>}
+        </span>
+      </Typography>
+      {note && (
+        <Typography variant="caption" sx={{ color: accent, fontWeight: 700, letterSpacing: '0.02em' }}>
+          {note}
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
+/** Todo lo de las no conformidades en una sola tarjeta alargada: abiertas, vencidas, próximas y cerradas en plazo. */
+function NcBand({ data, onTimePct, index }: { data: Dashboard; onTimePct: number | null; index: number }) {
+  return (
+    <Box
+      component="section"
+      aria-label="No conformidades"
+      sx={{
+        ...glass,
+        gridColumn: '1 / -1',
+        p: { xs: 2, md: 2.75 },
+        borderRadius: 4,
+        color: 'common.white',
+        animation: `${rise} 700ms cubic-bezier(0.22, 1, 0.36, 1) ${160 + index * 90}ms both`,
+        '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+      }}
+    >
+      <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', mb: { xs: 2, md: 2.5 } }}>
+        <Box
+          aria-hidden
+          sx={{
+            width: 38,
+            height: 38,
+            borderRadius: '12px',
+            display: 'grid',
+            placeItems: 'center',
+            color: toneAccent.info,
+            bgcolor: 'rgba(255, 255, 255, 0.14)',
+            border: '1px solid rgba(255, 255, 255, 0.22)',
+          }}
+        >
+          <AssignmentLateIcon />
+        </Box>
+        <Typography component="h2" sx={{ fontWeight: 700, fontSize: { xs: '1.05rem', md: '1.2rem' } }}>
+          No conformidades
+        </Typography>
+      </Stack>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' },
+          rowGap: 2.5,
+          // Separador fino a la izquierda de cada cifra salvo la primera de su fila (2 por fila en móvil, 4 en escritorio).
+          '& > *:nth-of-type(even)': { borderLeft: '1px solid rgba(255, 255, 255, 0.2)', pl: { xs: 2, md: 2.5 } },
+          '& > *:nth-of-type(3)': {
+            borderLeft: { md: '1px solid rgba(255, 255, 255, 0.2)' },
+            pl: { md: 2.5 },
+          },
+          '& > *': { pr: { xs: 1, md: 2.5 } },
+        }}
+      >
+        <NcMetric
+          value={data.openFindings}
+          title="Abiertas"
+          ariaTitle="No conformidades abiertas"
+          note={data.dueIn14Findings > 0 ? `${data.dueIn14Findings} vencen en 14 días` : undefined}
+          icon={<AssignmentLateIcon />}
+          tone="info"
+        />
+        <NcMetric
+          value={data.overdueFindings}
+          title="Vencidas"
+          ariaTitle="No conformidades vencidas"
+          note={data.overdueFindings > 0 ? 'Requieren atención' : 'Todo en plazo'}
+          icon={<ReportProblemIcon />}
+          tone={data.overdueFindings > 0 ? 'alert' : 'ok'}
+        />
+        <NcMetric
+          value={data.dueSoonFindings}
+          title="Vencen en 7 días"
+          ariaTitle="No conformidades que vencen en 7 días"
+          note={
+            data.dueIn2Findings > 0
+              ? `${data.dueIn2Findings} en 2 días o menos`
+              : data.dueSoonFindings > 0
+                ? 'Prioridad esta semana'
+                : 'Sin urgencias'
+          }
+          icon={<EventBusyIcon />}
+          tone={data.dueIn2Findings > 0 ? 'alert' : data.dueSoonFindings > 0 ? 'warn' : 'ok'}
+        />
+        <NcMetric
+          value={onTimePct ?? 0}
+          empty={onTimePct === null}
+          suffix="%"
+          title="Cerradas en plazo"
+          ariaTitle="Cerradas en plazo"
+          note={
+            onTimePct === null
+              ? 'Aún no hay NC cerradas'
+              : `${data.closedOnTimeFindings} de ${data.closedWithDeadlineFindings} en 12 meses`
+          }
+          icon={<TaskAltIcon />}
+          tone={onTimePct === null ? 'neutral' : onTimePct >= 90 ? 'ok' : onTimePct >= 70 ? 'warn' : 'alert'}
+        />
       </Box>
     </Box>
   );
@@ -331,55 +490,12 @@ export default function DashboardPage() {
               sx={{
                 display: 'grid',
                 gap: { xs: 1.5, md: 2.25 },
-                gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' },
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
               }}
             >
               <KpiTile index={0} value={data.farmsCount} title="Explotaciones" icon={<AgricultureIcon />} to="/farms" />
               <KpiTile index={1} value={data.auditsTotal} title="Auditorías" icon={<FactCheckIcon />} to="/audits" />
-              <KpiTile
-                index={2}
-                value={data.openFindings}
-                title="No conformidades abiertas"
-                note={data.dueIn14Findings > 0 ? `${data.dueIn14Findings} vencen en 14 días` : undefined}
-                icon={<AssignmentLateIcon />}
-                tone="info"
-              />
-              <KpiTile
-                index={3}
-                value={data.overdueFindings}
-                title="No conformidades vencidas"
-                note={data.overdueFindings > 0 ? 'Requieren atención' : 'Todo en plazo'}
-                icon={<ReportProblemIcon />}
-                tone={data.overdueFindings > 0 ? 'alert' : 'ok'}
-              />
-              <KpiTile
-                index={4}
-                value={data.dueSoonFindings}
-                title="Vencen en 7 días"
-                note={
-                  data.dueIn2Findings > 0
-                    ? `${data.dueIn2Findings} en 2 días o menos`
-                    : data.dueSoonFindings > 0
-                      ? 'Prioridad esta semana'
-                      : 'Sin urgencias'
-                }
-                icon={<EventBusyIcon />}
-                tone={data.dueIn2Findings > 0 ? 'alert' : data.dueSoonFindings > 0 ? 'warn' : 'ok'}
-              />
-              <KpiTile
-                index={5}
-                value={onTimePct ?? 0}
-                empty={onTimePct === null}
-                suffix="%"
-                title="Cerradas en plazo"
-                note={
-                  onTimePct === null
-                    ? 'Aún no hay NC cerradas'
-                    : `${data.closedOnTimeFindings} de ${data.closedWithDeadlineFindings} en 12 meses`
-                }
-                icon={<TaskAltIcon />}
-                tone={onTimePct === null ? 'neutral' : onTimePct >= 90 ? 'ok' : onTimePct >= 70 ? 'warn' : 'alert'}
-              />
+              <NcBand data={data} onTimePct={onTimePct} index={2} />
             </Box>
           )}
         </Box>

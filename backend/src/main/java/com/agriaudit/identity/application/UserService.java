@@ -192,8 +192,9 @@ public class UserService {
         }
     }
 
+    /** El correo de un usuario bloqueado no se muestra: el que queda guardado es un marcador interno, no su correo. */
     private UserDto toDto(AppUser u) {
-        return new UserDto(u.getId(), u.getEmail(), u.getFullName(), u.getRole().name(),
+        return new UserDto(u.getId(), u.isBlocked() ? null : u.getEmail(), u.getFullName(), u.getRole().name(),
                 u.getOrganization().getId(), u.getOrganization().getName(), u.isActive(), u.isBlocked());
     }
 }

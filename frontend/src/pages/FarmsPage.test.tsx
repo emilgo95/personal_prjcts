@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import FarmsPage from './FarmsPage';
 import { ToastProvider } from '../utils/toast';
+import { ConfirmProvider } from '../utils/confirm';
 
 const base = {
   tradeName: null, registrationNumber: null, address: null, region: null, latitude: null, longitude: null,
@@ -22,9 +23,11 @@ function renderPage() {
   return render(
     <QueryClientProvider client={client}>
       <ToastProvider>
-        <MemoryRouter>
-          <FarmsPage />
-        </MemoryRouter>
+        <ConfirmProvider>
+          <MemoryRouter>
+            <FarmsPage />
+          </MemoryRouter>
+        </ConfirmProvider>
       </ToastProvider>
     </QueryClientProvider>,
   );

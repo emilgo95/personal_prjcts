@@ -20,6 +20,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import { AttachmentApi } from '../api/endpoints';
 import type { Attachment, ComplianceValue, SuggestedFinding } from '../api/types';
 import { useToast } from '../utils/toast';
+import { useConfirm } from '../utils/confirm';
 import { extractErrorMessage } from '../api/client';
 import { useFeatures } from '../utils/useFeatures';
 import EvidenceAnalysisDialog from './EvidenceAnalysisDialog';
@@ -111,6 +112,7 @@ export default function AttachmentPanel({
   analyze?: AnalyzeContext;
 }) {
   const { notify } = useToast();
+  const confirm = useConfirm();
   const features = useFeatures();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -149,7 +151,13 @@ export default function AttachmentPanel({
   };
 
   const remove = async (id: number) => {
-    if (!window.confirm('¿Eliminar esta evidencia?')) return;
+    const ok = await confirm({
+      title: '¿Eliminar esta evidencia?',
+      message: 'Se quitará el fichero adjunto. No se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      tone: 'danger',
+    });
+    if (!ok) return;
     try {
       await onDelete(id);
       notify('Evidencia eliminada', 'success');

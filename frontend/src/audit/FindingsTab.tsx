@@ -29,6 +29,7 @@ import AttachmentPanel from '../components/AttachmentPanel';
 import DeadlineChip from '../components/DeadlineChip';
 import { formatDate } from '../utils/dates';
 import { useToast } from '../utils/toast';
+import { useConfirm } from '../utils/confirm';
 import { extractErrorMessage } from '../api/client';
 import {
   caStatusLabels,
@@ -292,6 +293,7 @@ function FindingCard({
   onChanged: () => void;
 }) {
   const { notify } = useToast();
+  const confirm = useConfirm();
   const [editing, setEditing] = useState(false);
   const [addingCa, setAddingCa] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -404,8 +406,15 @@ function FindingCard({
                   </IconButton>
                   <IconButton
                     size="small"
-                    onClick={() => {
-                      if (window.confirm('¿Eliminar esta no conformidad?')) remove.mutate();
+                    aria-label="Eliminar la no conformidad"
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: '¿Eliminar esta no conformidad?',
+                        message: `Se eliminará ${finding.reference}. No se puede deshacer.`,
+                        confirmLabel: 'Eliminar',
+                        tone: 'danger',
+                      });
+                      if (ok) remove.mutate();
                     }}
                   >
                     <DeleteOutlineIcon fontSize="small" />
@@ -527,6 +536,7 @@ function CorrectiveActionRow({
   onChanged: () => void;
 }) {
   const { notify } = useToast();
+  const confirm = useConfirm();
   const [editing, setEditing] = useState(false);
 
   const update = useMutation({
@@ -615,8 +625,15 @@ function CorrectiveActionRow({
             </IconButton>
             <IconButton
               size="small"
-              onClick={() => {
-                if (window.confirm('¿Eliminar esta acción correctiva?')) remove.mutate();
+              aria-label="Eliminar la acción correctiva"
+              onClick={async () => {
+                const ok = await confirm({
+                  title: '¿Eliminar esta acción correctiva?',
+                  message: 'No se puede deshacer.',
+                  confirmLabel: 'Eliminar',
+                  tone: 'danger',
+                });
+                if (ok) remove.mutate();
               }}
             >
               <DeleteOutlineIcon fontSize="small" />

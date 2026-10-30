@@ -6,6 +6,7 @@ import { CssBaseline, ThemeProvider } from '@mui/material';
 import { theme } from './theme';
 import { AuthProvider } from './auth/AuthContext';
 import { ToastProvider } from './utils/toast';
+import { ConfirmProvider } from './utils/confirm';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -22,11 +23,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <ErrorBoundary fullPage>
         <QueryClientProvider client={queryClient}>
           <ToastProvider>
-            <BrowserRouter>
-              <AuthProvider>
-                <App />
-              </AuthProvider>
-            </BrowserRouter>
+            <ConfirmProvider>
+              <BrowserRouter>
+                <AuthProvider>
+                  <App />
+                </AuthProvider>
+              </BrowserRouter>
+            </ConfirmProvider>
           </ToastProvider>
         </QueryClientProvider>
       </ErrorBoundary>

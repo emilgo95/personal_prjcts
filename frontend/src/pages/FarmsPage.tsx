@@ -13,6 +13,7 @@ import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
 import { useAuth } from '../auth/AuthContext';
 import { useToast } from '../utils/toast';
+import { useConfirm } from '../utils/confirm';
 import { extractErrorMessage } from '../api/client';
 import { filterFarms } from '../utils/search';
 
@@ -21,6 +22,7 @@ export default function FarmsPage() {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
   const { notify } = useToast();
+  const confirm = useConfirm();
   const { data, isLoading, error } = useQuery({ queryKey: ['farms'], queryFn: FarmApi.list });
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -61,8 +63,14 @@ export default function FarmsPage() {
                 key="del"
                 icon={<DeleteOutlineIcon />}
                 label="Eliminar"
-                onClick={() => {
-                  if (window.confirm('¿Eliminar esta explotación?')) remove.mutate(Number(params.id));
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: '¿Eliminar esta explotación?',
+                    message: `Se eliminará «${params.row.legalName}». No se puede deshacer.`,
+                    confirmLabel: 'Eliminar',
+                    tone: 'danger',
+                  });
+                  if (ok) remove.mutate(Number(params.id));
                 }}
               />,
             ]
