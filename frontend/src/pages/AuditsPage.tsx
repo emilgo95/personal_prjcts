@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Box, Button, CircularProgress, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
+import { Box, Button, Chip, CircularProgress, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
+import AssignmentLateIcon from '@mui/icons-material/AssignmentLate';
 import { AuditApi } from '../api/endpoints';
 import PageHeader from '../components/PageHeader';
 import QueryBoundary from '../components/QueryBoundary';
@@ -46,12 +47,12 @@ export default function AuditsPage() {
 
   const columns: GridColDef[] = [
     { field: 'reference', headerName: 'Referencia', width: 140 },
-    { field: 'farmName', headerName: 'Explotación', flex: 1, minWidth: 180 },
+    // Explotación con tope de ancho y Estándar fijo: así Tipo queda cerca y el sobrante va a Progreso.
+    { field: 'farmName', headerName: 'Explotación', flex: 1, minWidth: 200, maxWidth: 290 },
     {
       field: 'standardName',
       headerName: 'Estándar',
-      flex: 1,
-      minWidth: 170,
+      width: 165,
       valueGetter: (value, row) => standardShort(row.standardCode, value as string),
     },
     {
@@ -69,7 +70,8 @@ export default function AuditsPage() {
     {
       field: 'progressPct',
       headerName: 'Progreso',
-      width: 190,
+      flex: 1,
+      minWidth: 190,
       renderCell: (params) => (
         <ProgressMeter
           compact
@@ -79,7 +81,43 @@ export default function AuditsPage() {
         />
       ),
     },
-    { field: 'findingsCount', headerName: 'NC', width: 70, type: 'number' },
+    {
+      field: 'findingsCount',
+      headerName: 'NC',
+      width: 90,
+      align: 'center',
+      headerAlign: 'center',
+      sortable: false,
+      // Enlace a las NC de la auditoría (pestaña Hallazgos y CAPA); sin NC, solo el cero.
+      renderCell: (p) => (
+        <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {p.row.findingsCount > 0 ? (
+            <Chip
+              component={RouterLink}
+              to={`/audits/${p.row.id}?tab=hallazgos`}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              clickable
+              size="small"
+              icon={<AssignmentLateIcon />}
+              label={p.row.findingsCount}
+              aria-label={`Ver las ${p.row.findingsCount} no conformidades de ${p.row.reference}`}
+              title="Ver las no conformidades"
+              sx={{
+                bgcolor: '#fdf1e2',
+                color: '#8a4b05',
+                fontWeight: 700,
+                '& .MuiChip-icon': { color: '#b45f06' },
+                '&:hover': { bgcolor: '#fbe3c5' },
+              }}
+            />
+          ) : (
+            <Typography variant="body2" color="text.disabled">
+              0
+            </Typography>
+          )}
+        </Box>
+      ),
+    },
   ];
 
   return (

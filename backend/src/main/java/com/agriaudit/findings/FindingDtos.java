@@ -79,4 +79,19 @@ public final class FindingDtos {
                     description, area, dueDate, status, raisedAt, correctiveActions, attachments, null, null);
         }
     }
+
+    /**
+     * Una NC en la lista de toda la organización. {@code daysLeft}: días hasta el plazo si está abierta (negativo si
+     * venció); {@code closedOnTime}: si se cerró dentro de plazo (null si está abierta o no tiene plazo).
+     */
+    public record FindingRowDto(Long id, Long auditId, String auditReference, String auditStatus, Long farmId,
+                                String farmName, String standardCode, String standardName, String controlPointRef,
+                                String reference, String title, String classification, String status,
+                                LocalDate dueDate, Long daysLeft, Instant closedAt, Boolean closedOnTime,
+                                String lateJustification) {
+    }
+
+    /** Lista de NC de la organización en una vista, con el recuento de cada vista para los filtros. */
+    public record FindingListDto(String view, java.util.Map<String, Long> counts, List<FindingRowDto> rows) {
+    }
 }

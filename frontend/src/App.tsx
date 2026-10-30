@@ -19,6 +19,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import EvidencePage from './pages/EvidencePage';
 import EquivalencesPage from './pages/EquivalencesPage';
+import FindingsPage from './pages/FindingsPage';
 
 function FullscreenLoader() {
   return (
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/farms/:id" element={<FarmFormPage />} />
           <Route path="/audits" element={<AuditsPage />} />
           <Route path="/audits/new" element={hasRole('ADMIN', 'AUDITOR') ? <AuditWizardPage /> : <Navigate to="/audits" replace />} />
+          <Route path="/audits/findings" element={<FindingsPage />} />
           <Route path="/audits/evidence" element={<EvidencePage />} />
           <Route path="/audits/equivalences" element={<EquivalencesPage />} />
           <Route path="/audits/:id" element={<AuditDetailPage />} />

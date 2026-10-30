@@ -530,6 +530,39 @@ export interface CorrectiveAction {
   updatedAt: string;
 }
 
+/** Vista de la lista de NC de la organización: las mismas reglas que las cifras del panel. */
+export type FindingView = 'OPEN' | 'OVERDUE' | 'DUE_2' | 'DUE_7' | 'DUE_14' | 'CLOSED_12M' | 'CLOSED_LATE' | 'ALL';
+
+/** Una NC en Auditorías › No conformidades. */
+export interface FindingRow {
+  id: number;
+  auditId: number;
+  auditReference: string | null;
+  auditStatus: string | null;
+  farmId: number | null;
+  farmName: string | null;
+  standardCode: string | null;
+  standardName: string | null;
+  controlPointRef: string | null;
+  reference: string;
+  title: string | null;
+  classification: string;
+  status: string;
+  dueDate: string | null;
+  /** Días hasta el plazo si está abierta (negativo si venció). */
+  daysLeft: number | null;
+  closedAt: string | null;
+  /** Si se cerró dentro de plazo (null si está abierta o no tiene plazo). */
+  closedOnTime: boolean | null;
+  lateJustification: string | null;
+}
+
+export interface FindingList {
+  view: FindingView;
+  counts: Record<FindingView, number>;
+  rows: FindingRow[];
+}
+
 /** Una NC que impide (por revisar) o condiciona (vencida) el envío de la auditoría. */
 export interface PendingFinding {
   id: number;

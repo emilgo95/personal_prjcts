@@ -11,6 +11,7 @@ import EventBusyIcon from '@mui/icons-material/EventBusy';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { DashboardApi } from '../api/endpoints';
 import type { Dashboard } from '../api/types';
 import { extractErrorMessage } from '../api/client';
@@ -20,6 +21,7 @@ import ProgressMeter from '../components/ProgressMeter';
 import AuditStatusChip from '../components/AuditStatusChip';
 import DeadlineChip from '../components/DeadlineChip';
 import { useCountUp, useDashboardScroll } from '../utils/motion';
+import { findingLink, findingsListLink } from '../utils/links';
 import {
   auditStatusStyle,
   auditStatusLabels,
@@ -163,6 +165,7 @@ function NcMetric({
   tone,
   suffix = '',
   empty = false,
+  to,
 }: {
   value: number;
   title: string;
@@ -173,11 +176,31 @@ function NcMetric({
   tone: Tone;
   suffix?: string;
   empty?: boolean;
+  /** Lista de esas NC (Auditorías › No conformidades con su vista). */
+  to: string;
 }) {
   const shown = useCountUp(value);
   const accent = toneAccent[tone];
   return (
-    <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+    <Box
+      component={RouterLink}
+      to={to}
+      aria-label={`${empty ? `${ariaTitle}: sin datos` : `${value}${suffix} ${ariaTitle}`}. Ver la lista`}
+      sx={{
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.75,
+        color: 'inherit',
+        textDecoration: 'none',
+        borderRadius: 3,
+        py: 1,
+        transition: 'background-color 200ms ease',
+        '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+        '&:hover .nc-go': { opacity: 1, transform: 'translateX(2px)' },
+        '&:focus-visible': { outline: '3px solid #ffffff', outlineOffset: 2 },
+      }}
+    >
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', color: accent }}>
         <Box aria-hidden sx={{ display: 'grid', '& svg': { fontSize: 20 } }}>
           {icon}
@@ -185,6 +208,11 @@ function NcMetric({
         <Typography sx={{ fontWeight: 600, fontSize: { xs: '0.85rem', md: '0.95rem' }, color: 'common.white' }}>
           {title}
         </Typography>
+        <ChevronRightIcon
+          className="nc-go"
+          aria-hidden
+          sx={{ fontSize: 18, color: 'common.white', opacity: 0.55, transition: 'opacity 200ms ease, transform 200ms ease' }}
+        />
       </Stack>
       <Typography
         component="p"
@@ -264,6 +292,7 @@ function NcBand({ data, onTimePct, index }: { data: Dashboard; onTimePct: number
       >
         <NcMetric
           value={data.openFindings}
+          to={findingsListLink('abiertas')}
           title="Abiertas"
           ariaTitle="No conformidades abiertas"
           note={data.dueIn14Findings > 0 ? `${data.dueIn14Findings} vencen en 14 días` : undefined}
@@ -272,6 +301,7 @@ function NcBand({ data, onTimePct, index }: { data: Dashboard; onTimePct: number
         />
         <NcMetric
           value={data.overdueFindings}
+          to={findingsListLink('vencidas')}
           title="Vencidas"
           ariaTitle="No conformidades vencidas"
           note={data.overdueFindings > 0 ? 'Requieren atención' : 'Todo en plazo'}
@@ -280,6 +310,7 @@ function NcBand({ data, onTimePct, index }: { data: Dashboard; onTimePct: number
         />
         <NcMetric
           value={data.dueSoonFindings}
+          to={findingsListLink('7-dias')}
           title="Vencen en 7 días"
           ariaTitle="No conformidades que vencen en 7 días"
           note={
@@ -296,6 +327,7 @@ function NcBand({ data, onTimePct, index }: { data: Dashboard; onTimePct: number
           value={onTimePct ?? 0}
           empty={onTimePct === null}
           suffix="%"
+          to={findingsListLink('cerradas')}
           title="Cerradas en plazo"
           ariaTitle="Cerradas en plazo"
           note={
@@ -611,7 +643,12 @@ export default function DashboardPage() {
             >
               <Card sx={{ height: '100%' }} style={revealStyle(revealed, 2, reduced)}>
                 <CardContent>
-                  <Typography variant="h6">Próximos vencimientos</Typography>
+                  <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6">Próximos vencimientos</Typography>
+                    <Button component={RouterLink} to={findingsListLink()} size="small" endIcon={<ChevronRightIcon />}>
+                      Ver todas
+                    </Button>
+                  </Stack>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                     No conformidades abiertas, de la más urgente a la menos
                   </Typography>
@@ -626,7 +663,7 @@ export default function DashboardPage() {
                         <Box
                           key={d.findingId}
                           component={RouterLink}
-                          to={`/audits/${d.auditId}`}
+                          to={findingLink(d.auditId, d.findingId)}
                           sx={{ textDecoration: 'none', color: 'inherit', py: 1.25, '&:hover': { bgcolor: 'action.hover' } }}
                         >
                           <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between', alignItems: 'center' }}>

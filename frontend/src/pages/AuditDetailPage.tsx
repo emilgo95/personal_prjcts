@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, Box, Chip, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { AuditApi } from '../api/endpoints';
@@ -15,18 +15,26 @@ import DocumentsTab from '../audit/DocumentsTab';
 import HistoryTab from '../audit/HistoryTab';
 import { useAuth } from '../auth/AuthContext';
 
+/** Nombre de cada pestaña en la dirección, en el orden en que se muestran. */
+const tabNames = ['resumen', 'checklist', 'evidencias', 'hallazgos', 'documentos', 'historial'];
+
 export default function AuditDetailPage() {
   const { id } = useParams();
   const auditId = Number(id);
   const { hasRole } = useAuth();
   const canSeeHistory = hasRole('ADMIN', 'QUALITY', 'AUDITOR');
-  const [tab, setTab] = useState(0);
+  // La pestaña va en la dirección (?tab=hallazgos) para poder enlazar a ella; ?nc=ID despliega esa NC.
+  const [params, setParams] = useSearchParams();
+  const initialTab = Math.max(0, tabNames.indexOf(params.get('tab') ?? ''));
+  const focusFindingId = Number(params.get('nc')) || undefined;
+  const [tab, setTab] = useState(initialTab);
   // Las pestañas ya visitadas siguen montadas (solo ocultas): así el checklist no pierde los cambios sin
   // guardar al cambiar de pestaña, y las que nadie abre no cargan datos.
-  const [visited, setVisited] = useState<Set<number>>(() => new Set([0]));
+  const [visited, setVisited] = useState<Set<number>>(() => new Set([initialTab]));
   const selectTab = (value: number) => {
     setTab(value);
     setVisited((v) => (v.has(value) ? v : new Set(v).add(value)));
+    setParams(value === 0 ? {} : { tab: tabNames[value] }, { replace: true });
   };
 
   const { data, isLoading, error } = useQuery({
@@ -84,7 +92,13 @@ export default function AuditDetailPage() {
               <SummaryTab key="summary" auditId={auditId} audit={data} />,
               <ChecklistTab key="checklist" auditId={auditId} standardCode={data.standardCode} locked={locked} />,
               <AuditEvidenceTab key="evidence" auditId={auditId} />,
-              <FindingsTab key="findings" auditId={auditId} standardCode={data.standardCode} locked={locked} />,
+              <FindingsTab
+                key="findings"
+                auditId={auditId}
+                standardCode={data.standardCode}
+                locked={locked}
+                focusFindingId={focusFindingId}
+              />,
               <DocumentsTab key="documents" auditId={auditId} />,
               canSeeHistory ? <HistoryTab key="history" auditId={auditId} /> : <Box key="history" />,
             ].map(

@@ -30,6 +30,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 import FolderSpecialIcon from '@mui/icons-material/FolderSpecial';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import AssignmentLateIcon from '@mui/icons-material/AssignmentLate';
 import { useAuth } from '../auth/AuthContext';
 import { label, roleLabels } from '../utils/labels';
 
@@ -74,6 +75,7 @@ const navItems: NavItem[] = [
     label: 'Auditorías',
     icon: <FactCheckIcon />,
     children: [
+      { to: '/audits/findings', label: 'No conformidades', icon: <AssignmentLateIcon fontSize="small" /> },
       { to: '/audits/evidence', label: 'Evidencias', icon: <FolderSpecialIcon fontSize="small" /> },
       { to: '/audits/equivalences', label: 'Equivalencias entre normas', icon: <CompareArrowsIcon fontSize="small" /> },
     ],

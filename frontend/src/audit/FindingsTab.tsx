@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Accordion,
@@ -68,11 +68,14 @@ type ControlOption = { controlPointId: number; ref: string; title: string };
 export default function FindingsTab({
   auditId,
   locked = false,
+  focusFindingId,
 }: {
   auditId: number;
   standardCode: string;
   /** Auditoría enviada o cerrada: las no conformidades son de solo lectura. */
   locked?: boolean;
+  /** NC a la que se llega desde un enlace (panel o lista de NC): se desplaza hasta ella, desplegada y resaltada. */
+  focusFindingId?: number;
 }) {
   const queryClient = useQueryClient();
   const { notify } = useToast();
@@ -142,6 +145,7 @@ export default function FindingsTab({
               canEdit={canEdit}
               canVerify={canVerify}
               onChanged={invalidate}
+              focused={f.id === focusFindingId}
             />
           ))}
           {findings.data?.length === 0 && (
@@ -285,6 +289,7 @@ function FindingCard({
   canEdit,
   canVerify,
   onChanged,
+  focused = false,
 }: {
   auditId: number;
   finding: Finding;
@@ -292,7 +297,12 @@ function FindingCard({
   canEdit: boolean;
   canVerify: boolean;
   onChanged: () => void;
+  focused?: boolean;
 }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (focused) cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [focused]);
   const { notify } = useToast();
   const confirm = useConfirm();
   const [editing, setEditing] = useState(false);
@@ -345,7 +355,16 @@ function FindingCard({
   });
 
   return (
-    <Card variant="outlined">
+    <Card
+      ref={cardRef}
+      variant="outlined"
+      data-focused={focused || undefined}
+      sx={
+        focused
+          ? { borderColor: 'primary.main', borderWidth: 2, boxShadow: 3, scrollMarginTop: 80 }
+          : { scrollMarginTop: 80 }
+      }
+    >
       <CardContent>
         {editing ? (
           <FindingForm
@@ -463,7 +482,7 @@ function FindingCard({
           />
         )}
 
-        <Accordion sx={{ mt: 1 }} disableGutters>
+        <Accordion sx={{ mt: 1 }} disableGutters defaultExpanded={focused}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography variant="body2">
               Acciones correctivas ({finding.correctiveActions.length})

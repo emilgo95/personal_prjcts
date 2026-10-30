@@ -76,8 +76,17 @@ describe('DashboardPage', () => {
     const nc = within(screen.getByRole('region', { name: 'No conformidades' }));
     expect(nc.getByLabelText('5 No conformidades abiertas')).toBeInTheDocument();
     expect(nc.getByLabelText('2 No conformidades vencidas')).toBeInTheDocument();
-    expect(nc.getByLabelText(/No conformidades que vencen en 7 días/)).toBeInTheDocument();
+    expect(nc.getByLabelText('0 No conformidades que vencen en 7 días')).toBeInTheDocument();
     expect(nc.getByLabelText('90% Cerradas en plazo')).toBeInTheDocument();
+    // Cada cifra lleva a la lista de esas NC.
+    expect(nc.getByRole('link', { name: /No conformidades vencidas\. Ver la lista/ })).toHaveAttribute(
+      'href',
+      '/audits/findings?vista=vencidas',
+    );
+    expect(nc.getByRole('link', { name: /Cerradas en plazo\. Ver la lista/ })).toHaveAttribute(
+      'href',
+      '/audits/findings?vista=cerradas',
+    );
     expect(screen.getByText('18 de 20 en 12 meses')).toBeInTheDocument();
     expect(screen.getByText('3 vencen en 14 días')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/, Ana$/);
@@ -95,6 +104,12 @@ describe('DashboardPage', () => {
     expect(await screen.findByText('Próximos vencimientos')).toBeInTheDocument();
     expect(screen.getByText('Auditorías recientes')).toBeInTheDocument();
     expect(screen.getByText('NC-001 · Registro de fitosanitarios')).toBeInTheDocument();
+    // Cada vencimiento abre la NC dentro de su auditoría, y «Ver todas» la lista completa.
+    expect(screen.getByText('NC-001 · Registro de fitosanitarios').closest('a')).toHaveAttribute(
+      'href',
+      '/audits/7?tab=hallazgos&nc=1',
+    );
+    expect(screen.getByRole('link', { name: 'Ver todas' })).toHaveAttribute('href', '/audits/findings');
 
     fireEvent.click(screen.getByRole('button', { name: /Ver el detalle/ }));
     expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: expect.any(Number) }));

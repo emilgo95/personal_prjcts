@@ -3,6 +3,10 @@ import { esES } from '@mui/material/locale';
 import { esES as dataGridEsES } from '@mui/x-data-grid/locales';
 import type {} from '@mui/x-data-grid/themeAugmentation';
 
+/** Fondo y borde de las cabeceras de tabla: el verde de la marca, muy diluido. */
+const tableHeaderBg = '#edf4f1';
+const tableHeaderBorder = '#cfe0da';
+
 export const theme = createTheme(
   {
     palette: {
@@ -22,11 +26,32 @@ export const theme = createTheme(
       h6: { fontWeight: 700 },
     },
     components: {
+      // Cabeceras de tabla con un fondo suave del color de la marca, en todas las tablas de la aplicación.
+      MuiTableHead: {
+        styleOverrides: {
+          root: {
+            '& .MuiTableCell-head': {
+              backgroundColor: tableHeaderBg,
+              color: '#24413b',
+              fontWeight: 600,
+              borderBottomColor: tableHeaderBorder,
+            },
+          },
+        },
+      },
       MuiButton: { defaultProps: { disableElevation: true } },
       MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
       // Paginación de las tablas («Filas por página» y páginas) a la izquierda, bajo la primera columna.
       MuiDataGrid: {
         styleOverrides: {
+          root: {
+            '--DataGrid-containerBackground': tableHeaderBg,
+            '& .MuiDataGrid-columnHeader, & .MuiDataGrid-filler, & .MuiDataGrid-scrollbarFiller--header': {
+              backgroundColor: tableHeaderBg,
+            },
+            '& .MuiDataGrid-columnHeaderTitle': { fontWeight: 600, color: '#24413b' },
+            '& .MuiDataGrid-columnHeaders .MuiDataGrid-columnHeader': { borderBottomColor: tableHeaderBorder },
+          },
           footerContainer: {
             justifyContent: 'flex-start',
             '& .MuiTablePagination-root': { marginLeft: 0 },

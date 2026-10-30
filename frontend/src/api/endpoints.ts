@@ -40,6 +40,8 @@ import type {
   EvidenceCoverage,
   EvidenceMap,
   SubmissionCheck,
+  FindingList,
+  FindingView,
   EvidenceHealth,
   BlockedUser,
   PersonalDataItem,
@@ -146,6 +148,8 @@ export const AuditApi = {
 
 export const FindingApi = {
   list: (auditId: number) => api.get<Finding[]>(`/audits/${auditId}/findings`).then((r) => r.data),
+  /** Todas las NC de la organización en una vista (mismas reglas que las cifras del panel). */
+  listAll: (view: FindingView) => api.get<FindingList>('/findings', { params: { view } }).then((r) => r.data),
   create: (auditId: number, body: FindingRequest) =>
     api.post<Finding>(`/audits/${auditId}/findings`, body).then((r) => r.data),
   update: (auditId: number, findingId: number, body: FindingRequest) =>

@@ -19,7 +19,7 @@ const audit = (id: number, reference: string, farmName: string): AuditSummary =>
     actualDate: null,
     leadAuditor: 'Ana García',
     createdAt: '2026-10-01T10:00:00Z',
-    findingsCount: 0,
+    findingsCount: id === 5 ? 4 : 0,
     assessedCount: 0,
     totalControlPoints: 10,
     progressPct: 0,
@@ -64,6 +64,11 @@ describe('AuditsPage: buscador', () => {
     renderPage();
     expect(await screen.findByText('2 auditorías')).toBeInTheDocument();
     expect(screen.getByText('Filas por página:')).toBeInTheDocument();
+    // El nº de NC lleva a las NC de esa auditoría; sin NC, solo el cero.
+    expect(screen.getByRole('link', { name: 'Ver las 4 no conformidades de AUD-2026-0005' })).toHaveAttribute(
+      'href',
+      '/audits/5?tab=hallazgos',
+    );
 
     fireEvent.change(screen.getByLabelText('Buscar auditorías'), { target: { value: '  fortuna ' } });
 
