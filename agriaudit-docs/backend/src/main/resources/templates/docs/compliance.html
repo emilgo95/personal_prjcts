@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${m.documentTitle}">Resumen de Cumplimiento</title>
+    <th:block th:replace="~{docs/_common :: styles}"></th:block>
+</head>
+<body>
+<div th:replace="~{docs/_common :: docheader}"></div>
+
+<h2>Resultado global</h2>
+<p>
+    <span class="result"
+          th:classappend="${m.score.overallResult == 'PASS'} ? 'r-pass' : (${m.score.overallResult == 'FAIL'} ? 'r-fail' : 'r-other')"
+          th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).overallResult(m.score.overallResult)}">Resultado</span>
+    &nbsp; Progreso: <b th:text="${m.score.progressPct} + '%'"></b>
+</p>
+<ul>
+    <li th:each="note : ${m.score.notes}" th:text="${note}"></li>
+</ul>
+
+<h2>Cumplimiento por nivel de obligatoriedad</h2>
+<table>
+    <tr><th>Nivel</th><th>Total</th><th>Conformes</th><th>No conformes</th><th>No aplica</th><th>Sin evaluar</th><th>% cumplimiento</th></tr>
+    <tr th:each="l : ${m.score.levelBreakdown}">
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).level(l.level)}"></td>
+        <td th:text="${l.total}"></td>
+        <td th:text="${l.compliant}"></td>
+        <td th:text="${l.nonCompliant}"></td>
+        <td th:text="${l.notApplicable}"></td>
+        <td th:text="${l.notAssessed}"></td>
+        <td th:text="${l.compliancePct != null ? #numbers.formatDecimal(l.compliancePct, 1, 1) + '%' : '-'}"></td>
+    </tr>
+</table>
+<p th:if="${m.score.majorMustMinPct != null}"
+   th:text="'Umbral requerido: Obligaciones mayores ' + ${m.score.majorMustMinPct} + '% · Obligaciones menores ' + ${m.score.minorMustMinPct} + '%'">Umbral</p>
+
+<h2>Cumplimiento por capítulo</h2>
+<table>
+    <tr><th>Capítulo</th><th>Conformes</th><th>No conformes</th><th>No aplica</th><th>Sin evaluar</th><th>% conformidad</th></tr>
+    <tr th:each="g : ${m.score.chapterBreakdown}">
+        <td th:text="${g.title}"></td>
+        <td th:text="${g.compliant}"></td>
+        <td th:text="${g.nonCompliant}"></td>
+        <td th:text="${g.notApplicable}"></td>
+        <td th:text="${g.notAssessed}"></td>
+        <td th:text="${#numbers.formatDecimal(g.compliancePct, 1, 1)} + '%'"></td>
+    </tr>
+</table>
+
+<h2>Declaración</h2>
+<p th:switch="${m.score.overallResult}">
+    <span th:case="'PASS'">A la fecha de este resumen, la explotación cumple los criterios evaluados del estándar y está en condiciones de continuar el proceso de certificación, sujeto al cierre verificado de las no conformidades pendientes.</span>
+    <span th:case="'FAIL'">A la fecha de este resumen, la explotación NO cumple los umbrales exigidos. Debe implantar el plan de acciones correctivas y superar una verificación.</span>
+    <span th:case="*">La evaluación se encuentra en curso; este resumen es orientativo y no representa un resultado definitivo.</span>
+</p>
+
+<div th:replace="~{docs/_common :: disclaimer}"></div>
+</body>
+</html>

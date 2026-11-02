@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${m.documentTitle}">Informe de Auditoría</title>
+    <th:block th:replace="~{docs/_common :: styles}"></th:block>
+</head>
+<body>
+<div th:replace="~{docs/_common :: docheader}"></div>
+
+<h2>1. Resumen ejecutivo</h2>
+<p>
+    <span class="result"
+          th:classappend="${m.score.overallResult == 'PASS'} ? 'r-pass' : (${m.score.overallResult == 'FAIL'} ? 'r-fail' : 'r-other')"
+          th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).overallResult(m.score.overallResult)}">Resultado</span>
+</p>
+<table class="kv">
+    <tr><td>Progreso de la evaluación</td><td th:text="${m.score.progressPct} + '%'"></td></tr>
+    <tr><td>Puntos de control evaluados</td><td th:text="${m.score.assessedCount} + ' / ' + ${m.score.totalControlPoints}"></td></tr>
+    <tr><td>No conformidades</td><td th:text="${m.findings.size()}"></td></tr>
+</table>
+<ul>
+    <li th:each="note : ${m.score.notes}" th:text="${note}"></li>
+</ul>
+
+<h2>2. Resultado por capítulo</h2>
+<table>
+    <tr><th>Capítulo</th><th>Conformes</th><th>No conformes</th><th>No aplica</th><th>Sin evaluar</th><th>% conformidad</th></tr>
+    <tr th:each="g : ${m.score.chapterBreakdown}">
+        <td th:text="${g.title}"></td>
+        <td th:text="${g.compliant}"></td>
+        <td th:text="${g.nonCompliant}"></td>
+        <td th:text="${g.notApplicable}"></td>
+        <td th:text="${g.notAssessed}"></td>
+        <td th:text="${#numbers.formatDecimal(g.compliancePct, 1, 1)} + '%'"></td>
+    </tr>
+</table>
+
+<h2>3. Detalle de la evaluación</h2>
+<th:block th:each="ch : ${m.chapters}">
+    <h3 th:text="${ch.code} + ' · ' + ${ch.title}">Capítulo</h3>
+    <table>
+        <tr>
+            <th style="width:8%">Ref</th>
+            <th style="width:32%">Punto de control</th>
+            <th style="width:12%">Nivel</th>
+            <th style="width:10%">Resultado</th>
+            <th style="width:38%">Evidencias / observaciones</th>
+        </tr>
+        <tr th:each="cp : ${ch.controlPoints}" th:with="r=${m.resultsByControlPoint.get(cp.id)}">
+            <td th:text="${cp.ref}"></td>
+            <td th:text="${cp.title}"></td>
+            <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).level(cp.level)}"></td>
+            <td>
+                <span class="badge"
+                      th:with="c=${r != null ? r.compliance : 'NOT_ASSESSED'}"
+                      th:classappend="${c == 'COMPLIANT'} ? 'b-ok' : (${c == 'NON_COMPLIANT'} ? 'b-no' : (${c == 'NOT_APPLICABLE'} ? 'b-na' : 'b-pend'))"
+                      th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).compliance(c)}">-</span>
+            </td>
+            <td>
+                <span th:if="${r != null and r.evidenceNotes != null}" th:text="${r.evidenceNotes}"></span>
+                <span th:if="${r != null and r.auditorComment != null}" class="muted" th:text="' — ' + ${r.auditorComment}"></span>
+                <div th:replace="~{docs/_common :: evidence(${m.evidenceByControlPoint.get(cp.id)})}"></div>
+            </td>
+        </tr>
+    </table>
+</th:block>
+
+<h2>4. No conformidades</h2>
+<p th:if="${m.findings.isEmpty()}">No se han registrado no conformidades.</p>
+<table th:if="${!m.findings.isEmpty()}">
+    <tr><th>Nº</th><th>Punto</th><th>Clasificación</th><th>Descripción</th><th>Fecha límite</th><th>Estado</th></tr>
+    <tr th:each="f : ${m.findings}">
+        <td th:text="${f.reference} ?: ''"></td>
+        <td th:text="${f.controlPointRef} ?: '-'"></td>
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).classification(f.classification)}"></td>
+        <td>
+            <b th:if="${f.title}" th:text="${f.title}"></b>
+            <span th:if="${f.description}" th:text="${(f.title != null ? ' — ' : '') + f.description}"></span>
+            <div th:replace="~{docs/_common :: evidence(${m.evidenceByFinding.get(f.id)})}"></div>
+        </td>
+        <td>
+            <span th:text="${f.dueDate} ?: '-'"></span>
+            <div th:if="${f.lateJustification}" class="muted"><b>Retraso justificado:</b> <span th:text="${f.lateJustification}"></span></div>
+        </td>
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).findingStatus(f.status)}"></td>
+    </tr>
+</table>
+
+<h2>5. Conclusión</h2>
+<p th:switch="${m.score.overallResult}">
+    <span th:case="'PASS'">La explotación cumple los criterios del estándar en el alcance evaluado. Se recomienda elevar el expediente a decisión de certificación una vez cerradas las no conformidades menores.</span>
+    <span th:case="'FAIL'">La explotación no alcanza los umbrales de cumplimiento exigidos por el estándar. Es necesario resolver las no conformidades y realizar una verificación antes de continuar.</span>
+    <span th:case="'REPORT_ONLY'">Este estándar produce un informe de evaluación. Los hallazgos deben tratarse mediante el plan de acciones correctivas acordado con la empresa.</span>
+    <span th:case="*">La evaluación no está completa. Deben evaluarse todos los puntos de control obligatorios antes de emitir una conclusión.</span>
+</p>
+
+<h2>6. Firmas</h2>
+<table class="kv">
+    <tr><td>Auditor responsable</td><td th:text="${m.audit.leadAuditor} ?: ''"></td></tr>
+    <tr><td>Representante de la empresa</td><td th:text="${m.farm.contactName} ?: ''"></td></tr>
+    <tr><td>Fecha</td><td th:text="${m.audit.actualDate ?: m.generatedAt}"></td></tr>
+</table>
+
+<div th:replace="~{docs/_common :: disclaimer}"></div>
+</body>
+</html>

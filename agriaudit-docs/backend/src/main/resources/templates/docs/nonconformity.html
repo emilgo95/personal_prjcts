@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${m.documentTitle}">Informe de No Conformidades</title>
+    <th:block th:replace="~{docs/_common :: styles}"></th:block>
+</head>
+<body>
+<div th:replace="~{docs/_common :: docheader}"></div>
+
+<h2>No conformidades detectadas</h2>
+<p th:text="'Total de no conformidades: ' + ${m.findings.size()}">Total</p>
+
+<table th:if="${!m.findings.isEmpty()}">
+    <tr>
+        <th style="width:7%">Nº</th>
+        <th style="width:20%">Punto de control</th>
+        <th style="width:10%">Clasificación</th>
+        <th style="width:38%">Descripción de la no conformidad</th>
+        <th style="width:12%">Fecha límite</th>
+        <th style="width:13%">Estado</th>
+    </tr>
+    <tr th:each="f : ${m.findings}">
+        <td th:text="${f.reference} ?: ''"></td>
+        <td>
+            <span th:text="${f.controlPointRef} ?: '-'"></span>
+            <span th:if="${f.controlPointTitle}" class="muted" th:text="' · ' + ${f.controlPointTitle}"></span>
+        </td>
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).classification(f.classification)}"></td>
+        <td>
+            <b th:if="${f.title}" th:text="${f.title}"></b>
+            <span th:if="${f.description}" th:text="${(f.title != null ? ' — ' : '') + f.description}"></span>
+            <div th:replace="~{docs/_common :: evidence(${m.evidenceByFinding.get(f.id)})}"></div>
+        </td>
+        <td>
+            <span th:text="${f.dueDate} ?: '-'"></span>
+            <div th:if="${f.lateJustification}" class="muted"><b>Retraso justificado:</b> <span th:text="${f.lateJustification}"></span></div>
+        </td>
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).findingStatus(f.status)}"></td>
+    </tr>
+</table>
+<p th:if="${m.findings.isEmpty()}">No se han registrado no conformidades en esta auditoría.</p>
+
+<h2>Confirmación</h2>
+<p>Ambas partes confirman haber revisado y entendido las no conformidades detectadas y los plazos acordados para su resolución mediante el plan de acciones correctivas.</p>
+<table class="kv">
+    <tr><td>Auditor responsable</td><td th:text="${m.audit.leadAuditor} ?: ''"></td></tr>
+    <tr><td>Fecha</td><td th:text="${m.audit.actualDate ?: m.generatedAt}"></td></tr>
+    <tr><td>Representante de la empresa auditada</td><td th:text="${m.farm.contactName} ?: ''"></td></tr>
+    <tr><td>Fecha</td><td></td></tr>
+</table>
+
+<div th:replace="~{docs/_common :: disclaimer}"></div>
+</body>
+</html>

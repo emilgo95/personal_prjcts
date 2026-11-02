@@ -1,0 +1,309 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Permisos mínimos a nivel de workflow. El job `codeql` declara los suyos.
+permissions:
+  contents: read
+  pull-requests: read    # dorny/paths-filter lee los ficheros cambiados del PR vía API
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Detectar qué partes del monorepo han cambiado
+  # ---------------------------------------------------------------------------
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      ocr: ${{ steps.filter.outputs.ocr }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      apitests: ${{ steps.filter.outputs.apitests }}
+      compose: ${{ steps.filter.outputs.compose }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            ocr:
+              - 'ocr/**'
+            e2e:
+              - 'e2e/**'
+            apitests:
+              - 'api-tests/**'
+            compose:
+              - 'docker-compose.yml'
+              - '.env.example'
+
+  # ---------------------------------------------------------------------------
+  # 2. Backend: compilar, tests, verificación de arquitectura, análisis
+  # ---------------------------------------------------------------------------
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    # Los tests de integración levantan Postgres con Testcontainers (usa el
+    # Docker del runner); no se necesita un `services:` declarado aquí.
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Compilar y test (unit + integración con Testcontainers)
+        working-directory: backend
+        run: mvn -B -ntp clean verify
+
+      # La verificación de límites de módulo forma parte de `mvn verify` y es
+      # bloqueante: ModularityTests (Spring Modulith `verify()`: sin ciclos ni
+      # acceso a internals), ArchitectureTests (hexagonal, sin capas heredadas) y
+      # ModuleDataBoundariesTests + ModuleSchemasIntegrationTest (tablas en el
+      # esquema de su módulo, sin asociaciones JPA entre módulos: RT-02).
+
+      - name: Diagramas de módulos (Spring Modulith)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: modulith-docs
+          path: backend/target/spring-modulith-docs/
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # 2b. CodeQL (SAST) — análisis de fuente (build-mode: none), bloqueante.
+  #     El repo es privado y personal: GitHub no permite activar code scanning.
+  #     Por eso se usa la CLI de CodeQL (bundle fijado por versión y SHA-256, en
+  #     caché) en lugar de `github/codeql-action`, que depende de esa API. Mismas
+  #     consultas que el análisis por defecto (suites *code-scanning*).
+  #     `.github/scripts/codeql_gate.py` anota los hallazgos en el PR y falla con
+  #     severidad alta o crítica (>= 7.0), salvo excepciones registradas y
+  #     vigentes en `.github/codeql-exceptions.json`. El SARIF queda como
+  #     artefacto. Forma parte de `ci-ok`.
+  # ---------------------------------------------------------------------------
+  codeql:
+    name: codeql (${{ matrix.language }})
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    env:
+      CODEQL_BUNDLE: codeql-bundle-v2.27.0
+      CODEQL_BUNDLE_SHA256: 5e0f04bcb92c0c0973b6f5597e55316269051fa98bda3f725d8af9a85016721a
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            suite: codeql/java-queries:codeql-suites/java-code-scanning.qls
+          - language: javascript-typescript
+            suite: codeql/javascript-queries:codeql-suites/javascript-code-scanning.qls
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Caché del bundle de CodeQL
+        id: codeql-cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/codeql
+          key: ${{ env.CODEQL_BUNDLE }}-linux64-${{ env.CODEQL_BUNDLE_SHA256 }}
+
+      - name: Descargar CodeQL (verificando el SHA-256)
+        if: steps.codeql-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/codeql.tar.zst" \
+            "https://github.com/github/codeql-action/releases/download/${CODEQL_BUNDLE}/codeql-bundle-linux64.tar.zst"
+          echo "${CODEQL_BUNDLE_SHA256}  $RUNNER_TEMP/codeql.tar.zst" | sha256sum -c -
+          tar --zstd -xf "$RUNNER_TEMP/codeql.tar.zst" -C "$RUNNER_TEMP"
+          rm "$RUNNER_TEMP/codeql.tar.zst"
+
+      - name: Analizar (${{ matrix.language }})
+        run: |
+          codeql="$RUNNER_TEMP/codeql/codeql"
+          "$codeql" version
+          # Sin --ram la CLI usa ~700 MiB de heap y se queda sin memoria: memoria del runner menos 2 GiB.
+          ram=$(( $(awk '/MemTotal/ {print int($2 / 1024)}' /proc/meminfo) - 2048 ))
+          "$codeql" database create "$RUNNER_TEMP/db" --language=${{ matrix.language }} \
+            --build-mode=none --source-root=. --threads=0 --ram="$ram"
+          mkdir -p sarif-results
+          "$codeql" database analyze "$RUNNER_TEMP/db" "${{ matrix.suite }}" --threads=0 --ram="$ram" \
+            --format=sarif-latest --sarif-category="/language:${{ matrix.language }}" \
+            --output=sarif-results/${{ matrix.language }}.sarif
+
+      - name: Revisar hallazgos (bloquea con severidad alta o crítica)
+        run: >-
+          python3 .github/scripts/codeql_gate.py sarif-results
+          --threshold 7.0 --exceptions .github/codeql-exceptions.json
+
+      - name: Publicar resultados SARIF
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: codeql-sarif-${{ matrix.language }}
+          path: sarif-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # 3. Frontend: typecheck, tests, build
+  # ---------------------------------------------------------------------------
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          npm test -- --run
+
+  # ---------------------------------------------------------------------------
+  # 3b. E2E: arranque completo con Docker Compose + smoke + Playwright (UI/a11y)
+  #     + Karate (API). Una sola pila para las dos suites.
+  # ---------------------------------------------------------------------------
+  e2e:
+    needs: changes
+    if: >-
+      needs.changes.outputs.backend == 'true' ||
+      needs.changes.outputs.frontend == 'true' ||
+      needs.changes.outputs.ocr == 'true' ||
+      needs.changes.outputs.e2e == 'true' ||
+      needs.changes.outputs.apitests == 'true' ||
+      needs.changes.outputs.compose == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Levantar la aplicación
+        run: |
+          cp .env.example .env
+          docker compose up --build -d
+
+      - name: Esperar y comprobar salud (smoke)
+        run: |
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8081/actuator/health | grep -q UP && break || sleep 5
+          done
+          curl -fsS http://localhost:8081/actuator/health | grep -q UP
+          curl -fsS -o /dev/null -w "frontend HTTP %{http_code}\n" http://localhost:8080
+
+      - name: Configurar Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Playwright — instalar dependencias y navegador
+        working-directory: e2e
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Playwright — tests E2E (UI + accesibilidad)
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          E2E_API_URL: http://localhost:8081
+        run: npm test
+
+      - name: Configurar JDK 21
+        if: always()
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Karate — tests de API
+        if: always()
+        working-directory: api-tests
+        env:
+          API_BASE_URL: http://localhost:8081
+        run: mvn -B -ntp test
+
+      - name: Logs de la aplicación si algo falla
+        if: failure()
+        run: docker compose logs
+
+      - name: Publicar informe de Playwright
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Publicar informe de Karate
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: karate-report
+          path: api-tests/target/karate-reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Parar
+        if: always()
+        run: docker compose down -v
+
+  # NOTA: la construcción y publicación de imágenes a un registro (GHCR) se
+  # añadirá cuando exista un destino de despliegue real. Hoy el job `e2e` ya
+  # construye las imágenes para probarlas. Cuando vuelva, fijar las acciones por
+  # SHA (RS-SUPPLY-06) y escanear las imágenes (Trivy, RS-SUPPLY-05).
+
+  # ---------------------------------------------------------------------------
+  # 4. Escaneo de secretos (gitleaks) — sustituto del secret scanning nativo de
+  #    GitHub, que no está disponible en repos privados sin GitHub Advanced
+  #    Security. Corre siempre; en un PR analiza los commits del PR, en push a
+  #    main los commits nuevos. La configuración y la lista de permitidos
+  #    (valores de `.env.example`, credenciales de demo) están en `.gitleaks.toml`.
+  # ---------------------------------------------------------------------------
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------------------------------------------------------------------------
+  # 5. Puerta única de CI — es el ÚNICO check requerido por la protección de main.
+  #    Pasa si todos los jobs relevantes terminaron OK o se saltaron (skipped);
+  #    falla si alguno falló o fue cancelado.
+  # ---------------------------------------------------------------------------
+  ci-ok:
+    if: always()
+    needs: [changes, backend, codeql, frontend, e2e, secrets-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar resultados
+        run: |
+          results='${{ join(needs.*.result, ',') }}'
+          echo "Resultados de los jobs: $results"
+          case "$results" in
+            *failure*|*cancelled*) echo "::error::Algún job de CI ha fallado"; exit 1 ;;
+            *) echo "CI en verde"; exit 0 ;;
+          esac

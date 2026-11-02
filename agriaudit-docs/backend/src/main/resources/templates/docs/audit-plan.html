@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${m.documentTitle}">Plan de Auditoría</title>
+    <th:block th:replace="~{docs/_common :: styles}"></th:block>
+</head>
+<body>
+<div th:replace="~{docs/_common :: docheader}"></div>
+
+<h2>1. Objeto y alcance</h2>
+<p th:text="${m.audit.scopeDescription ?: ('Verificar el grado de cumplimiento de la explotación con los requisitos del estándar ' + m.audit.standardName + ' para los productos y emplazamientos indicados.')}">Alcance</p>
+
+<h2>2. Documentos de referencia</h2>
+<ul>
+    <li th:text="${m.audit.standardName + ' ' + (m.audit.standardVersion ?: '')}">Estándar</li>
+    <li>Reglamento general del estándar y guías de interpretación nacionales aplicables.</li>
+    <li>Legislación aplicable en el país de producción: seguridad alimentaria, productos fitosanitarios, medio ambiente y legislación laboral.</li>
+</ul>
+
+<h2>3. Agenda prevista</h2>
+<table>
+    <tr><th>Hora</th><th>Actividad</th><th>Participantes</th></tr>
+    <tr><td>09:00</td><td>Reunión de apertura: alcance, plan, confidencialidad e imparcialidad</td><td>Dirección y equipo auditor</td></tr>
+    <tr><td>09:30</td><td>Revisión documental: sistema de gestión, trazabilidad y registros</td><td>Responsable de calidad</td></tr>
+    <tr><td>11:00</td><td>Inspección de campo, almacenes e instalaciones de manipulación</td><td>Responsable técnico</td></tr>
+    <tr><td>13:30</td><td>Entrevistas confidenciales a trabajadores</td><td>Equipo auditor</td></tr>
+    <tr><td>15:30</td><td>Análisis de evidencias y redacción de hallazgos</td><td>Equipo auditor</td></tr>
+    <tr><td>16:30</td><td>Reunión de cierre: no conformidades, plazos y plan de acciones correctivas</td><td>Dirección y equipo auditor</td></tr>
+</table>
+
+<h2>4. Áreas y capítulos a auditar</h2>
+<table>
+    <tr><th>Código</th><th>Capítulo</th><th>Nº de puntos de control</th></tr>
+    <tr th:each="ch : ${m.chapters}">
+        <td th:text="${ch.code}"></td>
+        <td th:text="${ch.title}"></td>
+        <td th:text="${ch.controlPoints.size()}"></td>
+    </tr>
+</table>
+
+<h2>5. Criterios de decisión</h2>
+<ul>
+    <li th:each="note : ${m.score.notes}" th:text="${note}"></li>
+</ul>
+
+<h2>6. Firmas</h2>
+<table class="kv">
+    <tr><td>Auditor responsable</td><td th:text="${m.audit.leadAuditor} ?: ''"></td></tr>
+    <tr><td>Representante de la empresa auditada</td><td th:text="${m.farm.contactName} ?: ''"></td></tr>
+    <tr><td>Fecha</td><td></td></tr>
+</table>
+
+<div th:replace="~{docs/_common :: disclaimer}"></div>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${m.documentTitle}">Informe SMETA</title>
+    <th:block th:replace="~{docs/_common :: styles}"></th:block>
+</head>
+<body>
+<div th:replace="~{docs/_common :: docheader}"></div>
+
+<h2>Metodología</h2>
+<p>Auditoría ética SMETA de cuatro pilares (normas laborales, salud y seguridad, medio ambiente y ética empresarial),
+   tomando como referencia el ETI Base Code y la legislación local aplicable. Incluye revisión documental,
+   inspección de las instalaciones y entrevistas confidenciales a los trabajadores.</p>
+
+<h2>1. Resumen por pilar</h2>
+<table>
+    <tr><th>Pilar</th><th>Conformes</th><th>No conformes</th><th>No aplica</th><th>Sin evaluar</th></tr>
+    <tr th:each="g : ${m.score.pillarBreakdown.isEmpty() ? m.score.chapterBreakdown : m.score.pillarBreakdown}">
+        <td th:text="${g.title}"></td>
+        <td th:text="${g.compliant}"></td>
+        <td th:text="${g.nonCompliant}"></td>
+        <td th:text="${g.notApplicable}"></td>
+        <td th:text="${g.notAssessed}"></td>
+    </tr>
+</table>
+
+<h2>2. Detalle por requisito</h2>
+<th:block th:each="ch : ${m.chapters}">
+    <h3 th:text="${ch.title}">Capítulo</h3>
+    <table>
+        <tr><th style="width:8%">Ref</th><th style="width:40%">Requisito</th><th style="width:12%">Resultado</th><th style="width:40%">Observaciones</th></tr>
+        <tr th:each="cp : ${ch.controlPoints}" th:with="r=${m.resultsByControlPoint.get(cp.id)}">
+            <td th:text="${cp.ref}"></td>
+            <td th:text="${cp.title}"></td>
+            <td>
+                <span class="badge"
+                      th:with="c=${r != null ? r.compliance : 'NOT_ASSESSED'}"
+                      th:classappend="${c == 'COMPLIANT'} ? 'b-ok' : (${c == 'NON_COMPLIANT'} ? 'b-no' : (${c == 'NOT_APPLICABLE'} ? 'b-na' : 'b-pend'))"
+                      th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).compliance(c)}">-</span>
+            </td>
+            <td>
+                <span th:if="${r != null and r.evidenceNotes != null}" th:text="${r.evidenceNotes}"></span>
+                <span th:if="${r != null and r.auditorComment != null}" class="muted" th:text="' — ' + ${r.auditorComment}"></span>
+                <div th:replace="~{docs/_common :: evidence(${m.evidenceByControlPoint.get(cp.id)})}"></div>
+            </td>
+        </tr>
+    </table>
+</th:block>
+
+<h2>3. No conformidades y plan de acciones correctivas (CAPR)</h2>
+<p th:if="${m.findings.isEmpty()}">No se han registrado no conformidades.</p>
+<table th:if="${!m.findings.isEmpty()}">
+    <tr><th>Nº</th><th>Requisito</th><th>Clasificación</th><th>Descripción</th><th>Corrección acordada</th><th>Plazo</th></tr>
+    <tr th:each="f : ${m.findings}">
+        <td th:text="${f.reference} ?: ''"></td>
+        <td th:text="${f.controlPointRef ?: (f.area ?: '-')}"></td>
+        <td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).classification(f.classification)}"></td>
+        <td th:text="${f.description ?: (f.title ?: '')}"></td>
+        <td th:text="${!f.correctiveActions.isEmpty() ? (f.correctiveActions[0].correction ?: 'Ver CAPR') : 'Pendiente'}"></td>
+        <td th:text="${f.dueDate} ?: '-'"></td>
+    </tr>
+</table>
+
+<h2>4. Declaración final</h2>
+<p>Los hallazgos y el plan de acciones correctivas se han comunicado a la dirección en la reunión de cierre.
+   Este informe no constituye una certificación; su finalidad es compartir el resultado de la evaluación ética
+   con los miembros de la cadena de suministro a través de la plataforma correspondiente.</p>
+
+<div th:replace="~{docs/_common :: disclaimer}"></div>
+</body>
+</html>

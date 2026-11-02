@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<style th:fragment="styles">
+    @page { size: A4; margin: 1.7cm 1.4cm 2cm; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; color: #1b1b1b; line-height: 1.4; }
+    h1 { font-size: 20px; margin: 0 0 2px; color: #0f2e2b; }
+    h2 { font-size: 13px; margin: 18px 0 6px; color: #0f2e2b; border-bottom: 1.5px solid #0f6b5f; padding-bottom: 2px; }
+    h3 { font-size: 11px; margin: 12px 0 4px; color: #333; }
+    p { margin: 4px 0; }
+    .org { text-transform: uppercase; letter-spacing: 1px; font-size: 8.5px; color: #6b6b6b; }
+    .meta { font-size: 8.5px; color: #6b6b6b; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; }
+    th, td { border: 0.7px solid #b9c7c4; padding: 4px 5px; text-align: left; vertical-align: top; }
+    th { background: #0f6b5f; color: #fff; font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.3px; }
+    td { font-size: 9px; }
+    .kv td:first-child { background: #eef4f3; font-weight: bold; width: 32%; }
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 8px; font-weight: bold; }
+    .b-ok { background: #d8f0e3; color: #14683f; }
+    .b-no { background: #fadcdc; color: #9d2222; }
+    .b-na { background: #e6e6e6; color: #555; }
+    .b-pend { background: #fdefcf; color: #8a6100; }
+    .result { font-size: 15px; font-weight: bold; padding: 6px 10px; display: inline-block; border-radius: 4px; }
+    .r-pass { background: #d8f0e3; color: #14683f; }
+    .r-fail { background: #fadcdc; color: #9d2222; }
+    .r-other { background: #fdefcf; color: #8a6100; }
+    .disclaimer { margin-top: 22px; font-size: 7.5px; color: #7a7a7a; font-style: italic; border-top: 0.7px solid #ccc; padding-top: 6px; }
+    ul { margin: 4px 0; padding-left: 16px; }
+    li { margin: 2px 0; }
+    .muted { color: #777; }
+    .evidence { margin-top: 4px; }
+    .evidence .ev-item { margin: 2px 0; }
+    .ev-img { max-width: 170px; max-height: 130px; border: 1px solid #ccc; margin: 2px 6px 2px 0; }
+    .ev-name { font-size: 8px; color: #555; }
+</style>
+</head>
+<body>
+<div th:fragment="docheader">
+    <div class="org" th:text="${m.organizationName}">Organización</div>
+    <h1 th:text="${m.documentTitle}">Documento</h1>
+    <div class="meta">
+        <span th:text="${m.audit.standardName}">Estándar</span>
+        <span th:if="${m.audit.standardVersion}" th:text="'(' + ${m.audit.standardVersion} + ')'"></span>
+        &nbsp;·&nbsp; Ref. <span th:text="${m.audit.reference}">AUD</span>
+        &nbsp;·&nbsp; Generado el <span th:text="${m.generatedAt}">fecha</span> por <span th:text="${m.generatedBy}">usuario</span>
+    </div>
+    <table class="kv">
+        <tr><td>Explotación / empresa</td><td th:text="${m.farm.legalName}"></td></tr>
+        <tr><td>Nº de registro (GGN / otro)</td><td th:text="${m.farm.registrationNumber ?: '-'}"></td></tr>
+        <tr><td>Emplazamiento</td><td th:text="${m.audit.siteAddress ?: (m.farm.address ?: '-')}"></td></tr>
+        <tr><td>País</td><td th:text="${m.farm.country ?: '-'}"></td></tr>
+        <tr><td>Tipo de auditoría</td><td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).auditType(m.audit.auditType)}"></td></tr>
+        <tr><td>Estado</td><td th:text="${T(com.agriaudit.documents.infrastructure.render.DocLabels).auditStatus(m.audit.status)}"></td></tr>
+        <tr><td>Fecha prevista</td><td th:text="${m.audit.plannedStartDate ?: '-'}"></td></tr>
+        <tr><td>Fecha de auditoría</td><td th:text="${m.audit.actualDate ?: '-'}"></td></tr>
+        <tr><td>Auditor responsable</td><td th:text="${m.audit.leadAuditor ?: '-'}"></td></tr>
+        <tr><td>Equipo auditor</td><td th:text="${m.audit.auditTeam ?: '-'}"></td></tr>
+        <tr><td>Productos en alcance</td><td th:text="${m.audit.productsInScope ?: '-'}"></td></tr>
+    </table>
+</div>
+
+<div th:fragment="evidence(items)" class="evidence" th:if="${items != null and !items.isEmpty()}">
+    <b style="font-size:8px;color:#0f6b5f;">Evidencias adjuntas:</b>
+    <div class="ev-item" th:each="ev : ${items}">
+        <img th:if="${ev.hasImage()}" th:src="${ev.dataUri}" class="ev-img" alt="evidencia"/>
+        <span class="ev-name" th:text="${ev.fileName}">fichero</span>
+        <span class="ev-name muted" th:if="${ev.sizeBytes != null}"
+              th:text="' · ' + ${#numbers.formatInteger(ev.sizeBytes / 1024 + 1, 1)} + ' KB'"></span>
+    </div>
+</div>
+
+<div th:fragment="disclaimer" class="disclaimer" th:text="${m.disclaimer}">aviso</div>
+</body>
+</html>

@@ -1,0 +1,38 @@
+# Configuración de gitleaks para AgriAudit Docs.
+# Se ejecuta en CI (job `secrets-scan` de .github/workflows/ci.yml) como
+# sustituto del secret scanning nativo de GitHub (no disponible en repos
+# privados sin GitHub Advanced Security).
+
+title = "AgriAudit Docs - gitleaks"
+
+# Parte de la configuración de reglas por defecto de gitleaks y añade lo de abajo.
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+Valores de ejemplo y credenciales de demostración. NO son secretos reales:
+- .env.example: plantilla con marcadores de posición ('...change...').
+- Credenciales de demo del juego de datos ficticio (README, seeders, tests).
+El .env real está en .gitignore y nunca se versiona.
+"""
+
+# Rutas cuyo contenido no se analiza en busca de secretos.
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)\.gitleaks\.toml$''',
+  '''(^|/)README\.md$''',
+  '''(^|/)docker-compose\.yml$''',
+  '''(^|/)api-tests/.*\.(feature|js)$''',
+  '''(^|/)e2e/.*\.(ts|js)$''',
+  '''backend/src/test/.*''',
+  '''backend/src/main/resources/db/migration/.*''',
+]
+
+# Cadenas concretas que, aunque aparezcan en cualquier fichero, se ignoran.
+regexes = [
+  '''agriaudit_pw_change_me''',
+  '''dev-only-secret-please-change[a-z0-9-]*''',
+  '''Admin123!''',
+  '''Demo1234!''',
+]

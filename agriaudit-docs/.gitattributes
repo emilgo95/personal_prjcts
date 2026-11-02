@@ -1,0 +1,31 @@
+# Normaliza los finales de línea: en el repo siempre LF.
+* text=auto eol=lf
+
+# Scripts y ficheros que DEBEN ser LF aunque se editen en Windows
+*.sh              text eol=lf
+*.bash            text eol=lf
+mvnw              text eol=lf
+gradlew           text eol=lf
+Dockerfile        text eol=lf
+*.Dockerfile      text eol=lf
+*.yml             text eol=lf
+*.yaml            text eol=lf
+
+# Ficheros propios de Windows: CRLF
+*.cmd             text eol=crlf
+*.bat             text eol=crlf
+*.ps1             text eol=crlf
+
+# Binarios: sin conversión
+*.png             binary
+*.jpg             binary
+*.jpeg            binary
+*.gif             binary
+*.ico             binary
+*.pdf             binary
+*.zip             binary
+*.jar             binary
+*.woff            binary
+*.woff2           binary
+*.ttf             binary
+*.onnx            binary

@@ -1,0 +1,115 @@
+spring:
+  application:
+    name: agriaudit-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/agriaudit}
+    username: ${SPRING_DATASOURCE_USERNAME:agriaudit}
+    password: ${SPRING_DATASOURCE_PASSWORD:agriaudit}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+        type:
+          preferred_instant_jdbc_type: TIMESTAMP_WITH_TIMEZONE
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 30MB
+  thymeleaf:
+    check-template-location: false
+    cache: true
+
+server:
+  port: 8081
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+# Documentación de la API: activa al arrancar en local; con Docker solo si AGRIAUDIT_API_DOCS=true y nunca en prod.
+springdoc:
+  api-docs:
+    enabled: ${AGRIAUDIT_API_DOCS:true}
+  swagger-ui:
+    enabled: ${AGRIAUDIT_API_DOCS:true}
+    path: /swagger-ui.html
+
+agriaudit:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-please-change-me-to-a-long-random-string-value}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+    refresh-expiration-days: ${JWT_REFRESH_EXPIRATION_DAYS:7}
+  storage:
+    dir: ${STORAGE_DIR:./data/storage}
+  admin:
+    email: ${ADMIN_EMAIL:admin@demo.test}
+    password: ${ADMIN_PASSWORD:Admin123!}
+    org-name: ${ADMIN_ORG_NAME:Organización Demo}
+    # El administrador inicial debe cambiar ADMIN_PASSWORD al entrar por primera vez (siempre en el perfil prod).
+    force-password-change: ${ADMIN_FORCE_PASSWORD_CHANGE:false}
+  privacy:
+    # Meses que se conservan, bloqueados, los datos identificativos de un usuario bloqueado antes de destruirlos.
+    # Lo fija el responsable del tratamiento (no hay plazo oficial único). Vacío = 60 solo en desarrollo; con el
+    # perfil prod es obligatorio. Cada organización puede fijar el suyo desde la aplicación.
+    blocked-retention-months: ${AGRIAUDIT_BLOCKED_RETENTION_MONTHS:}
+    destroy-cron: ${AGRIAUDIT_PRIVACY_DESTROY_CRON:0 20 0 * * *}
+  trace:
+    # Clave con la que se firman (HMAC-SHA-512) las huellas de la traza; debe estar fuera de la base de datos.
+    hmac-key: ${TRACE_HMAC_KEY:dev-only-trace-hmac-key-change-me-in-production-0123456789abcdef}
+    seal-cron: ${TRACE_SEAL_CRON:0 5 0 * * *}
+  demo:
+    seed: ${AGRIAUDIT_DEMO_SEED:true}
+  ocr:
+    url: ${AGRIAUDIT_OCR_URL:}
+    timeout-seconds: ${AGRIAUDIT_OCR_TIMEOUT:120}
+    min-confidence-warn: 0.55
+  # Asistentes de IA (módulo ai). Desactivados por defecto; la IA es opcional (RF-IA-19, RS-IA-10).
+  ai:
+    provider: ${AGRIAUDIT_AI_PROVIDER:none}      # none | fake (tests/CI) | anthropic
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}               # solo desde el entorno (RS-IA-09)
+      timeout-seconds: ${AGRIAUDIT_AI_TIMEOUT:60}
+      max-retries: 2
+    # Modelo y región de inferencia por escalón (RT-A07, RS-IA-02). inference_geo solo lo admiten la Claude
+    # API de primera parte y los modelos Opus/Sonnet 4.6 o posteriores: Haiku 4.5 no puede fijar región UE.
+    tiers:
+      fast:
+        model: ${AGRIAUDIT_AI_MODEL_FAST:claude-haiku-4-5}
+        inference-geo: ${AGRIAUDIT_AI_GEO_FAST:}
+      balanced:
+        model: ${AGRIAUDIT_AI_MODEL_BALANCED:claude-sonnet-5}
+        inference-geo: ${AGRIAUDIT_AI_GEO_BALANCED:eu}
+    # Tarifa USD por millón de tokens, para la traza de coste (RT-A08).
+    pricing:
+      "[claude-haiku-4-5]": { input-per-million: 1.00, output-per-million: 5.00 }
+      "[claude-sonnet-5]": { input-per-million: 2.00, output-per-million: 10.00 }
+      "[claude-opus-5]": { input-per-million: 5.00, output-per-million: 25.00 }
+    # Versión activa de cada prompt (resources/ai/prompts/<id>.v<N>.md, RT-A10).
+    prompts: {}
+    # Embeddings para RAG sobre pgvector (RT-A06). none | fake; Voyage o bge-m3 se decide en WS-5.
+    embeddings:
+      provider: ${AGRIAUDIT_AI_EMBEDDINGS_PROVIDER:none}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8080}
+
+logging:
+  level:
+    root: INFO
+    com.agriaudit: DEBUG

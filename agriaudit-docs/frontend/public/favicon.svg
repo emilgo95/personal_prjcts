@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="AgriAudit Docs">
+  <title>AgriAudit Docs</title>
+  <rect width="96" height="96" rx="20" fill="#0f6b5c"/>
+  <path d="M22 74C16 42 38 18 76 20C78 58 56 80 22 74Z" fill="#ffffff"/>
+  <path d="M36 54L46 64L62 41" stroke="#0f6b5c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

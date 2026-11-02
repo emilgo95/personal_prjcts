@@ -1,0 +1,35 @@
+{
+  "name": "AgriAudit Docs",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/java:1": { "version": "21" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "24" }
+  },
+
+  // Puertos que Codespaces expondrá con una URL para probar la app.
+  "forwardPorts": [8080, 8081, 5432],
+  "portsAttributes": {
+    "8080": { "label": "Frontend (SPA)", "onAutoForward": "openBrowser" },
+    "8081": { "label": "Backend API / Swagger", "onAutoForward": "silent" },
+    "5432": { "label": "PostgreSQL", "onAutoForward": "silent" }
+  },
+
+  // Al crear el Codespace: prepara el .env.
+  "postCreateCommand": "cp -n .env.example .env || true",
+
+  // Mensaje de bienvenida con el comando para arrancar.
+  "postAttachCommand": {
+    "hint": "echo 'Arranca la app con:  make up   (o: docker compose up --build)'"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

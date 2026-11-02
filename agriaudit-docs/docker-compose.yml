@@ -1,0 +1,102 @@
+# Nombre de proyecto fijo (independiente de la carpeta): prefija contenedores,
+# volúmenes y red como "agriaudit-docs_*".
+name: agriaudit-docs
+
+services:
+  db:
+    # PostgreSQL 16 con la extensión pgvector (RAG del módulo ai, RT-A06).
+    image: pgvector/pgvector:pg16
+    container_name: agriaudit-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-agriaudit}
+      POSTGRES_USER: ${POSTGRES_USER:-agriaudit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agriaudit}
+    ports:
+      # Se enlaza explícitamente a la loopback IPv4 para no exponer la BD en la red.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agriaudit} -d ${POSTGRES_DB:-agriaudit}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agriaudit-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-agriaudit}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-agriaudit}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-agriaudit}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-please-change-me-to-a-long-random-string}
+      TRACE_HMAC_KEY: ${TRACE_HMAC_KEY:-dev-only-trace-hmac-key-change-me-in-production-0123456789abcdef}
+      # Swagger apagado por defecto: no se publica la documentación de la API en demos ni pilotos.
+      AGRIAUDIT_API_DOCS: ${AGRIAUDIT_API_DOCS:-false}
+      AGRIAUDIT_BLOCKED_RETENTION_MONTHS: ${AGRIAUDIT_BLOCKED_RETENTION_MONTHS:-60}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-120}
+      JWT_REFRESH_EXPIRATION_DAYS: ${JWT_REFRESH_EXPIRATION_DAYS:-7}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@demo.test}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123!}
+      ADMIN_ORG_NAME: ${ADMIN_ORG_NAME:-Central Hortofrutícola del Segura}
+      AGRIAUDIT_DEMO_SEED: ${AGRIAUDIT_DEMO_SEED:-true}
+      AGRIAUDIT_OCR_URL: ${AGRIAUDIT_OCR_URL:-http://ocr:8000}
+      AGRIAUDIT_AI_PROVIDER: ${AGRIAUDIT_AI_PROVIDER:-none}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      STORAGE_DIR: ${STORAGE_DIR:-/data/storage}
+    depends_on:
+      db:
+        condition: service_healthy
+      ocr:
+        condition: service_started
+    ports:
+      - "${BACKEND_PORT:-8081}:8081"
+    volumes:
+      - docdata:/data/storage
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8081/actuator/health | grep -q UP || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  ocr:
+    build:
+      context: ./ocr
+      dockerfile: Dockerfile
+    container_name: agriaudit-ocr
+    # Servicio de OCR gratuito y autoalojado (RapidOCR / PP-OCR). No sale ningún dato del host.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8000/health | grep -q UP || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+        # Precarga un usuario de demostración en el login (solo para pruebas internas).
+        VITE_DEMO_PREFILL: ${VITE_DEMO_PREFILL:-false}
+    container_name: agriaudit-frontend
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+
+  adminer:
+    image: adminer:4
+    container_name: agriaudit-adminer
+    profiles: ["debug"]
+    depends_on:
+      - db
+    ports:
+      - "8090:8080"
+
+volumes:
+  pgdata:
+  docdata:
