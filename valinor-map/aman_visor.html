@@ -422,8 +422,8 @@ html[data-cursor], html[data-cursor] * { cursor: url("data:image/svg+xml,%3Csvg 
 
 <script type="importmap">
 { "imports": {
-  "three": "./lib/three/build/three.module.js",
-  "three/addons/": "./lib/three/examples/jsm/"
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
 } }
 </script>
 <script type="module">
@@ -3518,10 +3518,9 @@ async function arrancar() {
     if (!rj.ok) throw new Error(`No se pudo leer aman_web.json (${rj.status})`);
     DATOS = await rj.json();
     ALT = DATOS.alturas;
-    // el modelo viaja como texto base64 (los artifacts no sirven .glb)
-    const rm = await fetch("aman_web_glb.txt");
+    const rm = await fetch("aman_web.glb");
     if (!rm.ok) throw new Error(`No se pudo leer el modelo (${rm.status})`);
-    const total = Number(rm.headers.get("content-length")) || 8.5e6;
+    const total = Number(rm.headers.get("content-length")) || 6.4e6;
     const lector = rm.body.getReader(), trozos = [];
     let recibido = 0;
     for (;;) {
@@ -3530,9 +3529,7 @@ async function arrancar() {
       trozos.push(value); recibido += value.length;
       const p = Math.min(99, Math.round(recibido / total * 100)); barra.style.width = p + "%"; txt.textContent = p + " %";
     }
-    const b64 = new TextDecoder().decode(await new Blob(trozos).arrayBuffer());
-    const bin = Uint8Array.from(atob(b64.trim()), (c) => c.charCodeAt(0));
-    const gltf = await new GLTFLoader().parseAsync(bin.buffer, "");
+    const gltf = await new GLTFLoader().parseAsync(await new Blob(trozos).arrayBuffer(), "");
     txt.textContent = "Plantando los bosques…";
     prepararModelo(gltf);
     modelarCosta();
